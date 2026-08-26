@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-bg: #08090b;
+  --color-panel: #0f1114;
+  --color-panel-2: #14171b;
+  --color-line: #1d2126;
+  --color-line-2: #2a2f36;
+
+  --color-ink: #eef0f2;
+  --color-ink-2: #9da3ad;
+  --color-ink-3: #5f6670;
+
+  --color-accent: #6672e0;
+  --color-accent-2: #8b95f6;
+  --color-green: #3dd68c;
+  --color-amber: #ffb224;
+  --color-red: #f2555a;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  letter-spacing: 0.005em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2f36 transparent;
+}
+
+/* Hairline card */
+.card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+}
+
+.hover-row {
+  transition: background 120ms ease;
+}
+.hover-row:hover {
+  background: color-mix(in srgb, var(--color-panel-2) 80%, transparent);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #7280ee, #5b67d8);
+  border: 1px solid #7d89f0;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition:
+    filter 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+.btn-primary:hover {
+  filter: brightness(1.09);
+  box-shadow:
+    0 2px 10px rgba(102, 114, 224, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.btn-primary:active {
+  transform: translateY(0.5px);
+  filter: brightness(0.97);
+}
+
+.btn-ghost {
+  border: 1px solid var(--color-line-2);
+  background: transparent;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+.btn-ghost:hover {
+  background: var(--color-panel-2);
+  border-color: #363c45;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+@keyframes row-flash {
+  0% {
+    background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.row-flash {
+  animation: row-flash 2.2s ease-out forwards;
+}
