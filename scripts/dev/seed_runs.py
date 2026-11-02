@@ -41,7 +41,7 @@ import time
 import types
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -1759,6 +1759,8 @@ async def live(args: argparse.Namespace) -> None:
         rewind(hone, run_id)
         nudge(args.service, settings.service.token)
     story = STORIES["live"]
+    if args.fail:
+        story = replace(story, failed_propose_attempts=settings.optimization.max_attempts)
     fresh = [t for t in hone.db.traces() if t["status"] == "new"]
     if len(fresh) != len(story.batch):
         raise SystemExit(f"live replay expects {len(story.batch)} unanalyzed traces, found {len(fresh)}")
@@ -1796,6 +1798,7 @@ def main() -> None:
     live_p.add_argument("--service", help="service URL to nudge so open dashboards refresh, e.g. http://127.0.0.1:8090")
     live_p.add_argument("--rewind", action="store_true", help="undo a previous replay of this run id first")
     live_p.add_argument("--seed", type=int, default=7)
+    live_p.add_argument("--fail", action="store_true", help="every propose attempt dies, so the run ends failed")
     args = parser.parse_args()
     if args.command == "seed":
         for name in ("reviewers", "proposers"):
