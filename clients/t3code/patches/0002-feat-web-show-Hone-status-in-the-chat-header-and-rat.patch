@@ -1,0 +1,378 @@
+From fe8580fca10ef710e1aaa5405d29555ffa094a65 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Mon, 2 Nov 2026 16:35:37 +0000
+Subject: [PATCH 2/2] feat(web): show Hone status in the chat header and rate
+ Pi replies
+
+The header chip shows which AGENTS.md version Hone serves, how many sessions
+wait for the next optimization, and whether one is running; it toasts when a
+session reaches Hone or AGENTS.md changes. Pi replies get thumbs up and down
+buttons whose comment is sent to Hone, visible without hover on the newest
+reply.
+
+---
+ apps/web/src/components/chat/ChatHeader.tsx   |   2 +
+ apps/web/src/components/chat/HoneControls.tsx | 213 ++++++++++++++++++
+ .../components/chat/TimelineAssistantRows.tsx |  11 +-
+ apps/web/src/state/hone.ts                    |  68 ++++++
+ 4 files changed, 293 insertions(+), 1 deletion(-)
+ create mode 100644 apps/web/src/components/chat/HoneControls.tsx
+ create mode 100644 apps/web/src/state/hone.ts
+
+diff --git a/apps/web/src/components/chat/ChatHeader.tsx b/apps/web/src/components/chat/ChatHeader.tsx
+index 49f21a1d..753f41d1 100644
+--- a/apps/web/src/components/chat/ChatHeader.tsx
++++ b/apps/web/src/components/chat/ChatHeader.tsx
+@@ -42,6 +42,7 @@ import { cn } from "~/lib/utils";
+ import { textDirection } from "~/textDirection";
+ import { useClientSettings } from "../../hooks/useSettings";
+ import { GuestShareIndicator } from "./GuestShareControls";
++import { HoneStatusChip } from "./HoneControls";
+ 
+ interface ChatHeaderProps {
+   activeThreadEnvironmentId: EnvironmentId;
+@@ -431,6 +432,7 @@ export const ChatHeader = memo(function ChatHeader({
+         </WorkspaceBreadcrumbItem>
+       </WorkspaceBreadcrumb>
+       {isServerThread ? <GuestShareIndicator threadRef={activeThreadRef} /> : null}
++      {isServerThread ? <HoneStatusChip environmentId={activeThreadEnvironmentId} /> : null}
+     </div>
+   );
+ });
+diff --git a/apps/web/src/components/chat/HoneControls.tsx b/apps/web/src/components/chat/HoneControls.tsx
+new file mode 100644
+index 00000000..d4c2b76f
+--- /dev/null
++++ b/apps/web/src/components/chat/HoneControls.tsx
+@@ -0,0 +1,213 @@
++import {
++  isAtomCommandInterrupted,
++  squashAtomCommandFailure,
++} from "@t3tools/client-runtime/state/runtime";
++import type { EnvironmentId, HoneFeedbackRating, HoneStatus, ThreadId } from "@t3tools/contracts";
++import { ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
++import { useEffect, useRef, useState } from "react";
++
++import { cn } from "~/lib/utils";
++import { honeEnvironment } from "~/state/hone";
++import { useEnvironmentQuery } from "~/state/query";
++import { useAtomCommand } from "~/state/use-atom-command";
++import { ConnectionStatusDot } from "../ConnectionStatusDot";
++import { Button } from "../ui/button";
++import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "../ui/popover";
++import { Textarea } from "../ui/textarea";
++import { toastManager } from "../ui/toast";
++import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
++
++/** Which AGENTS.md the agent runs and how close Hone is to rewriting it. */
++export function HoneStatusChip({ environmentId }: { readonly environmentId: EnvironmentId }) {
++  const status = useEnvironmentQuery(honeEnvironment.status({ environmentId, input: {} })).data;
++  useHoneUpdateToasts(status);
++  if (status === null || status.dashboardUrl === null) return null;
++  const optimizing = status.reachable && status.run !== null;
++  return (
++    <Tooltip>
++      <TooltipTrigger
++        render={
++          <a
++            href={status.dashboardUrl}
++            target="_blank"
++            rel="noreferrer"
++            aria-label="Open the Hone dashboard"
++            className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
++          />
++        }
++      >
++        <ConnectionStatusDot
++          dotClassName={
++            !status.reachable ? "bg-destructive" : optimizing ? "bg-warning" : "bg-success"
++          }
++          pingClassName={optimizing ? "bg-warning/60 duration-2000" : null}
++        />
++        <span className="font-medium text-foreground">Hone</span>
++        {status.reachable ? (
++          <>
++            <span>
++              AGENTS.md <span className="font-mono">{status.versionId ?? "none"}</span>
++            </span>
++            <span className="tabular-nums">
++              batch {status.pendingCount}/{status.batchSize}
++            </span>
++            {optimizing ? <span className="text-warning">optimizing…</span> : null}
++          </>
++        ) : (
++          <span>offline</span>
++        )}
++      </TooltipTrigger>
++      <TooltipPopup side="bottom" className="max-w-72">
++        {status.reachable ? (
++          <div className="flex flex-col gap-1">
++            {status.versionTitle ? <span>{status.versionTitle}</span> : null}
++            <span className="text-muted-foreground">
++              {status.pendingCount} of {status.batchSize} sessions collected for the next AGENTS.md
++              optimization.
++            </span>
++          </div>
++        ) : (
++          <span>Hone is not reachable.</span>
++        )}
++      </TooltipPopup>
++    </Tooltip>
++  );
++}
++
++function useHoneUpdateToasts(status: HoneStatus | null) {
++  const previous = useRef<HoneStatus | null>(null);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- raises imperative toasts when a poll shows a new session or AGENTS.md version
++  useEffect(() => {
++    if (status === null || !status.reachable) return;
++    const before = previous.current;
++    previous.current = status;
++    if (before === null) return;
++    if (status.traceCount > before.traceCount) {
++      toastManager.add({
++        type: "info",
++        title: "Session sent to Hone",
++        description: `${status.pendingCount} of ${status.batchSize} sessions toward the next AGENTS.md update.`,
++      });
++    }
++    if (status.versionId !== null && status.versionId !== before.versionId) {
++      toastManager.add({
++        type: "success",
++        title: `AGENTS.md updated · ${status.versionId}`,
++        ...(status.versionTitle ? { description: status.versionTitle } : {}),
++      });
++    }
++  }, [status]);
++}
++
++const RATINGS = [
++  {
++    rating: "up",
++    Icon: ThumbsUpIcon,
++    label: "Good reply, tell Hone",
++    prompt: "What did you like?",
++  },
++  {
++    rating: "down",
++    Icon: ThumbsDownIcon,
++    label: "Needs work, tell Hone",
++    prompt: "What should the agent do differently next time?",
++  },
++] as const;
++
++/** Rates a Pi reply; Hone reads the rating and comment when it next rewrites AGENTS.md. */
++export function HoneFeedbackControl({
++  environmentId,
++  threadId,
++}: {
++  readonly environmentId: EnvironmentId;
++  readonly threadId: ThreadId;
++}) {
++  const sendFeedback = useAtomCommand(honeEnvironment.feedback, { reportFailure: false });
++  const [openRating, setOpenRating] = useState<HoneFeedbackRating | null>(null);
++  const [sentRating, setSentRating] = useState<HoneFeedbackRating | null>(null);
++  const [comment, setComment] = useState("");
++  const [sending, setSending] = useState(false);
++
++  const submit = async (rating: HoneFeedbackRating) => {
++    setSending(true);
++    const result = await sendFeedback({
++      environmentId,
++      input: { threadId, rating, comment: comment.trim() },
++    });
++    setSending(false);
++    if (result._tag === "Success") {
++      setSentRating(rating);
++      setOpenRating(null);
++      toastManager.add({
++        type: "success",
++        title: `Feedback sent to Hone (${result.value.traceId})`,
++      });
++      return;
++    }
++    if (isAtomCommandInterrupted(result)) return;
++    const error = squashAtomCommandFailure(result);
++    toastManager.add({
++      type: "error",
++      title: "Could not send feedback to Hone",
++      description: error instanceof Error ? error.message : "An error occurred.",
++    });
++  };
++
++  return (
++    <div className="flex items-center">
++      {RATINGS.map(({ rating, Icon, label, prompt }) => (
++        <Popover
++          key={rating}
++          open={openRating === rating}
++          onOpenChange={(open) => {
++            if (open) setComment("");
++            setOpenRating(open ? rating : null);
++          }}
++        >
++          <PopoverTrigger
++            render={
++              <Button
++                type="button"
++                size="icon-xs"
++                variant={sentRating === rating ? "secondary" : "ghost"}
++                aria-label={label}
++                aria-pressed={sentRating === rating}
++              />
++            }
++          >
++            <Icon className={cn("size-3", sentRating === rating && "fill-current")} />
++          </PopoverTrigger>
++          <PopoverPopup side="top" align="start" width="md" padding="compact">
++            <form
++              className="flex flex-col gap-2"
++              onSubmit={(event) => {
++                event.preventDefault();
++                void submit(rating);
++              }}
++            >
++              <PopoverTitle>{prompt}</PopoverTitle>
++              <Textarea
++                autoFocus
++                rows={3}
++                value={comment}
++                placeholder="Hone uses this to improve AGENTS.md"
++                onChange={(event) => setComment(event.target.value)}
++                onKeyDown={(event) => {
++                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
++                    event.preventDefault();
++                    void submit(rating);
++                  }
++                }}
++              />
++              <div className="flex justify-end">
++                <Button type="submit" size="xs" disabled={sending}>
++                  Send to Hone
++                </Button>
++              </div>
++            </form>
++          </PopoverPopup>
++        </Popover>
++      ))}
++    </div>
++  );
++}
+diff --git a/apps/web/src/components/chat/TimelineAssistantRows.tsx b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+index b425e100..5d89f134 100644
+--- a/apps/web/src/components/chat/TimelineAssistantRows.tsx
++++ b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+@@ -21,6 +21,8 @@ import { cn } from "~/lib/utils";
+ import { useUiStateStore } from "~/uiStateStore";
+ import { formatChatTimestampTooltip, formatDayAwareTimestamp } from "../../timestampFormat";
+ import { useV2ItemSupport } from "../../state/v2ItemSupport";
++import { useHoneReply } from "../../state/hone";
++import { HoneFeedbackControl } from "./HoneControls";
+ import { TimelineRowCtx, TimelineRowActivityCtx, type TimelineRow } from "./timelineRowContext";
+ import { MESSAGE_HEADING_LEVEL, MessageAuthorHeading } from "./TimelineRowParts";
+ 
+@@ -171,12 +173,13 @@ function AssistantMessageMeta({
+   alwaysVisible?: boolean;
+ }) {
+   const ctx = use(TimelineRowCtx);
++  const honeReply = useHoneReply(ctx.activeThreadEnvironmentId, projectedItem);
+ 
+   return (
+     <div
+       className={cn(
+         "flex items-center gap-2 text-xs tabular-nums transition-opacity duration-200",
+-        alwaysVisible
++        alwaysVisible || honeReply === "latest"
+           ? "opacity-100"
+           : "opacity-0 pointer-coarse:opacity-100 focus-within:opacity-100 group-hover/assistant:opacity-100",
+         className,
+@@ -195,6 +198,12 @@ function AssistantMessageMeta({
+       {projectedItem?.item.type === "assistant_message" ? (
+         <AssistantForkButton projectedItem={projectedItem} />
+       ) : null}
++      {projectedItem && honeReply !== null && !message.streaming ? (
++        <HoneFeedbackControl
++          environmentId={ctx.activeThreadEnvironmentId}
++          threadId={projectedItem.sourceThreadId}
++        />
++      ) : null}
+       {!message.streaming && (
+         <Tooltip>
+           <TooltipTrigger render={<p className="text-muted-foreground text-xs tabular-nums" />}>
+diff --git a/apps/web/src/state/hone.ts b/apps/web/src/state/hone.ts
+new file mode 100644
+index 00000000..83aeb968
+--- /dev/null
++++ b/apps/web/src/state/hone.ts
+@@ -0,0 +1,68 @@
++import { useAtomValue } from "@effect/atom-react";
++import { scopeThreadRef } from "@t3tools/client-runtime/environment";
++import {
++  createEnvironmentRpcCommand,
++  createEnvironmentRpcQueryAtomFamily,
++} from "@t3tools/client-runtime/state/runtime";
++import { type EnvironmentId, type ThreadId, type TurnItemId, WS_METHODS } from "@t3tools/contracts";
++import { Atom } from "effect/reactivity";
++
++import { connectionAtomRuntime } from "../connection/runtime";
++import { environmentThreadDetails } from "./threads";
++
++export const honeEnvironment = {
++  status: createEnvironmentRpcQueryAtomFamily(connectionAtomRuntime, {
++    label: "environment-data:hone:status",
++    tag: WS_METHODS.honeStatus,
++    staleTimeMs: 0,
++    refreshIntervalMs: 4_000,
++  }),
++  feedback: createEnvironmentRpcCommand(connectionAtomRuntime, {
++    label: "environment-data:hone:feedback",
++    tag: WS_METHODS.honeFeedback,
++  }),
++};
++
++/** A Pi reply Hone can take feedback on, and whether it is the thread's newest reply. */
++export type HoneReply = "latest" | "earlier" | null;
++
++const honeReplyAtom = Atom.family((key: string) => {
++  const { environmentId, threadId, itemId } = JSON.parse(key) as {
++    readonly environmentId: EnvironmentId;
++    readonly threadId: ThreadId;
++    readonly itemId: TurnItemId;
++  };
++  const ref = scopeThreadRef(environmentId, threadId);
++  return Atom.make((get): HoneReply => {
++    const projection = get(environmentThreadDetails.threadAtom(ref))?.projection;
++    const item = projection?.turnItems.find((candidate) => candidate.id === itemId);
++    if (projection === undefined || item?.type !== "assistant_message") return null;
++    const providerThread = projection.providerThreads.find(
++      (candidate) => candidate.id === item.providerThreadId,
++    );
++    if (providerThread?.driver !== "pi") return null;
++    const latest = projection.turnItems.findLast(
++      (candidate) => candidate.type === "assistant_message",
++    );
++    return latest?.id === itemId ? "latest" : "earlier";
++  }).pipe(Atom.withLabel(`web-hone-reply:${key}`));
++});
++
++const NO_HONE_REPLY = Atom.make<HoneReply>(null);
++
++export function useHoneReply(
++  environmentId: EnvironmentId,
++  item: { readonly sourceThreadId: ThreadId; readonly sourceItemId: TurnItemId } | undefined,
++): HoneReply {
++  return useAtomValue(
++    item === undefined
++      ? NO_HONE_REPLY
++      : honeReplyAtom(
++          JSON.stringify({
++            environmentId,
++            threadId: item.sourceThreadId,
++            itemId: item.sourceItemId,
++          }),
++        ),
++  );
++}
+-- 
+2.43.0
+

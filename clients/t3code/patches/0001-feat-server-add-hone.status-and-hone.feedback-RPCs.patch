@@ -1,0 +1,451 @@
+From fed424ba46c865dca1c202b19ce7c37d0e335408 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Mon, 2 Nov 2026 16:27:04 +0000
+Subject: [PATCH 1/2] feat(server): add hone.status and hone.feedback RPCs
+
+hone.status reports which AGENTS.md version the Hone service serves and how
+full its next optimization batch is; an unreachable Hone reads as
+reachable:false. hone.feedback resolves a thread's Pi session from the stored
+projection, derives Hone's trace id, and posts rated feedback text.
+
+---
+ apps/server/src/auth/RpcAuthorization.ts      |   2 +
+ apps/server/src/hone/Hone.test.ts             |  39 ++++
+ apps/server/src/hone/Hone.ts                  | 193 ++++++++++++++++++
+ .../src/observability/RpcInstrumentation.ts   |   2 +
+ apps/server/src/ws.test.ts                    |   2 +
+ apps/server/src/ws.ts                         |   3 +
+ packages/contracts/src/hone.ts                |  45 ++++
+ packages/contracts/src/index.ts               |   1 +
+ packages/contracts/src/rpc.ts                 |  17 ++
+ 9 files changed, 304 insertions(+)
+ create mode 100644 apps/server/src/hone/Hone.test.ts
+ create mode 100644 apps/server/src/hone/Hone.ts
+ create mode 100644 packages/contracts/src/hone.ts
+
+diff --git a/apps/server/src/auth/RpcAuthorization.ts b/apps/server/src/auth/RpcAuthorization.ts
+index f040dbc4..e86fb0d1 100644
+--- a/apps/server/src/auth/RpcAuthorization.ts
++++ b/apps/server/src/auth/RpcAuthorization.ts
+@@ -162,6 +162,8 @@ export const RPC_REQUIRED_SCOPES = {
+   [WS_METHODS.attachmentsCreateUploadUrl]: AuthOrchestrationOperateScope,
+   [WS_METHODS.attachmentsDelete]: AuthOrchestrationOperateScope,
+   [WS_METHODS.providerUploadFeedback]: AuthOrchestrationOperateScope,
++  [WS_METHODS.honeStatus]: AuthOrchestrationReadScope,
++  [WS_METHODS.honeFeedback]: AuthOrchestrationOperateScope,
+   [WS_METHODS.mcpAppsCallTool]: AuthOrchestrationOperateScope,
+   [WS_METHODS.mcpAppsToolInfo]: AuthOrchestrationReadScope,
+   [WS_METHODS.mcpAppsReadResource]: AuthOrchestrationReadScope,
+diff --git a/apps/server/src/hone/Hone.test.ts b/apps/server/src/hone/Hone.test.ts
+new file mode 100644
+index 00000000..5584c3a9
+--- /dev/null
++++ b/apps/server/src/hone/Hone.test.ts
+@@ -0,0 +1,39 @@
++import { describe, expect, it } from "@effect/vitest";
++
++import { honeFeedbackText, honeTraceId, piSessionIdOf } from "./Hone.ts";
++
++describe("honeTraceId", () => {
++  it("matches the id Hone gives a Pi session", () => {
++    expect(honeTraceId("01A19D0C-7f2e-4b1a-9c3d-123456789abc")).toBe("ses_01a19d0c");
++  });
++});
++
++describe("piSessionIdOf", () => {
++  it("reads the session header line", () => {
++    const contents =
++      '\n{"type":"session","id":"01a19d0c-aaaa-bbbb-cccc-dddddddddddd"}\n{"type":"x"}';
++    expect(piSessionIdOf("/s/whatever.jsonl", contents)).toBe(
++      "01a19d0c-aaaa-bbbb-cccc-dddddddddddd",
++    );
++  });
++
++  it("falls back to the uuid in the file name", () => {
++    expect(piSessionIdOf("/s/2026_01a19d0c-aaaa-bbbb-cccc-dddddddddddd.jsonl", "not json")).toBe(
++      "01a19d0c-aaaa-bbbb-cccc-dddddddddddd",
++    );
++  });
++});
++
++describe("honeFeedbackText", () => {
++  it("prefixes the rating", () => {
++    expect(honeFeedbackText({ rating: "down", comment: " Use long dates " })).toBe(
++      "👎 Use long dates",
++    );
++    expect(honeFeedbackText({ rating: "up", comment: "" })).toBe("👍");
++    expect(honeFeedbackText({ rating: null, comment: "Shorter" })).toBe("Shorter");
++  });
++
++  it("has nothing to send without a rating or comment", () => {
++    expect(honeFeedbackText({ rating: null, comment: "  " })).toBeNull();
++  });
++});
+diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
+new file mode 100644
+index 00000000..c59df5d1
+--- /dev/null
++++ b/apps/server/src/hone/Hone.ts
+@@ -0,0 +1,193 @@
++import {
++  HoneError,
++  type HoneFeedbackInput,
++  type HoneFeedbackResult,
++  type HoneStatus,
++} from "@t3tools/contracts";
++import * as Config from "effect/Config";
++import * as Effect from "effect/Effect";
++import * as FileSystem from "effect/FileSystem";
++import * as Option from "effect/Option";
++import * as Schema from "effect/Schema";
++import { HttpClient, HttpClientRequest } from "effect/http";
++
++import * as ThreadManagementService from "../orchestration-v2/ThreadManagementService.ts";
++
++const HoneConfig = Config.all({
++  url: Config.String("HONE_URL").pipe(Config.option),
++  token: Config.Redacted("HONE_TOKEN").pipe(Config.option),
++  dashboardUrl: Config.String("HONE_DASHBOARD_URL").pipe(Config.option),
++});
++
++const HoneState = Schema.Struct({
++  traces: Schema.Array(Schema.Struct({ status: Schema.String })),
++  versions: Schema.Array(
++    Schema.Struct({ id: Schema.String, title: Schema.NullishOr(Schema.String) }),
++  ),
++  currentId: Schema.NullishOr(Schema.String),
++  currentBranch: Schema.NullishOr(Schema.String),
++  batchSize: Schema.Int,
++  run: Schema.NullishOr(Schema.Struct({ id: Schema.String, status: Schema.String })),
++});
++
++const PiSessionHeader = Schema.fromJsonString(
++  Schema.Struct({ type: Schema.Literal("session"), id: Schema.String }),
++);
++const decodePiSessionHeader = Schema.decodeUnknownOption(PiSessionHeader);
++const isHoneError = Schema.is(HoneError);
++
++const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
++
++const readConfig = Effect.orDie(HoneConfig);
++
++const baseUrl = (url: string) => url.replace(/\/+$/, "");
++
++function unreachableStatus(dashboardUrl: string | null): HoneStatus {
++  return {
++    reachable: false,
++    dashboardUrl,
++    versionId: null,
++    versionTitle: null,
++    branch: null,
++    traceCount: 0,
++    pendingCount: 0,
++    batchSize: 0,
++    run: null,
++  };
++}
++
++export const honeStatus = Effect.gen(function* () {
++  const config = yield* readConfig;
++  if (Option.isNone(config.url)) return unreachableStatus(null);
++  const url = baseUrl(config.url.value);
++  const dashboardUrl = Option.getOrElse(config.dashboardUrl, () => url);
++  const http = yield* HttpClient.HttpClient;
++  return yield* http.execute(HttpClientRequest.get(`${url}/api/state`)).pipe(
++    Effect.flatMap((response) => response.json),
++    Effect.flatMap(Schema.decodeUnknownEffect(HoneState)),
++    Effect.map((state): HoneStatus => {
++      const current = state.versions.find((version) => version.id === state.currentId);
++      return {
++        reachable: true,
++        dashboardUrl,
++        versionId: state.currentId ?? null,
++        versionTitle: current?.title ?? null,
++        branch: state.currentBranch ?? null,
++        traceCount: state.traces.length,
++        pendingCount: state.traces.filter((trace) => trace.status === "new").length,
++        batchSize: state.batchSize,
++        run: state.run ?? null,
++      };
++    }),
++    Effect.timeout("3 seconds"),
++    Effect.orElseSucceed(() => unreachableStatus(dashboardUrl)),
++  );
++}).pipe(Effect.withSpan("hone.status"));
++
++/** Mirrors Hone's trace id derivation (hone/ids.py) for a Pi session id. */
++export function honeTraceId(piSessionId: string): string {
++  return `ses_${piSessionId
++    .replace(/[^0-9a-f]/gi, "")
++    .slice(0, 8)
++    .toLowerCase()}`;
++}
++
++/** The line the optimizer reads; null when there is nothing to send. */
++export function honeFeedbackText(input: Pick<HoneFeedbackInput, "rating" | "comment">) {
++  const comment = input.comment.trim();
++  const mark = input.rating === "up" ? "👍" : input.rating === "down" ? "👎" : null;
++  if (mark === null) return comment === "" ? null : comment;
++  return comment === "" ? mark : `${mark} ${comment}`;
++}
++
++/** Pi names the session in its file's header line, as Hone's Pi extension reads it. */
++export function piSessionIdOf(sessionFile: string, contents: string): string | null {
++  for (const line of contents.split("\n")) {
++    if (line.trim() === "") continue;
++    const header = decodePiSessionHeader(line);
++    if (Option.isSome(header)) return header.value.id;
++  }
++  return sessionFile.split(/[\\/]/).at(-1)?.match(UUID_PATTERN)?.[0] ?? null;
++}
++
++export const honeFeedback = Effect.fn("hone.feedback")(
++  function* (input: HoneFeedbackInput) {
++    const text = honeFeedbackText(input);
++    if (text === null) {
++      return yield* new HoneError({ reason: "rejected", message: "Add a rating or a comment." });
++    }
++    const config = yield* readConfig;
++    if (Option.isNone(config.url)) {
++      return yield* new HoneError({ reason: "unreachable", message: "HONE_URL is not set." });
++    }
++    // Read from the stored projection so feedback still works after Pi's process exits.
++    const threadManagement = yield* ThreadManagementService.ThreadManagementService;
++    const projection = yield* threadManagement.getThreadRecords(input.threadId, [
++      "providerThreads",
++    ]);
++    const piThreads = projection.providerThreads.filter((thread) => thread.driver === "pi");
++    const piThread =
++      piThreads.find((thread) => thread.id === projection.thread.activeProviderThreadId) ??
++      piThreads.at(-1);
++    const sessionFile = piThread?.nativeThreadRef?.nativeId ?? null;
++    if (sessionFile === null) {
++      return yield* new HoneError({
++        reason: "no-pi-session",
++        message: "This thread has no Pi session yet.",
++      });
++    }
++    const fileSystem = yield* FileSystem.FileSystem;
++    const contents = yield* fileSystem
++      .readFileString(sessionFile)
++      .pipe(Effect.orElseSucceed(() => ""));
++    const sessionId = piSessionIdOf(sessionFile, contents);
++    if (sessionId === null) {
++      return yield* new HoneError({
++        reason: "no-pi-session",
++        message: "Could not read the Pi session id.",
++      });
++    }
++    const traceId = honeTraceId(sessionId);
++    const http = yield* HttpClient.HttpClient;
++    const request = HttpClientRequest.post(
++      `${baseUrl(config.url.value)}/api/traces/${traceId}/feedback`,
++    ).pipe(
++      Option.isSome(config.token)
++        ? HttpClientRequest.bearerToken(config.token.value)
++        : (request) => request,
++      HttpClientRequest.bodyJsonUnsafe({ text }),
++    );
++    const response = yield* http.execute(request).pipe(
++      Effect.timeout("5 seconds"),
++      Effect.mapError(
++        () => new HoneError({ reason: "unreachable", message: "Could not reach Hone." }),
++      ),
++    );
++    if (response.status === 404) {
++      return yield* new HoneError({
++        reason: "not-published",
++        message: "Hone has not received this session yet. Try again after the reply finishes.",
++      });
++    }
++    if (response.status < 200 || response.status >= 300) {
++      return yield* new HoneError({
++        reason: "rejected",
++        message: `Hone rejected the feedback (HTTP ${response.status}).`,
++      });
++    }
++    return { traceId } satisfies HoneFeedbackResult;
++  },
++  (effect) =>
++    effect.pipe(
++      Effect.catchIf(
++        (error) => !isHoneError(error),
++        (error) =>
++          Effect.fail(
++            new HoneError({
++              reason: "no-pi-session",
++              message: `Could not load the thread: ${error.message}`,
++            }),
++          ),
++      ),
++    ),
++);
+diff --git a/apps/server/src/observability/RpcInstrumentation.ts b/apps/server/src/observability/RpcInstrumentation.ts
+index 7bb8bf8a..e8219fe7 100644
+--- a/apps/server/src/observability/RpcInstrumentation.ts
++++ b/apps/server/src/observability/RpcInstrumentation.ts
+@@ -165,6 +165,8 @@ const RPC_AGGREGATES = {
+   [WS_METHODS.attachmentsCreateUploadUrl]: "workspace",
+   [WS_METHODS.attachmentsDelete]: "workspace",
+   [WS_METHODS.providerUploadFeedback]: "provider",
++  [WS_METHODS.honeStatus]: "hone",
++  [WS_METHODS.honeFeedback]: "hone",
+   [WS_METHODS.mcpAppsCallTool]: "provider",
+   [WS_METHODS.mcpAppsToolInfo]: "provider",
+   [WS_METHODS.mcpAppsUpdateModelContext]: "provider",
+diff --git a/apps/server/src/ws.test.ts b/apps/server/src/ws.test.ts
+index 40eebbf4..3b7c9be6 100644
+--- a/apps/server/src/ws.test.ts
++++ b/apps/server/src/ws.test.ts
+@@ -26,6 +26,7 @@ import * as Layer from "effect/Layer";
+ import * as PubSub from "effect/PubSub";
+ import * as Queue from "effect/Queue";
+ import * as Stream from "effect/Stream";
++import { FetchHttpClient } from "effect/http";
+ import * as TestClock from "effect/testing/TestClock";
+ import { Headers } from "effect/http";
+ import { RpcGroup, RpcMessage, RpcServer } from "effect/rpc";
+@@ -528,6 +529,7 @@ it.effect("shell snapshots omit idle children and older settled threads only on
+ // Build the production RPC layer; unrelated capabilities fail if this test calls them.
+ const layerUnusedConfigRpcServices = Layer.mergeAll(
+   Layer.mock(DocumentText.DocumentText)({}),
++  FetchHttpClient.layer,
+   Layer.mock(ServerSecretStore.ServerSecretStore)({}),
+   Layer.mock(WorkspacePaths.WorkspacePaths)({}),
+   Layer.mock(TraceDiagnostics.TraceDiagnostics)({}),
+diff --git a/apps/server/src/ws.ts b/apps/server/src/ws.ts
+index e880551e..acd27626 100644
+--- a/apps/server/src/ws.ts
++++ b/apps/server/src/ws.ts
+@@ -192,6 +192,7 @@ import * as TerminalManager from "./terminal/Manager.ts";
+ import { terminalOutputStream, withTerminalOutputWindow } from "./terminal/OutputProtocol.ts";
+ import * as ServerBrowser from "./preview/ServerBrowser.ts";
+ import * as DeviceService from "./device/DeviceService.ts";
++import * as Hone from "./hone/Hone.ts";
+ import { remoteSshDeviceHosts } from "./device/localSshDeviceHost.ts";
+ import * as PreviewManager from "./preview/Manager.ts";
+ import { issueAssetUrl } from "./assets/AssetAccess.ts";
+@@ -2480,6 +2481,8 @@ export const layerWsRpc = (
+                 ),
+               ),
+           ),
++        [WS_METHODS.honeStatus]: (_input) => Hone.honeStatus,
++        [WS_METHODS.honeFeedback]: (input) => Hone.honeFeedback(input),
+         [WS_METHODS.serverUpdateProvider]: (input) =>
+           providerMaintenanceRunner.updateProvider(input),
+         [WS_METHODS.providerConsumeResetCredit]:
+diff --git a/packages/contracts/src/hone.ts b/packages/contracts/src/hone.ts
+new file mode 100644
+index 00000000..31553a69
+--- /dev/null
++++ b/packages/contracts/src/hone.ts
+@@ -0,0 +1,45 @@
++import * as Schema from "effect/Schema";
++import { NonNegativeInt, ThreadId, TrimmedString } from "./baseSchemas.ts";
++
++/** What the Hone service reports about the AGENTS.md the agent runs and the next optimization. */
++export const HoneStatus = Schema.Struct({
++  reachable: Schema.Boolean,
++  dashboardUrl: Schema.NullOr(Schema.String),
++  versionId: Schema.NullOr(Schema.String),
++  versionTitle: Schema.NullOr(Schema.String),
++  branch: Schema.NullOr(Schema.String),
++  traceCount: NonNegativeInt,
++  /** Sessions Hone has not yet optimized from. */
++  pendingCount: NonNegativeInt,
++  batchSize: NonNegativeInt,
++  run: Schema.NullOr(Schema.Struct({ id: Schema.String, status: Schema.String })),
++});
++export type HoneStatus = typeof HoneStatus.Type;
++
++export const HoneFeedbackRating = Schema.Literals(["up", "down"]);
++export type HoneFeedbackRating = typeof HoneFeedbackRating.Type;
++
++export const HoneFeedbackInput = Schema.Struct({
++  threadId: ThreadId,
++  rating: Schema.NullOr(HoneFeedbackRating),
++  comment: TrimmedString,
++});
++export type HoneFeedbackInput = typeof HoneFeedbackInput.Type;
++
++export const HoneFeedbackResult = Schema.Struct({
++  traceId: Schema.String,
++});
++export type HoneFeedbackResult = typeof HoneFeedbackResult.Type;
++
++export const HoneErrorReason = Schema.Literals([
++  "unreachable",
++  "not-published",
++  "no-pi-session",
++  "rejected",
++]);
++export type HoneErrorReason = typeof HoneErrorReason.Type;
++
++export class HoneError extends Schema.TaggedError<HoneError>()("HoneError", {
++  reason: HoneErrorReason,
++  message: Schema.String,
++}) {}
+diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
+index 896733c5..8628152e 100644
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -19,6 +19,7 @@ export * from "./providerInstance.ts";
+ export * from "./providerSetup.ts";
+ export * from "./providerRuntime.ts";
+ export * from "./providerUsageLimits.ts";
++export * from "./hone.ts";
+ export * from "./usageLimitSourceId.ts";
+ export * from "./providerPolicy.ts";
+ export * from "./modelSelection.ts";
+diff --git a/packages/contracts/src/rpc.ts b/packages/contracts/src/rpc.ts
+index 01989ff8..17983894 100644
+--- a/packages/contracts/src/rpc.ts
++++ b/packages/contracts/src/rpc.ts
+@@ -165,6 +165,7 @@ import {
+   ProviderUploadFeedbackResult,
+ } from "./provider.ts";
+ import { ProviderInstanceId, ProviderInstanceMutation } from "./providerInstance.ts";
++import { HoneError, HoneFeedbackInput, HoneFeedbackResult, HoneStatus } from "./hone.ts";
+ import {
+   GuestShareCreateError,
+   GuestShareCreateInput,
+@@ -434,6 +435,8 @@ export const WS_METHODS = {
+   mcpAppsUpdateModelContext: "mcpApps.updateModelContext",
+ 
+   providerUploadFeedback: "provider.uploadFeedback",
++  honeStatus: "hone.status",
++  honeFeedback: "hone.feedback",
+   providerAuthStart: "provider.auth.start",
+   providerConsumeResetCredit: "provider.consumeResetCredit",
+   providerAuthComplete: "provider.auth.complete",
+@@ -1434,6 +1437,18 @@ const WsProviderUploadFeedbackRpc = Rpc.make(WS_METHODS.providerUploadFeedback,
+   error: Schema.Union([ProviderUploadFeedbackError, EnvironmentAuthorizationError]),
+ });
+ 
++const WsHoneStatusRpc = Rpc.make(WS_METHODS.honeStatus, {
++  payload: Schema.Struct({}),
++  success: HoneStatus,
++  error: EnvironmentAuthorizationError,
++});
++
++const WsHoneFeedbackRpc = Rpc.make(WS_METHODS.honeFeedback, {
++  payload: HoneFeedbackInput,
++  success: HoneFeedbackResult,
++  error: Schema.Union([HoneError, EnvironmentAuthorizationError]),
++});
++
+ const WsSubscribeVcsStatusRpc = Rpc.make(WS_METHODS.subscribeVcsStatus, {
+   payload: VcsStatusSubscriptionInput,
+   success: VcsStatusStreamEvent,
+@@ -2118,6 +2133,8 @@ export const WsRpcGroup = RpcGroup.make(
+   WsMcpAppsReadResourceRpc,
+   WsMcpAppsUpdateModelContextRpc,
+   WsProviderUploadFeedbackRpc,
++  WsHoneStatusRpc,
++  WsHoneFeedbackRpc,
+   WsSubscribeVcsStatusRpc,
+   WsSubscribeWorktreeSetupRpc,
+   WsWorktreeSetupCancelRpc,
+-- 
+2.43.0
+
