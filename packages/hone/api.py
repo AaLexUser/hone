@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .events import tail_sse
@@ -144,6 +144,17 @@ def run_report(run_id: str) -> Response:
         media_type="text/html; charset=utf-8",
         headers={"cache-control": "no-store", "content-security-policy": "sandbox"},
     )
+
+
+@app.get("/api/runs/{run_id}/review")
+def run_review(run_id: str) -> Response:
+    """The review judge's structured findings, the data behind report.html."""
+    if not hone.db.run(run_id):
+        raise HTTPException(status_code=404, detail="run not found")
+    p = hone.dirs.review_path(run_id)
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="no review for this run")
+    return Response(p.read_text(encoding="utf-8"), media_type="application/json")
 
 
 @app.get("/api/versions")
