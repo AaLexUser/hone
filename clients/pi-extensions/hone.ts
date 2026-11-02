@@ -186,10 +186,14 @@ function sessionIdOf(file: string): string | null {
 }
 
 export default async function (pi: ExtensionAPI) {
+  // Hosts such as t3code start throwaway `--no-session` processes to list
+  // models and commands; syncing there would write AGENTS.md into their cwd.
+  const ephemeral = process.argv.includes("--no-session");
   const boot = resolveCfg();
-  if (boot.cfg.url) await syncAgentsMd(boot.cfg);
+  if (boot.cfg.url && !ephemeral) await syncAgentsMd(boot.cfg);
 
   pi.on("session_start", async (_event, ctx) => {
+    if (ephemeral) return;
     const { cfg } = resolveCfg();
     const r = await syncAgentsMd(cfg);
     announce(ctx, r, cfg);
