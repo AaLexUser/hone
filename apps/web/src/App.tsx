@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Header } from './components/Layout'
+import { pageWidth } from './lib/pageWidth'
 import { Dashboard } from './pages/Dashboard'
 import { TracePage } from './pages/TracePage'
 import { RunPage } from './pages/RunPage'
@@ -19,7 +20,7 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          className="mx-auto max-w-[1200px] px-4 py-5 sm:px-6 sm:py-7"
+          className={`mx-auto px-4 py-5 sm:px-6 sm:py-7 ${pageWidth(location.pathname)}`}
         >
           <Routes location={location}>
             <Route path="/" element={<Dashboard />} />

@@ -1,50 +1,90 @@
 @import 'tailwindcss';
 
+/*
+ * Design tokens. Neutrals are one low-chroma OKLCH ramp (hue 270), with one
+ * accent and three status colors. Utilities read the variables, so a theme is
+ * only a set of overrides on <html data-theme>.
+ */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --color-bg: #08090b;
-  --color-panel: #0f1114;
-  --color-panel-2: #14171b;
-  --color-line: #1d2126;
-  --color-line-2: #2a2f36;
+  --text-meta: 12px;
+  --text-meta--line-height: 16px;
+  --text-body: 13px;
+  --text-body--line-height: 20px;
+  --text-emph: 14px;
+  --text-emph--line-height: 20px;
+  --text-section: 16px;
+  --text-section--line-height: 24px;
 
-  --color-ink: #eef0f2;
-  --color-ink-2: #9da3ad;
-  --color-ink-3: #5f6670;
+  --color-bg: oklch(0.155 0.004 270);
+  --color-panel: oklch(0.185 0.005 270);
+  --color-panel-2: oklch(0.215 0.006 270);
+  --color-line: oklch(0.255 0.007 270);
+  --color-line-2: oklch(0.31 0.008 270);
 
-  --color-accent: #6672e0;
-  --color-accent-2: #8b95f6;
-  --color-green: #3dd68c;
-  --color-amber: #ffb224;
-  --color-red: #f2555a;
+  --color-ink: oklch(0.965 0.003 270);
+  --color-ink-2: oklch(0.76 0.01 270);
+  --color-ink-3: oklch(0.6 0.012 270);
+
+  --color-accent: oklch(0.62 0.15 277);
+  --color-accent-2: oklch(0.74 0.12 277);
+  --color-green: oklch(0.76 0.15 158);
+  --color-amber: oklch(0.8 0.14 78);
+  --color-red: oklch(0.67 0.19 24);
+
+  /* Stage hues: a seat's chip and its group box share one. */
+  --color-rev: oklch(0.76 0.1 195);
+  --color-pro: oklch(0.74 0.12 305);
 }
 
-html {
+:root {
   color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-bg: oklch(0.985 0.002 270);
+  --color-panel: oklch(1 0 0);
+  --color-panel-2: oklch(0.965 0.003 270);
+  --color-line: oklch(0.92 0.004 270);
+  --color-line-2: oklch(0.86 0.006 270);
+
+  --color-ink: oklch(0.23 0.01 270);
+  --color-ink-2: oklch(0.44 0.012 270);
+  --color-ink-3: oklch(0.56 0.012 270);
+
+  --color-accent: oklch(0.55 0.17 277);
+  --color-accent-2: oklch(0.5 0.17 277);
+  --color-green: oklch(0.58 0.14 158);
+  --color-amber: oklch(0.66 0.15 70);
+  --color-red: oklch(0.56 0.2 25);
+
+  --color-rev: oklch(0.52 0.1 205);
+  --color-pro: oklch(0.52 0.15 305);
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-size: 13.5px;
-  letter-spacing: 0.005em;
+  font-size: 13px;
+  line-height: 20px;
+  font-feature-settings: 'cv11', 'ss01';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  background: color-mix(in oklch, var(--color-accent) 35%, transparent);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a2f36 transparent;
+  scrollbar-color: var(--color-line-2) transparent;
 }
 
-/* Hairline card */
 .card {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
@@ -52,10 +92,10 @@ body {
 }
 
 .hover-row {
-  transition: background 120ms ease;
+  transition: background 120ms ease-out;
 }
 .hover-row:hover {
-  background: color-mix(in srgb, var(--color-panel-2) 80%, transparent);
+  background: var(--color-panel-2);
 }
 
 .scrollbar-none {
@@ -66,56 +106,39 @@ body {
 }
 
 .label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--color-ink-3);
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, #7280ee, #5b67d8);
-  border: 1px solid #7d89f0;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition:
-    filter 140ms ease,
-    transform 140ms ease,
-    box-shadow 140ms ease;
+  background: var(--color-accent);
+  border: 1px solid color-mix(in oklch, var(--color-accent) 80%, white);
+  color: white;
+  transition: filter 140ms ease-out;
 }
 .btn-primary:hover {
-  filter: brightness(1.09);
-  box-shadow:
-    0 2px 10px rgba(102, 114, 224, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-.btn-primary:active {
-  transform: translateY(0.5px);
-  filter: brightness(0.97);
+  filter: brightness(1.08);
 }
 
 .btn-ghost {
   border: 1px solid var(--color-line-2);
   background: transparent;
   transition:
-    background 140ms ease,
-    border-color 140ms ease;
+    background 140ms ease-out,
+    border-color 140ms ease-out;
 }
 .btn-ghost:hover {
   background: var(--color-panel-2);
-  border-color: #363c45;
 }
 
 @keyframes pulse-dot {
   0%,
   100% {
     opacity: 1;
-    transform: scale(1);
   }
   50% {
-    opacity: 0.45;
-    transform: scale(0.82);
+    opacity: 0.35;
   }
 }
 .pulse-dot {
@@ -124,7 +147,7 @@ body {
 
 @keyframes row-flash {
   0% {
-    background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+    background: color-mix(in oklch, var(--color-accent) 16%, transparent);
   }
   100% {
     background: transparent;
@@ -132,4 +155,77 @@ body {
 }
 .row-flash {
   animation: row-flash 2.2s ease-out forwards;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+}
+.drawer-in {
+  animation: drawer-in 200ms ease-out;
+}
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+.scrim-in {
+  animation: scrim-in 200ms ease-out;
+}
+
+/* A booth TV at 1920 px: the run page scales as one piece instead of reflowing. */
+@media (min-width: 1800px) {
+  .tv-scale {
+    zoom: 1.15;
+  }
+}
+
+/* An active edge: short dashes drifting toward the work. */
+@keyframes edge-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.edge-flow {
+  stroke-dasharray: 3 9;
+  animation: edge-flow 0.9s linear infinite;
+}
+
+/* A working seat: a quarter arc turning slowly around its ring. */
+@keyframes spin-arc {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-arc {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spin-arc 1.8s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--color-panel-2) 25%, var(--color-line) 50%, var(--color-panel-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot,
+  .drawer-in,
+  .scrim-in,
+  .spin-arc,
+  .shimmer,
+  .edge-flow {
+    animation: none;
+  }
 }

@@ -117,7 +117,7 @@ export function Dashboard() {
             >
               <span
                 className={`flex h-[18px] w-8 items-center rounded-full border px-[2px] transition-colors ${
-                  state.autoOptimize ? 'justify-end border-[#7d89f0] bg-[#5b67d8]' : 'justify-start border-line-2 bg-panel-2'
+                  state.autoOptimize ? 'justify-end border-accent bg-accent' : 'justify-start border-line-2 bg-panel-2'
                 }`}
               >
                 <motion.span layout transition={{ type: 'spring', stiffness: 600, damping: 32 }} className="size-3 rounded-full bg-white/90" />
@@ -130,9 +130,9 @@ export function Dashboard() {
           {runActive ? (
             <Link
               to={`/runs/${state.run!.id}`}
-              className="btn-ghost flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium text-[#8b95f6] md:w-auto"
+              className="btn-ghost flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium text-accent-2 md:w-auto"
             >
-              <span className="pulse-dot size-1.5 rounded-full bg-[#8b95f6]" />
+              <span className="pulse-dot size-1.5 rounded-full bg-accent-2" />
               View running optimization
               <ArrowRight size={14} />
             </Link>
@@ -168,7 +168,7 @@ export function Dashboard() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2.5">
             <span className="text-[13px] font-semibold">Traces</span>
-            <span className="rounded-full bg-white/5 px-1.5 py-px font-mono text-[10.5px] text-ink-3">
+            <span className="rounded-full bg-ink/5 px-1.5 py-px font-mono text-[10.5px] text-ink-3">
               {visible.length}
             </span>
           </div>
@@ -178,7 +178,7 @@ export function Dashboard() {
                 {filter === f && (
                   <motion.span
                     layoutId="filter-pill"
-                    className="absolute inset-0 rounded-md bg-white/6"
+                    className="absolute inset-0 rounded-md bg-ink/6"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
@@ -318,7 +318,7 @@ function BatchSizeInput({ value, onCommit }: { value: number; onCommit: (v: numb
       }}
       onFocus={(e) => e.currentTarget.select()}
       aria-label="Batch size"
-      className="h-6 w-12 rounded-md border border-transparent bg-transparent text-center font-mono text-[13px] text-ink transition-colors outline-none hover:border-line-2 focus:border-[#7d89f0] focus:bg-panel-2"
+      className="h-6 w-12 rounded-md border border-transparent bg-transparent text-center font-mono text-[13px] text-ink transition-colors outline-none hover:border-line-2 focus:border-accent focus:bg-panel-2"
     />
   )
 }

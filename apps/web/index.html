@@ -10,6 +10,15 @@
       rel="stylesheet"
     />
     <link rel="icon" type="image/svg+xml" href="/hone.svg" />
+    <script>
+      try {
+        const t = localStorage.getItem('hone-theme')
+        document.documentElement.dataset.theme =
+          t === 'dark' ? 'dark' : 'light'
+      } catch {
+        document.documentElement.dataset.theme = 'light'
+      }
+    </script>
     <title>Hone — AGENTS.md optimizer</title>
   </head>
   <body>

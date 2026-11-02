@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import type { BranchInfo, RunEvent, Trace, VersionNode } from './data'
+import type { BranchInfo, Trace, VersionNode } from './data'
 
 export type RunStatus = 'running' | 'validating' | 'succeeded'
 
@@ -234,4 +234,3 @@ export function fmtDuration(ms: number): string {
   return `${Math.floor(s / 60)}m ${s % 60}s`
 }
 
-export type { RunEvent }

@@ -92,7 +92,7 @@ export function RunsPage() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
           <div className="flex items-center gap-2.5">
             <span className="text-[13px] font-semibold">Optimization runs</span>
-            <span className="rounded-full bg-white/5 px-1.5 py-px font-mono text-[10.5px] text-ink-3">
+            <span className="rounded-full bg-ink/5 px-1.5 py-px font-mono text-[10.5px] text-ink-3">
               {visible.length}
             </span>
           </div>
@@ -102,7 +102,7 @@ export function RunsPage() {
                 {filter === f && (
                   <motion.span
                     layoutId="runs-filter-pill"
-                    className="absolute inset-0 rounded-md bg-white/6"
+                    className="absolute inset-0 rounded-md bg-ink/6"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
@@ -170,7 +170,7 @@ export function RunsPage() {
                   </span>
                   <span className="hidden font-mono text-[12px] md:block">
                     {r.resultVersionId ? (
-                      <span className="text-[#8b95f6]">{r.resultVersionId}</span>
+                      <span className="text-accent-2">{r.resultVersionId}</span>
                     ) : (
                       <span className="text-ink-3">—</span>
                     )}

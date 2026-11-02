@@ -30,7 +30,7 @@ export function BatchRing({ filled, total }: { filled: number; total: number }) 
               strokeLinecap="round"
               initial={false}
               animate={{
-                stroke: on ? (full ? 'var(--color-green)' : 'var(--color-accent-2)') : '#23272e',
+                stroke: on ? (full ? 'var(--color-green)' : 'var(--color-accent-2)') : 'var(--color-line-2)',
                 opacity: on ? 1 : 0.9,
               }}
               transition={{ duration: 0.35, delay: on ? (i % TICKS) * 0.008 : 0 }}

@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom'
 import { animate } from 'motion/react'
 
 const badgeStyles: Record<string, string> = {
-  new: 'text-[#8b95f6] bg-[#6672e0]/12 border-[#6672e0]/30',
-  analyzed: 'text-ink-2 bg-white/4 border-white/10',
-  running: 'text-[#8b95f6] bg-[#6672e0]/12 border-[#6672e0]/30',
+  new: 'text-accent-2 bg-accent/12 border-accent/30',
+  analyzed: 'text-ink-2 bg-ink/4 border-line-2',
+  running: 'text-accent-2 bg-accent/12 border-accent/30',
   validating: 'text-amber bg-amber/10 border-amber/30',
   succeeded: 'text-green bg-green/10 border-green/25',
   failed: 'text-red bg-red/10 border-red/30',
-  'no-changes': 'text-ink-2 bg-white/4 border-white/10',
+  'no-changes': 'text-ink-2 bg-ink/4 border-line-2',
   current: 'text-green bg-green/10 border-green/25',
 }
 

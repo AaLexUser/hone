@@ -368,7 +368,7 @@ export function VersionsPage() {
                 onContextMenu={(e) => openMenu(e, v.branch, v.id)}
                 style={{ height: ROW_H, paddingLeft: railW + 12 }}
                 className={`hover-row relative flex w-full items-center gap-3 border-b border-line/60 py-2 pr-4 text-left ${
-                  v.id === selectedId ? 'bg-white/4' : ''
+                  v.id === selectedId ? 'bg-ink/4' : ''
                 }`}
               >
                 {v.id === selectedId && (
@@ -451,7 +451,7 @@ export function VersionsPage() {
                     · run{' '}
                     <Link
                       to={`/runs/${selected.runId}`}
-                      className="font-mono text-[#8b95f6] hover:underline"
+                      className="font-mono text-accent-2 hover:underline"
                       title="Open the run that produced this commit"
                     >
                       {selected.runId}
@@ -537,7 +537,7 @@ export function VersionsPage() {
                 {tab === t && (
                   <motion.span
                     layoutId="version-tab"
-                    className="absolute inset-0 rounded-md bg-white/6"
+                    className="absolute inset-0 rounded-md bg-ink/6"
                     transition={{ type: 'spring', stiffness: 500, damping: 38 }}
                   />
                 )}
@@ -655,7 +655,7 @@ function BranchChip({
       {active && (
         <motion.span
           layoutId="branch-pill"
-          className="absolute inset-0 rounded-md bg-white/7"
+          className="absolute inset-0 rounded-md bg-ink/7"
           transition={{ type: 'spring', stiffness: 500, damping: 38 }}
         />
       )}
@@ -697,7 +697,7 @@ function NewBranchForm({
           if (e.key === 'Escape') onCancel()
         }}
         placeholder="branch name"
-        className="h-7 flex-1 rounded-md border border-line-2 bg-panel-2 px-2 font-mono text-[12px] text-ink outline-none focus:border-[#7d89f0]"
+        className="h-7 flex-1 rounded-md border border-line-2 bg-panel-2 px-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
       />
       <button
         onClick={() => name.trim() && onCreate(name.trim())}
@@ -792,7 +792,7 @@ function BranchMenu({
               if (e.key === 'Escape') onClose()
             }}
             placeholder={editing === 'rename' ? 'new branch name' : 'branch name'}
-            className="h-7 w-full rounded-md border border-line-2 bg-panel-2 px-2 font-mono text-[12px] text-ink outline-none focus:border-[#7d89f0]"
+            className="h-7 w-full rounded-md border border-line-2 bg-panel-2 px-2 font-mono text-[12px] text-ink outline-none focus:border-accent"
           />
           <div className="mt-1 flex items-center gap-1">
             <button
@@ -865,7 +865,7 @@ function MenuItem({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-2 transition-colors hover:bg-white/6 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+      className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-2 transition-colors hover:bg-ink/6 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
     >
       <Icon size={12} className="shrink-0 text-ink-3" />
       {label}

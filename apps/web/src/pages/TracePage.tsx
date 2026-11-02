@@ -67,7 +67,7 @@ export function TracePage() {
               <ToolRow key={i} name={turn.tool!.name} args={turn.tool!.args} result={turn.tool!.result} />
             ) : (
               <motion.div key={i} variants={rise} className="card px-4 py-3">
-                <div className={`label ${turn.role === 'user' ? 'text-[#8b95f6]' : ''}`}>{turn.role}</div>
+                <div className={`label ${turn.role === 'user' ? 'text-accent-2' : ''}`}>{turn.role}</div>
                 <p className="mt-1.5 max-w-[560px] text-[13.5px] leading-relaxed text-ink">{turn.text}</p>
               </motion.div>
             ),
@@ -92,7 +92,7 @@ export function TracePage() {
               <Badge kind={trace.status} />
             </MetaRow>
             <MetaRow k="AGENTS.md">
-              <Link to="/versions" className="font-mono text-[11.5px] text-[#8b95f6] hover:underline">
+              <Link to="/versions" className="font-mono text-[11.5px] text-accent-2 hover:underline">
                 {trace.versionId}
               </Link>
             </MetaRow>
@@ -145,7 +145,7 @@ function ToolRow({ name, args, result }: { name: string; args: string; result: s
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="border-t border-line bg-black/25 px-4 py-3 font-mono text-[11.5px] leading-relaxed text-ink-2">
+            <div className="border-t border-line bg-panel-2 px-4 py-3 font-mono text-[11.5px] leading-relaxed text-ink-2">
               → {result}
             </div>
           </motion.div>
