@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hone · ICDM 2026 Demo Poster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Physical size: 90 cm wide × 120 cm high, portrait. Print or export to PDF at this size. */
+  @page { size: 900mm 1200mm; margin: 0; }
+
+  :root {
+    --bg: #f7f7f9;
+    --panel: #ffffff;
+    --line: #e3e4ea;
+    --ink: #1d1f27;
+    --ink-2: #4a4e5c;
+    --ink-3: #7a7e8c;
+    --accent: #5458c8;
+    --accent-soft: #ecedfb;
+    --review: #1f8a8f;
+    --review-soft: #e6f4f4;
+    --propose: #8e4fc0;
+    --propose-soft: #f3ecfa;
+    --green: #16895c;
+    --green-soft: #e7f5ee;
+    --red: #c4343c;
+    --amber: #b8780f;
+    --amber-soft: #fbf3e2;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 900mm; height: 1200mm; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11mm;
+    line-height: 1.32;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .poster {
+    width: 900mm; height: 1200mm;
+    padding: 26mm 28mm 22mm;
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    gap: 14mm;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: grid;
+    grid-template-columns: 58mm 1fr auto;
+    gap: 16mm;
+    align-items: center;
+  }
+  header .mark { width: 58mm; height: 58mm; }
+  h1 {
+    font-size: 25mm;
+    line-height: 1.06;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  h1 .name { color: var(--accent); }
+  .authors { margin-top: 6mm; font-size: 11mm; font-weight: 500; }
+  .authors sup { font-size: 0.6em; }
+  .affil { margin-top: 2mm; font-size: 8.5mm; color: var(--ink-2); }
+  .badge {
+    display: flex; flex-direction: column; align-items: center; gap: 4mm;
+    font-size: 8mm; color: var(--ink-2); text-align: center;
+  }
+  .badge .venue {
+    background: var(--ink); color: #fff; border-radius: 4mm;
+    padding: 4mm 7mm; font-weight: 600; font-size: 9mm; letter-spacing: 0.02em;
+  }
+  .badge img { width: 62mm; height: 62mm; }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--panel);
+    border: 0.6mm solid var(--line);
+    border-radius: 6mm;
+    padding: 12mm 13mm;
+  }
+  h2 {
+    font-size: 14mm; font-weight: 700; letter-spacing: -0.015em;
+    display: flex; align-items: baseline; gap: 5mm;
+  }
+  h2 .num {
+    font-size: 9mm; font-weight: 600; color: #fff; background: var(--accent);
+    border-radius: 50%; width: 14mm; height: 14mm; display: inline-grid; place-items: center;
+    flex: none; transform: translateY(-1mm);
+  }
+  .muted { color: var(--ink-3); }
+  .mono { font-family: var(--mono); }
+
+  .row-a { display: grid; grid-template-columns: 1fr 1.08fr; gap: 14mm; }
+
+  /* problem */
+  .assumptions { margin-top: 9mm; display: grid; gap: 6mm; }
+  .assume {
+    display: grid; grid-template-columns: 16mm 1fr; gap: 5mm; align-items: start;
+  }
+  .assume .x {
+    width: 16mm; height: 16mm; border-radius: 50%; background: #fbe9ea; color: var(--red);
+    display: grid; place-items: center; font-weight: 700; font-size: 10mm;
+  }
+  .assume b { font-weight: 600; text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 0.7mm; }
+  .assume .why { display: block; color: var(--ink-2); font-size: 9.5mm; }
+  .hone-says {
+    margin-top: 9mm; padding: 8mm 9mm; border-radius: 5mm;
+    background: var(--accent-soft); color: var(--ink);
+    display: grid; grid-template-columns: 16mm 1fr; gap: 5mm; align-items: center;
+    font-weight: 500;
+  }
+  .hone-says .ok {
+    width: 16mm; height: 16mm; border-radius: 50%; background: var(--accent); color: #fff;
+    display: grid; place-items: center; font-weight: 700; font-size: 9mm;
+  }
+
+  .facts { margin-top: 8mm; display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .fact { border: 0.5mm solid var(--line); border-radius: 4mm; padding: 5mm 6mm; display: grid; gap: 1mm; }
+  .fact .v { font-size: 15mm; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--red); }
+  .fact .k { font-size: 8mm; color: var(--ink-2); line-height: 1.25; }
+  .src { font-size: 6.6mm; color: var(--ink-3); margin-top: 2mm; }
+
+  /* results */
+  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 8mm; }
+  .hero .stat .big { font-size: 30mm; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--accent); }
+  .hero .stat .big small { font-size: 0.5em; }
+  .hero .stat .label { font-size: 9.5mm; font-weight: 600; margin-top: 2mm; }
+  .hero .stat .delta { font-size: 8.5mm; color: var(--green); font-weight: 600; }
+  .charts { margin-top: 8mm; display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; }
+  .chart-title { font-size: 8.5mm; font-weight: 600; color: var(--ink-2); margin-bottom: 2mm; }
+  .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart text { font-family: Inter, system-ui, sans-serif; }
+  .note { margin-top: 5mm; font-size: 7.5mm; color: var(--ink-3); }
+
+  /* pipeline */
+  .row-b { display: grid; grid-template-columns: 1.42fr 1fr; gap: 14mm; }
+  .arch { margin-top: 6mm; }
+  .arch img { width: 100%; display: block; }
+  .acronym { font-size: 9mm; color: var(--ink-2); margin-top: 3mm; }
+  .acronym b { color: var(--ink); }
+  .why-list { margin-top: 8mm; display: grid; gap: 8mm; }
+  .why-item { display: grid; grid-template-columns: 20mm 1fr; gap: 6mm; align-items: start; }
+  .why-item svg { width: 20mm; height: 20mm; }
+  .why-item .t { font-weight: 600; }
+  .why-item .d { color: var(--ink-2); font-size: 9.5mm; }
+  .axes { margin-top: 9mm; display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .axis {
+    border-radius: 4mm; padding: 5mm 6mm; font-size: 8.5mm; line-height: 1.25;
+  }
+  .axis.traces { background: var(--review-soft); color: #145e62; }
+  .axis.models { background: var(--propose-soft); color: #5f2f86; }
+  .axis b { display: block; font-size: 9.5mm; }
+
+  .live { margin-top: 9mm; }
+  .live figcaption { margin-top: 4mm; font-size: 8.5mm; color: var(--ink-2); display: flex; align-items: center; gap: 3mm; }
+  .live .pulse { width: 4.5mm; height: 4.5mm; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.6mm var(--accent-soft); flex: none; }
+
+  /* demo */
+  .demo h2 .tag {
+    font-size: 8.5mm; font-weight: 600; color: var(--amber); background: var(--amber-soft);
+    border-radius: 3mm; padding: 1.5mm 4mm; letter-spacing: 0.02em;
+  }
+  .lead { margin-top: 3mm; font-size: 9.5mm; color: var(--ink-2); }
+  .story {
+    margin-top: 8mm;
+    display: grid; grid-template-columns: 1.78fr 1.78fr 2.8fr 1.32fr; gap: 9mm;
+    position: relative;
+  }
+  .step { display: grid; grid-template-rows: auto auto; gap: 4mm; position: relative; }
+  .shot {
+    border-radius: 3.5mm; overflow: hidden; border: 0.5mm solid var(--line);
+    background: #fff; box-shadow: 0 1.2mm 3mm rgba(20, 22, 40, 0.07);
+  }
+  .shot svg { display: block; width: 100%; height: auto; }
+  .step .cap { display: grid; grid-template-columns: 11mm 1fr; gap: 3.5mm; align-items: start; font-size: 9.6mm; line-height: 1.25; }
+  .step .cap .n {
+    width: 11mm; height: 11mm; border-radius: 50%; background: var(--ink); color: #fff;
+    display: grid; place-items: center; font-size: 6.5mm; font-weight: 600;
+  }
+  .step:not(:last-child)::after {
+    content: ""; position: absolute; right: -7.8mm; top: 22%;
+    width: 6.6mm; height: 6.6mm;
+    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 4l8 8-8 8' fill='none' stroke='%237a7e8c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+  .loop {
+    margin-top: 5mm; display: flex; align-items: center; gap: 4mm; justify-content: center;
+    font-size: 8.5mm; color: var(--ink-2);
+  }
+  .loop svg { width: 12mm; height: 12mm; }
+
+  .learned { margin-top: 9mm; display: grid; grid-template-columns: 1fr 14mm 1.25fr; gap: 4mm 5mm; align-items: center; }
+  .learned .h { font-size: 8mm; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .quote {
+    background: var(--amber-soft); border-radius: 4mm 4mm 4mm 1mm; padding: 4mm 6mm;
+    font-size: 9mm; line-height: 1.25;
+  }
+  .arrow { color: var(--ink-3); font-size: 10mm; text-align: center; }
+  .rule {
+    font-family: var(--mono); font-size: 7.6mm; line-height: 1.3;
+    background: var(--green-soft); color: #0f5c3e; border-radius: 3mm;
+    padding: 4mm 6mm; border-left: 1.4mm solid var(--green);
+  }
+
+  /* footer */
+  footer {
+    display: grid; grid-template-columns: auto 1fr 1.1fr; gap: 12mm; align-items: center;
+    font-size: 7.5mm; color: var(--ink-2);
+    border-top: 0.6mm solid var(--line); padding-top: 9mm;
+  }
+  footer .repo { display: flex; align-items: center; gap: 7mm; }
+  footer .repo img { width: 34mm; height: 34mm; }
+  footer .repo .url { font-family: var(--mono); font-size: 9mm; color: var(--ink); font-weight: 500; }
+  footer .refs { font-size: 6.4mm; line-height: 1.35; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="poster">
+
+  <!-- ===================== HEADER ===================== -->
+  <header>
+    <img class="mark" src="assets/hone.svg" alt="Hone">
+    <div>
+      <h1><span class="name">Hone</span>: Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
+      <div class="authors">Alexey Lapin<sup>1</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup></div>
+      <div class="affil">
+        <sup>1</sup>&lt;placeholder&gt;, &lt;placeholder&gt; &nbsp;·&nbsp; <sup>2</sup>&lt;placeholder&gt;, &lt;placeholder&gt;
+        &nbsp;·&nbsp; <span class="mono">&lt;placeholder&gt;</span>
+      </div>
+    </div>
+    <div class="badge">
+      <div class="venue">ICDM 2026 · Demo</div>
+      <img src="assets/qr-github.svg" alt="QR code: github.com/AaLexUser/hone">
+      <div>Code &amp; demo</div>
+    </div>
+  </header>
+
+  <!-- ===================== PROBLEM + RESULTS ===================== -->
+  <section class="row-a">
+    <div class="card">
+      <h2><span class="num">1</span>Agents ship with a hand-tuned AGENTS.md</h2>
+      <div class="assumptions">
+        <div class="assume">
+          <div class="x">✕</div>
+          <div><b>Re-run the task after every edit</b><span class="why">Real sessions are one-shot: the user's problem cannot be replayed.</span></div>
+        </div>
+        <div class="assume">
+          <div class="x">✕</div>
+          <div><b>A pass/fail verifier per run</b><span class="why">Feedback is a free-text comment, if it exists at all.</span></div>
+        </div>
+      </div>
+      <div class="facts">
+        <div class="fact"><span class="v">≤4%</span><span class="k">success gain from handwritten context files</span></div>
+        <div class="fact"><span class="v">+20%</span><span class="k">inference cost, and generated files hurt</span></div>
+      </div>
+      <div class="src">Gloaguen et al., 2026</div>
+      <div class="hone-says">
+        <div class="ok">✓</div>
+        <div>Hone mines <b>settled sessions</b> and optional <b>free-text feedback</b>. No task is ever re-run.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">2</span>Best AGENTS.md on both benchmarks</h2>
+      <div class="hero">
+        <div class="stat">
+          <div class="big">59.7<small>%</small></div>
+          <div class="label">OfficeQA</div>
+          <div class="delta">+3.0 pts over the best baseline</div>
+        </div>
+        <div class="stat">
+          <div class="big">82.3<small>%</small></div>
+          <div class="label">SpreadsheetBench</div>
+          <div class="delta">+1.9 pts over the best baseline</div>
+        </div>
+      </div>
+      <div class="charts">
+        <div class="chart" data-bench="OfficeQA"></div>
+        <div class="chart" data-bench="SpreadsheetBench"></div>
+      </div>
+      <div class="note">Task success, %. Target agent Pi with GPT-5.4-mini; only AGENTS.md differs between systems.</div>
+    </div>
+  </section>
+
+  <!-- ===================== PIPELINE ===================== -->
+  <section class="row-b">
+    <div class="card">
+      <h2><span class="num">3</span>The MAJICS pipeline</h2>
+      <div class="acronym"><b>M</b>ulti-<b>A</b>gent <b>J</b>udgment through <b>I</b>nteractive <b>C</b>ross-examination and <b>S</b>ynthesis</div>
+      <div class="arch"><img src="assets/hone_architecture.svg" alt="Hone architecture: frozen batch, review panel and judge, report, propose panel and judge, verifier, published AGENTS.md"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">4</span>Why it works</h2>
+      <div class="why-list">
+        <div class="why-item">
+          <svg viewBox="0 0 40 40"><circle cx="11" cy="12" r="6" fill="#e6f4f4" stroke="#1f8a8f" stroke-width="2"/><circle cx="29" cy="12" r="6" fill="#f3ecfa" stroke="#8e4fc0" stroke-width="2"/><circle cx="20" cy="29" r="6" fill="#ecedfb" stroke="#5458c8" stroke-width="2"/></svg>
+          <div><div class="t">Diverse panel</div><div class="d">Reviewers on different LLMs read the same batch independently.</div></div>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="8" fill="#ecedfb" stroke="#5458c8" stroke-width="2"/><path d="M20 4v6M20 30v6M4 20h6M30 20h6" stroke="#5458c8" stroke-width="2.4" stroke-linecap="round"/><text x="20" y="24.5" text-anchor="middle" font-size="12" font-weight="700" fill="#5458c8">?</text></svg>
+          <div><div class="t">Judge cross-examines</div><div class="d">It re-queries live panelists (<span class="mono">ask_panel</span>) until disagreements resolve.</div></div>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 40 40"><rect x="5" y="9" width="13" height="22" rx="3" fill="#e6f4f4" stroke="#1f8a8f" stroke-width="2"/><rect x="22" y="9" width="13" height="22" rx="3" fill="#f3ecfa" stroke="#8e4fc0" stroke-width="2"/></svg>
+          <div><div class="t">Review, then propose</div><div class="d">Characterize the problem first; fixes come from the judged review.</div></div>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 40 40"><path d="M20 5l12 5v9c0 8-5 13-12 16C13 32 8 27 8 19v-9z" fill="#e7f5ee" stroke="#16895c" stroke-width="2"/><path d="M14 20l4 4 8-8" fill="none" stroke="#16895c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div><div class="t">Verified, versioned</div><div class="d">Every edit needs a unique anchor and real trace evidence, then a Git commit.</div></div>
+        </div>
+      </div>
+      <div class="axes">
+        <div class="axis traces"><b>Across traces</b>recurs in the batch</div>
+        <div class="axis models"><b>Across models</b>holds under questioning</div>
+      </div>
+      <figure class="live">
+        <div class="shot"><svg viewBox="80 585 1345 460"><image href="assets/run-live-crossexam.png" width="2880" height="1800"/></svg></div>
+        <figcaption><span class="pulse"></span>Live in the dashboard: the judge is asking reviewers 1 and 2</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== DEMO ===================== -->
+  <section class="card demo">
+    <h2><span class="num">5</span>Live demo: one week of Mei's office work <span class="tag">TRY IT</span></h2>
+    <div class="lead">Mei, an HR coordinator, asks her agent for an offer letter every day and says what she dislikes. Hone turns her comments into rules.</div>
+
+    <div class="story">
+      <div class="step">
+        <div class="shot"><svg viewBox="740 100 1400 788"><image href="assets/t3-feedback.png" width="2880" height="1800"/></svg></div>
+        <div class="cap"><span class="n">1</span><span>Mei works in a web agent UI and leaves feedback</span></div>
+      </div>
+      <div class="step">
+        <div class="shot"><svg viewBox="290 770 1820 1024"><image href="assets/dashboard.png" width="2880" height="1800"/></svg></div>
+        <div class="cap"><span class="n">2</span><span>Sessions and comments stream into Hone</span></div>
+      </div>
+      <div class="step">
+        <div class="shot"><svg viewBox="45 310 2790 996"><image href="assets/run-done-viewport.png" width="2880" height="1800"/></svg></div>
+        <div class="cap"><span class="n">3</span><span>MAJICS run: review → propose → verify → commit</span></div>
+      </div>
+      <div class="step">
+        <div class="shot"><svg viewBox="1123 180 1469 1110"><image href="assets/versions.png" width="2880" height="1800"/></svg></div>
+        <div class="cap"><span class="n">4</span><span>A verified AGENTS.md diff, committed to Git</span></div>
+      </div>
+    </div>
+    <div class="loop">
+      <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3" fill="none" stroke="#7a7e8c" stroke-width="2" stroke-linecap="round"/><path d="M18 3v4h-4M6 21v-4h4" fill="none" stroke="#7a7e8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      The next session already runs on the new AGENTS.md.
+    </div>
+
+    <div class="learned">
+      <div class="h">Mei said</div><div></div><div class="h">Hone wrote to AGENTS.md <span style="text-transform:none;letter-spacing:0;font-weight:500">(abridged)</span></div>
+      <div class="quote">“Write dates like 1 December 2026, as all our letters do”</div>
+      <div class="arrow">→</div>
+      <div class="rule">- Write every date as day month year, e.g. `1 December 2026`.</div>
+      <div class="quote">“There's a big empty gap where the relocation part was”</div>
+      <div class="arrow">→</div>
+      <div class="rule">- When a conditional block does not apply, delete it with its heading.</div>
+      <div class="quote">“Don't make up the manager, ask me”</div>
+      <div class="arrow">→</div>
+      <div class="rule">- If a field is missing, ask the user. Never invent it.</div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer>
+    <div class="repo">
+      <div><div class="url">github.com/AaLexUser/hone</div>Open source · Pi extension · web dashboard</div>
+    </div>
+    <div><b>Acknowledgments.</b> &lt;placeholder&gt;</div>
+    <div class="refs">
+      Baselines: SkillOpt (Yang et al., 2026), EvoSkill (Zhang et al., 2026), Trace2Skill (Ni et al., 2026).
+      Benchmarks: OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024). Sandboxes: Harbor.
+    </div>
+  </footer>
+</div>
+
+<script>
+  // Results from Table I of the paper. Edit here; both charts redraw from this table.
+  const RESULTS = [
+    { system: 'Hone', OfficeQA: 59.7, SpreadsheetBench: 82.3 },
+    { system: 'Pi agent', OfficeQA: 56.7, SpreadsheetBench: 71.0 },
+    { system: 'Codex CLI', OfficeQA: 54.9, SpreadsheetBench: 72.3 },
+    { system: 'SkillOpt', OfficeQA: 50.6, SpreadsheetBench: 80.4 },
+    { system: 'EvoSkill', OfficeQA: 41.5, SpreadsheetBench: 65.3 },
+    { system: 'Trace2Skill', OfficeQA: 20.9, SpreadsheetBench: 40.7 },
+  ]
+  const HIGHLIGHT = 'Hone'
+
+  for (const el of document.querySelectorAll('.chart')) {
+    const bench = el.dataset.bench
+    const rows = [...RESULTS].sort((a, b) => b[bench] - a[bench])
+    const W = 200, labelW = 52, valueW = 22, barH = 11, gap = 4.5
+    const plotW = W - labelW - valueW
+    const H = rows.length * (barH + gap) - gap
+    const bars = rows.map((r, i) => {
+      const y = i * (barH + gap)
+      const w = (r[bench] / 100) * plotW
+      const hl = r.system === HIGHLIGHT
+      const fill = hl ? '#5458c8' : '#8e919a'
+      const rad = 2
+      const d = `M${labelW},${y} h${w - rad} a${rad},${rad} 0 0 1 ${rad},${rad} v${barH - 2 * rad} a${rad},${rad} 0 0 1 -${rad},${rad} h-${w - rad} z`
+      const weight = hl ? 700 : 500
+      const ink = hl ? '#1d1f27' : '#4a4e5c'
+      return `<text x="${labelW - 3}" y="${y + barH / 2}" dy="0.35em" text-anchor="end" font-size="8.2" font-weight="${weight}" fill="${ink}">${r.system}</text>
+        <path d="${d}" fill="${fill}"/>
+        <text x="${labelW + w + 2.5}" y="${y + barH / 2}" dy="0.35em" font-size="8.2" font-weight="${weight}" fill="${ink}">${r[bench].toFixed(1)}</text>`
+    }).join('')
+    el.innerHTML = `<div class="chart-title">${bench}</div>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${bench} task success by system">
+        <line x1="${labelW}" y1="-1" x2="${labelW}" y2="${H + 1}" stroke="#c9cbd3" stroke-width="0.6"/>
+        ${bars}
+      </svg>`
+  }
+</script>
+</body>
+</html>
