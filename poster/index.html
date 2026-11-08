@@ -2,437 +2,565 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Hone · ICDM 2026 demo poster</title>
+<title>Hone ICDM Poster</title>
 <style>
-/* ===== Fonts: local static TrueType files so the PDF embeds TrueType, not Type 3 ===== */
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Medium.ttf') format('truetype'); font-weight: 500; font-style: normal; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-MediumItalic.ttf') format('truetype'); font-weight: 500; font-style: italic; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-SemiBold.ttf') format('truetype'); font-weight: 600; font-style: normal; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-SemiBoldItalic.ttf') format('truetype'); font-weight: 600; font-style: italic; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-ExtraBold.ttf') format('truetype'); font-weight: 800; font-style: normal; }
-@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Black.ttf') format('truetype'); font-weight: 900; font-style: normal; }
-@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-SemiBold.ttf') format('truetype'); font-weight: 600; }
-@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-Bold.ttf') format('truetype'); font-weight: 700; }
-@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-ExtraBold.ttf') format('truetype'); font-weight: 800; }
-@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-Black.ttf') format('truetype'); font-weight: 900; }
-@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-weight: 400; }
-@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-Medium.ttf') format('truetype'); font-weight: 500; }
-@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-Bold.ttf') format('truetype'); font-weight: 700; }
-@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-ExtraBold.ttf') format('truetype'); font-weight: 800; }
+@font-face { font-family: Inter; src: url(assets/fonts/Inter-Regular.ttf); font-weight: 400; }
+@font-face { font-family: Inter; src: url(assets/fonts/Inter-Italic.ttf); font-weight: 400; font-style: italic; }
+@font-face { font-family: Inter; src: url(assets/fonts/Inter-Medium.ttf); font-weight: 500; }
+@font-face { font-family: Inter; src: url(assets/fonts/Inter-MediumItalic.ttf); font-weight: 500; font-style: italic; }
+@font-face { font-family: Inter; src: url(assets/fonts/Inter-SemiBold.ttf); font-weight: 600; }
+@font-face { font-family: Inter; src: url(assets/fonts/Inter-Bold.ttf); font-weight: 700; }
+@font-face { font-family: InterDisplay; src: url(assets/fonts/InterDisplay-Bold.ttf); font-weight: 700; }
+@font-face { font-family: InterDisplay; src: url(assets/fonts/InterDisplay-ExtraBold.ttf); font-weight: 800; }
+@font-face { font-family: InterDisplay; src: url(assets/fonts/InterDisplay-Black.ttf); font-weight: 900; }
+@font-face { font-family: Mono; src: url(assets/fonts/JetBrainsMono-Regular.ttf); font-weight: 400; }
+@font-face { font-family: Mono; src: url(assets/fonts/JetBrainsMono-Medium.ttf); font-weight: 500; }
+@font-face { font-family: Mono; src: url(assets/fonts/JetBrainsMono-Bold.ttf); font-weight: 700; }
 
-/* ===== Page: 90 x 120 cm portrait. All sizes in mm. ===== */
 @page { size: 900mm 1200mm; margin: 0; }
+
+/* All sizes are millimetres on the printed sheet. Nothing is set below 8.8 mm. */
 :root {
-  --ink: #111318; --ink-2: #262a34; --paper: #f4f2ed; --paper-2: #e8e5dc; --rule: #c9c3b6; --muted: #474b56;
-  --hone: #4653c9; --hone-deep: #3540a6; --hone-hi: #8f9bff; --hone-hi2: #a9b2ff; --hone-soft: #e2e5fb;
-  --on-dark-2: #c9ccd6; --amber-bg: #fbe2b0; --amber-ink: #5c3200; --amber: #d4861a;
-  --ok-bg: #d3eedb; --ok-ink: #0d4a2a; --bad: #b42318; --m: 30mm;
-  --sans: 'Inter', system-ui, sans-serif; --display: 'Inter Display', 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --ink: #1a1c21;
+  --muted: #565b66;
+  --paper: #f3efe7;
+  --card: #fffdf9;
+  --rule: #d6cfc1;
+  --night: #16181d;
+  --accent: #d9501c;      /* Hone, its output, the mining points */
+  --accent-soft: #fbe3d6;
+  --rev: #34478a;
+  --pro: #23704f;
+  --rej: #b0302f;
+  --gap: 40mm;
 }
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: var(--paper); }
-body { font-family: var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.poster { width: 900mm; height: 1200mm; position: relative; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; }
-p, h1, h2, h3 { margin: 0; }
-b { font-weight: 700; }
 
-/* header (v2 conventions) */
-.hdr { background: var(--ink); color: #fff; padding: 7mm var(--m) 0; position: relative; }
-.hdr::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3mm; background: var(--hone); }
-.hdr-top { display: flex; align-items: center; justify-content: space-between; }
-.venue { display: flex; align-items: center; gap: 7mm; }
-.venue img { height: 19mm; display: block; }
-.venue .track { border-left: 0.5mm solid #4b5060; padding-left: 6mm; font-size: 9mm; line-height: 1.2; color: #d9dbe3; }
-.venue .track b { color: #fff; font-size: 10mm; letter-spacing: 0.02em; }
-.logos { display: flex; gap: 5mm; }
-.logo-ph { width: 62mm; height: 20mm; border: 0.5mm dashed #8d92a3; border-radius: 3mm; display: grid; place-items: center; text-align: center; font-size: 8.5mm; line-height: 1.1; color: #c3c6d1; }
-.hdr-main { display: grid; grid-template-columns: 1fr 68mm; gap: 10mm; align-items: center; margin-top: 3mm; }
-h1 { font-family: var(--display); font-size: 33mm; line-height: 1.03; font-weight: 800; letter-spacing: -0.025em; }
-h1 .name { color: var(--hone-hi); }
-.authors { margin-top: 4mm; font-size: 12.5mm; font-weight: 600; white-space: nowrap; }
-.authors sup { font-size: 8.5mm; }
-.authors .affil { margin-left: 6mm; font-size: 9mm; font-weight: 400; color: var(--on-dark-2); }
-.qr { text-align: center; }
-.qr .tile { background: #fff; border-radius: 3mm; padding: 4mm; }
-.qr .tile img { width: 100%; display: block; }
-.qr .lbl { margin-top: 2mm; font-size: 11mm; font-weight: 800; }
-.qr .url { font-size: 8.5mm; line-height: 1.15; color: #d9dbe3; }
-.thesis { margin: 5mm calc(-1 * var(--m)) 0; padding: 5mm var(--m) 5mm; border-top: 0.5mm solid #2f3440; font-family: var(--display); font-size: 26mm; line-height: 1.07; font-weight: 800; letter-spacing: -0.02em; }
-.thesis em { font-style: normal; color: var(--hone-hi); }
-.thesis .t2 { display: flex; align-items: center; gap: 14mm; }
-.thesis .t2 > p:first-child { white-space: nowrap; }
-.def { font-family: var(--sans); font-size: 10mm; line-height: 1.2; font-weight: 400; letter-spacing: 0; color: var(--on-dark-2); border-left: 0.6mm solid #4b5060; padding-left: 5mm; }
-.def code { font-family: var(--mono); color: #fff; font-weight: 700; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 900mm; height: 1200mm; background: var(--paper); }
+body { font-family: Inter, sans-serif; color: var(--ink); font-size: 11mm; line-height: 1.3;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.poster { width: 900mm; height: 1200mm; overflow: hidden; display: flex; flex-direction: column; }
+section, header, footer { padding-left: var(--gap); padding-right: var(--gap); }
+.kicker { font-family: Mono, monospace; font-weight: 700; font-size: 9mm; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent); }
+h2 { font-family: InterDisplay, Inter, sans-serif; font-weight: 800; font-size: 21mm; line-height: 1.06;
+  letter-spacing: -0.015em; }
+code, .mono { font-family: Mono, monospace; }
 
-/* hero results */
-.hero { background: var(--hone-deep); color: #fff; padding: 5mm var(--m) 9.5mm; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 calc(100% - 6mm)); }
-.hero .top { font-family: var(--display); font-size: 17mm; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
-.hero .top span { font-weight: 600; }
-.halves { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18mm; margin-top: 4mm; }
-.half { display: grid; grid-template-columns: 172mm 1fr; column-gap: 4mm; align-items: start; }
-.half .mini { margin-top: 1mm; }
-.hl .lab { font-size: 12.5mm; font-weight: 800; line-height: 1; }
-.hl .v { font-family: var(--display); font-weight: 900; font-size: 56mm; line-height: 0.92; letter-spacing: -0.045em; margin-top: 1mm; }
-.hl .v small { font-size: 0.32em; letter-spacing: 0; margin-left: 2mm; font-weight: 800; }
-.hl .s { font-size: 10mm; line-height: 1.15; color: #eef0ff; }
-.hl .s2 { font-size: 10.5mm; line-height: 1.15; font-weight: 800; margin-top: 1mm; color: #fff; }
-.mini .br { display: grid; grid-template-columns: 52mm 1fr; column-gap: 2mm; align-items: center; height: 9.2mm; }
-.mini .br.hone { height: 21mm; }
-.mini .l { font-size: 8.8mm; font-weight: 600; text-align: right; padding-right: 3mm; white-space: nowrap; color: #eef0ff; }
-.mini .tr { position: relative; height: 6.4mm; margin-right: 40mm; }
-.mini .hone .tr { height: 13mm; }
-.mini .b { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(255,255,255,0.5); }
-.mini .agent .b { background: repeating-linear-gradient(135deg, rgba(255,255,255,0.8) 0 1.2mm, rgba(255,255,255,0.18) 1.2mm 2.4mm); }
-.mini .hone .b { background: #fff; }
-.mini .v { position: absolute; top: 50%; transform: translateY(-50%); padding-left: 1.8mm; font-size: 8.8mm; font-weight: 700; line-height: 1; white-space: nowrap; }
-.mini .hone .l { color: #fff; font-weight: 800; font-size: 11mm; }
-.mini .hone .v { font-family: var(--display); font-size: 21mm; font-weight: 900; letter-spacing: -0.02em; padding-left: 2.5mm; }
-.hero .cap { font-size: 8.8mm; line-height: 1.22; color: #eef0ff; white-space: nowrap; }
-.hero .cap:first-of-type { margin-top: 3mm; }
-.sw { display: inline-block; width: 7mm; height: 4.6mm; margin: 0 1.5mm 0 3mm; vertical-align: -0.4mm; }
-.sw.opt { background: rgba(255,255,255,0.5); }
-.sw.agent { background: repeating-linear-gradient(135deg, rgba(255,255,255,0.8) 0 1.2mm, rgba(255,255,255,0.18) 1.2mm 2.4mm); }
-.sw.hone { background: #fff; }
+/* ---------- masthead ---------- */
+.mast { background: var(--night); color: #f4f1ea; padding-top: 11mm; padding-bottom: 8mm;
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 15mm; row-gap: 6mm; }
+.word { font-family: InterDisplay, sans-serif; font-weight: 900; font-size: 116mm; line-height: 0.74;
+  letter-spacing: -0.045em; color: var(--accent); align-self: end; margin-left: -3mm; padding-bottom: 4mm; }
+.mast h1 { font-family: InterDisplay, sans-serif; font-weight: 800; font-size: 34.5mm; line-height: 0.99;
+  letter-spacing: -0.02em; color: #fff; }
+.word .colon { margin-left: 1mm; }
+.byline { border-top: 0.5mm solid #3a3d45; padding-top: 4mm; }
+.authors { font-size: 11.5mm; color: #e9e5dc; line-height: 1.25; }
+.authors b { font-weight: 600; color: #fff; }
+.authors sup { font-size: 9mm; line-height: 0; }
+.authors .aff { display: block; font-size: 9.5mm; color: #b4b0a8; }
+.venue { display: flex; align-items: center; gap: 7mm; border-top: 0.5mm solid #3a3d45; padding-top: 4mm; }
+.venue img { height: 27mm; display: block; }
+.venue div { font-size: 9.5mm; line-height: 1.25; color: #c9c5bc; }
+.venue b { color: #fff; font-weight: 700; letter-spacing: 0.05em; }
 
-/* bands */
-.band { padding: 6mm var(--m) 5mm; position: relative; }
-.band.alt { background: var(--paper-2); }
-.band.dark { background: var(--ink); color: #fff; }
-#demo { flex: 1 0 auto; }
-.kicker { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hone); }
-.dark .kicker { color: var(--hone-hi2); }
-.kicker .tag { display: inline-block; margin-left: 3mm; padding: 0.6mm 2.5mm; border-radius: 1.5mm; background: var(--amber-bg); color: var(--amber-ink); letter-spacing: 0.06em; }
-h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weight: 800; letter-spacing: -0.02em; }
+/* ---------- setting + results ---------- */
+.setting { display: grid; grid-template-columns: 1fr 372mm; column-gap: 26mm; padding-top: 10mm; padding-bottom: 8mm;
+  border-bottom: 0.5mm solid var(--rule); }
+.setting h2 { margin-top: 3mm; }
+.setting h2 em { font-style: normal; color: var(--accent); }
+.setting p { margin-top: 5mm; font-size: 10.5mm; line-height: 1.3; color: #2c2f36; }
+.versus { margin-top: 6mm; width: 100%; border-collapse: collapse; font-size: 10mm; }
+.versus th { text-align: left; font-weight: 600; font-size: 9mm; color: var(--muted); padding: 0 0 1.5mm; border-bottom: 0.5mm solid var(--ink); }
+.versus th.c, .versus td.c { text-align: center; width: 70mm; white-space: nowrap; padding-left: 4mm; }
+.versus td { padding: 2.4mm 0; border-bottom: 0.4mm solid var(--rule); }
+.versus tr.hone td { font-weight: 700; }
+.versus tr.hone td:first-child { color: var(--accent); }
+.yes { color: var(--rej); font-weight: 600; }
+.no { color: var(--pro); font-weight: 700; }
+.hero { display: grid; grid-template-columns: 92mm 144mm 1fr; column-gap: 0; margin-top: 3mm; align-items: end; }
+.hero .who { text-align: right; padding-right: 8mm; padding-bottom: 1mm; font-size: 9.4mm; line-height: 1.2; color: var(--muted); }
+.hero .who b { display: block; font-size: 13mm; color: var(--accent); font-weight: 700; }
+.hero .hn b { display: block; font-family: InterDisplay, sans-serif; font-weight: 900; font-size: 31mm; line-height: 0.95;
+  letter-spacing: -0.02em; color: var(--accent); }
+.hero .hn b small { font-size: 15mm; font-weight: 800; margin-left: 1mm; }
+.hero .hn span { display: block; font-size: 9.6mm; font-weight: 700; margin-top: 1mm; }
+.results svg { display: block; width: 372mm; margin-top: 2mm; }
+.results .cap { margin-top: 2mm; font-size: 8.8mm; line-height: 1.28; color: var(--muted); }
+.results .cap b { color: var(--ink); font-weight: 600; }
 
-/* positioning: 2x2 */
-.pos { display: grid; grid-template-columns: 236mm 1fr; column-gap: 20mm; align-items: center; }
-.pos h2 { font-size: 19mm; }
-.pos h2 .hn { color: var(--hone-deep); }
-.nw { white-space: nowrap; }
-.quad { display: grid; grid-template-columns: 70mm 1fr 1fr; grid-template-rows: 10mm auto auto; }
-.quad .qa { font-size: 9.5mm; font-weight: 800; color: var(--ink); text-align: center; align-self: end; line-height: 1.08; }
-.quad .qa.qr { text-align: right; align-self: center; padding-right: 3mm; }
-.cell { margin: 2mm; border-radius: 3mm; padding: 3.5mm 4mm; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5mm; text-align: center; position: relative; z-index: 1; }
-.cell.hone { background: var(--hone-deep); color: #fff; }
-.cell.hone > b { font-family: var(--display); font-size: 17mm; font-weight: 900; letter-spacing: -0.03em; line-height: 0.95; }
-.cell.five { background: #fff; box-shadow: inset 0 0 0 0.5mm #8b8578; color: var(--ink); }
-.cell.five > b { font-size: 9.5mm; line-height: 1.18; font-weight: 700; }
-.chain { display: flex; align-items: center; gap: 2mm; white-space: nowrap; }
-.chain span { font-size: 11mm; font-weight: 800; padding: 1.2mm 3mm 1.6mm; border-radius: 2mm; line-height: 1; }
-.chain i { font-style: normal; font-size: 10mm; font-weight: 800; }
-.hone .chain span { background: #fff; color: var(--hone-deep); }
-.hone .chain i { color: #fff; }
-.five .chain span { background: var(--paper-2); color: var(--ink); }
-.five .chain span.again { background: #fbe4e1; color: #7a1010; }
-.five .chain i { color: var(--muted); }
-.quad .xh, .quad .xv { pointer-events: none; }
-.quad .xh { border-top: 0.5mm solid #b9b2a3; align-self: center; height: 0; }
-.quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
+/* ---------- architecture ---------- */
+.arch { padding-top: 9mm; padding-bottom: 7mm; }
+.arch h2 { margin-top: 3mm; }
+.arch svg { display: block; width: 820mm; margin-top: 4mm; }
+.mine { display: grid; grid-template-columns: 1.45fr 1fr 1.1fr 1fr; column-gap: 10mm; margin-top: 3mm;
+  border-top: 0.4mm solid var(--rule); padding-top: 4mm; }
+.mine div { font-size: 9.4mm; line-height: 1.26; padding-left: 16mm; position: relative; color: #2c2f36; }
+.mine div.lead { padding-left: 0; color: var(--ink); }
+.mine div b { color: var(--ink); }
+.mine i { position: absolute; left: 1.5mm; top: 0.4mm; width: 10mm; height: 10mm; transform: rotate(45deg); background: var(--accent); }
+.mine i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 700;
+  font-size: 9.4mm; line-height: 10mm; text-align: center; }
 
-/* architecture */
-.arch svg { width: 686mm; margin: 2mm auto 0; height: auto; display: block; overflow: visible; }
-.arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
-.arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
+/* ---------- demo ---------- */
+.demo { background: var(--card); border-top: 0.5mm solid var(--rule); border-bottom: 0.5mm solid var(--rule);
+  padding-top: 7mm; padding-bottom: 5mm; flex: 1; }
+.demo-head { display: flex; align-items: center; gap: 6mm; }
+.demo-head .disc { font-size: 9.6mm; color: #2c2f36; }
+.demo-title { display: flex; align-items: flex-end; gap: 12mm; margin-top: 3mm; }
+.demo-title h2 { margin-top: 0; white-space: nowrap; }
+.tag { font-family: Mono, monospace; font-weight: 700; font-size: 9mm; letter-spacing: 0.06em; color: var(--night);
+  background: #f2c94c; padding: 1mm 3.5mm; border-radius: 1.5mm; white-space: nowrap; }
 
-/* demo */
-.stills { --sh: 162mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
-.shot { margin: 0; }
-.shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
-.shot img { height: 100%; width: auto; display: block; }
-.shot figcaption { margin-top: 3mm; font-size: 12mm; line-height: 1.1; font-weight: 800; color: #fff; display: flex; gap: 3mm; align-items: center; white-space: nowrap; }
-.shot .n { width: 13mm; height: 13mm; flex: none; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 9.5mm; box-shadow: 0 0 0 0.9mm var(--hone-hi); }
-.sar { width: 22mm; flex: none; margin-top: calc(var(--sh) / 2 - 14mm); }
-.mine { display: grid; grid-template-columns: 1fr 214mm; column-gap: 14mm; margin-top: 6mm; align-items: stretch; }
-.rl-h { font-family: var(--display); font-size: 17mm; font-weight: 800; letter-spacing: -0.015em; line-height: 1.05; }
-.rl-h .ok { color: #7fe3a1; } .rl-h .no { color: #ff9a8f; }
-.grid { display: grid; grid-template-columns: auto auto auto; justify-content: space-between; column-gap: 6mm; row-gap: 1.2mm; align-items: center; }
-.dhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10mm; }
-.gc.gth { padding-bottom: 0; }
-.gth { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-2); border-bottom: 0.4mm solid #4b5060; padding-bottom: 1mm; }
-.gf { font-size: 10.5mm; font-weight: 600; color: #fff; white-space: nowrap; }
-.gc { display: flex; gap: 3mm; }
-.bt { display: flex; }
-.c { display: inline-grid; place-items: center; width: 12.5mm; height: 10mm; font-style: normal; position: relative; }
-.c::before { content: ""; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: #5d6272; }
-.c.n::before { display: none; }
-.c.n { letter-spacing: -0.04em; font-family: var(--mono); font-size: 8.5mm; font-weight: 700; color: var(--on-dark-2); }
-.c.on::before { width: 6.4mm; height: 6.4mm; background: var(--hone-hi); }
-.c.ring::after { content: ""; position: absolute; inset: 0.6mm; border-radius: 50%; box-shadow: 0 0 0 0.7mm var(--amber); }
-.gn { font-family: var(--mono); font-size: 11mm; font-weight: 800; color: #fff; text-align: center; }
-.go { font-size: 10mm; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 2mm; white-space: nowrap; justify-self: start; }
-.go.ok { background: var(--ok-bg); color: var(--ok-ink); }
-.go.no { background: #fbe4e1; color: #5c0f0f; }
-.gl { margin-top: 2.5mm; font-size: 8.8mm; line-height: 1.25; color: var(--on-dark-2); }
-.gl b { color: #fff; }
-.gl .c { width: 7mm; height: 7mm; vertical-align: -1.6mm; margin: 0 0.5mm 0 2mm; }
-.gl .c.on::before { width: 5mm; height: 5mm; }
-.gl .c.ring::after { inset: 0.4mm; }
-.booth { background: #fff; color: var(--ink); border-radius: 4mm; padding: 7mm 8mm; display: flex; flex-direction: column; justify-content: center; gap: 4mm; border-top: 3mm solid var(--hone-hi); }
-.booth h3 { font-family: var(--display); font-size: 21mm; line-height: 1.02; font-weight: 900; letter-spacing: -0.02em; color: var(--hone-deep); }
-.booth p { font-size: 16mm; line-height: 1.1; font-weight: 700; }
+.demo-sub { margin-top: 2.5mm; font-size: 10mm; color: var(--muted); }
+.ledger { margin-top: 3mm; display: grid; grid-template-columns: 78mm 0.85fr 1.3fr; }
+.ledger .h { font-family: Mono, monospace; font-weight: 700; font-size: 9mm; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); padding-bottom: 2mm; border-bottom: 0.6mm solid var(--ink); }
+.ledger .h + .h { padding-left: 9mm; }
+.cell { padding: 2.8mm 0 2.8mm; border-bottom: 0.4mm solid var(--rule); }
+.cell + .cell { padding-left: 9mm; }
+.cell.c1 { padding-left: 0; }
+.cell.last { border-bottom: 0; }
+.run { display: grid; grid-template-columns: auto 1fr; column-gap: 3.5mm; align-items: start; }
+.run b { grid-row: 1 / 3; font-family: InterDisplay, sans-serif; font-weight: 800; font-size: 21mm; line-height: 0.85; }
+.run .ver { justify-self: start; margin-top: 1mm; }
+.run .n { display: block; line-height: 1.1; font-size: 9.4mm; color: var(--muted); white-space: nowrap; }
+.ver { display: inline-block; margin-top: 1.5mm; font-family: Mono, monospace; font-weight: 700; font-size: 9.5mm; white-space: nowrap;
+  color: var(--accent); border: 0.5mm solid var(--accent); border-radius: 1.4mm; padding: 0.3mm 2mm; background: #fff; }
+.ver.none { color: var(--muted); border-color: #9a9488; border-style: dashed; background: transparent; }
+.q { font-size: 9.6mm; line-height: 1.17; font-style: italic; font-weight: 500; }
+.q + .q { margin-top: 1.2mm; }
+.q.none { font-style: normal; font-weight: 400; color: var(--muted); }
+.chip { display: inline-block; font-family: Mono, monospace; font-weight: 700; font-size: 9.6mm; letter-spacing: 0.02em; line-height: 1.15;
+  padding: 0.2mm 2.4mm; border-radius: 1.4mm; color: #fff; margin-right: 2.6mm; vertical-align: 0.2mm; white-space: nowrap; }
+.chip.add { background: var(--pro); }
+.chip.hold { background: #8a6d16; }
+.chip.refuse { background: var(--rej); }
+.chip.none { background: #5b616d; }
+.chip.widen { background: var(--rev); }
+.out { font-size: 9.8mm; line-height: 1.17; }
+.out > * + * { margin-top: 1.3mm; }
+.out .lead { font-weight: 700; font-size: 10.2mm; }
+.out ul { list-style: none; }
+.out li { display: grid; grid-template-columns: 7mm 1fr; column-gap: 1.5mm; }
+.out li + li { margin-top: 0.5mm; }
+.out .m { font-family: Mono, monospace; font-weight: 700; }
+.out .m.p { color: var(--pro); }
+.out .m.t { color: var(--rev); }
+.out .tw { font-family: Mono, monospace; font-weight: 700; font-size: 9mm; color: var(--rev); letter-spacing: 0.03em; margin-left: 2mm; }
+.out code { font-size: 9mm; }
+.out s { text-decoration-thickness: 0.45mm; text-decoration-color: #8e3b2a; color: #6b6158; }
+.out .ex { margin-top: 0.5mm; padding-left: 8.5mm; font-size: 9.4mm; line-height: 1.18; color: #2c2f36; }
+.out .ex i { font-style: normal; font-weight: 700; color: var(--ink); }
+.out .x + .ex { margin-top: 0.4mm; }
+.undo { flex: 1; border-left: 1.2mm solid var(--accent); padding-left: 5mm; font-size: 9.4mm; line-height: 1.2; color: #2c2f36; }
+.undo b { font-weight: 700; color: var(--ink); }
 
-/* footer */
-.ftr { margin-top: auto; background: var(--ink); color: #d6d8e0; padding: 4mm var(--m) 4mm; display: grid; grid-template-columns: 1fr auto; gap: 10mm; align-items: center; font-size: 8.5mm; line-height: 1.25; border-top: 0.5mm solid #2f3440; }
-.ftr .gh { font-family: var(--mono); color: #fff; font-size: 9.5mm; font-weight: 700; }
-.ftr .scope { color: #fff; font-size: 9.5mm; font-weight: 600; margin-top: 1mm; }
-.ftr .refs { color: #c3c6d0; margin-top: 1mm; }
-.ftr .pid { font-family: var(--mono); font-size: 11mm; font-weight: 700; color: #fff; background: var(--ink-2); border: 0.5mm solid #6b7080; border-radius: 2mm; padding: 2mm 5mm; white-space: nowrap; }
+/* ---------- footer ---------- */
+.foot { display: grid; grid-template-columns: 42mm 1fr auto auto; column-gap: 10mm; align-items: center; padding-top: 5mm; padding-bottom: 5mm; }
+.foot img { width: 42mm; height: 42mm; display: block; }
+.foot .code { font-size: 10mm; line-height: 1.25; }
+.foot .code b { font-family: Mono, monospace; font-weight: 700; }
+.foot .small { font-size: 8.8mm; line-height: 1.25; color: var(--muted); margin-top: 1.5mm; }
+.inst { display: flex; flex-direction: column; gap: 3mm; }
+.inst div { border: 0.5mm dashed #9a9488; color: var(--muted); font-size: 8.8mm; padding: 2mm 5mm; border-radius: 1.5mm; white-space: nowrap; }
+.paperid { align-self: end; font-family: Mono, monospace; font-weight: 700; font-size: 10.5mm; border: 0.6mm solid var(--ink);
+  padding: 2.5mm 5mm; border-radius: 1.5mm; white-space: nowrap; }
 </style>
 </head>
 <body>
 <div class="poster">
 
-<header class="hdr">
-  <div class="hdr-top">
-    <div class="venue">
-      <img src="assets/icdm2026-logo.png" alt="ICDM 2026 Shenyang, China">
-      <div class="track"><b>DEMO TRACK</b><br>IEEE International Conference on Data Mining</div>
-    </div>
-    <div class="logos"><div class="logo-ph">Institution logo<br>&lt;placeholder&gt;</div><div class="logo-ph">Institution logo<br>&lt;placeholder&gt;</div></div>
+<!-- ======================= MASTHEAD ======================= -->
+<header class="mast">
+  <div class="word">Hone<span class="colon">:</span></div>
+  <h1>Mining Agent Trajectories<br>to Optimize AGENTS.md via<br><span style="white-space:nowrap">Cross-Examination</span></h1>
+  <div class="venue">
+    <img src="assets/icdm2026-logo.png" alt="ICDM 2026, Shenyang, China">
+    <div><b>DEMO TRACK</b><br>IEEE International Conference<br>on Data Mining</div>
   </div>
-  <div class="hdr-main">
-    <div>
-      <h1><span class="name">Hone</span>: Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
-      <p class="authors">Alexey Lapin<sup>1</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup><span class="affil"><sup>1</sup>&lt;placeholder affiliation&gt; &nbsp;<sup>2</sup>&lt;placeholder affiliation&gt; &nbsp;·&nbsp; &lt;placeholder email&gt;</span></p>
+  <div class="byline">
+    <div class="authors">
+      <b>Alexey Lapin</b><sup>1</sup> &nbsp;·&nbsp; <b>Nikolay O. Nikitin</b><sup>2</sup>
+      <span class="aff"><sup>1</sup>&lt;placeholder affiliation&gt; &nbsp; <sup>2</sup>&lt;placeholder affiliation&gt; &nbsp; &lt;placeholder email&gt;</span>
     </div>
-    <div class="qr"><div class="tile"><img src="assets/qr-code.svg" alt="QR code to github.com/AaLexUser/hone"></div><p class="lbl">Code</p><p class="url">github.com/<br>AaLexUser/hone</p></div>
   </div>
-  <div class="thesis"><p>Hone improves AGENTS.md from sessions that <em>already happened</em>.</p><div class="t2"><p>No task is re-run.</p><p class="def"><code>AGENTS.md</code>: the instruction file a coding agent loads into its system prompt at every session.</p></div></div>
 </header>
 
-<section class="hero">
-  <p class="top">Highest task success of six systems on both benchmarks. <span>Gain over the same Pi agent without Hone:</span></p>
-  <div class="halves">
-    <div class="half">
-      <div class="hl"><p class="lab">OfficeQA</p><div class="v">+3.0<small>pts</small></div></div>
-      <div class="mini">
-        <div class="br hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:59.7%"></span><span class="v" style="left:59.7%">59.7</span></span></div>
-        <div class="br agent"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:56.7%"></span><span class="v" style="left:56.7%">56.7</span></span></div>
-        <div class="br agent"><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:54.9%"></span><span class="v" style="left:54.9%">54.9</span></span></div>
-        <div class="br opt"><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:50.6%"></span><span class="v" style="left:50.6%">50.6</span></span></div>
-        <div class="br opt"><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:41.5%"></span><span class="v" style="left:41.5%">41.5</span></span></div>
-        <div class="br opt"><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:20.9%"></span><span class="v" style="left:20.9%">20.9</span></span></div>
-      </div>
-    </div>
-    <div class="half">
-      <div class="hl"><p class="lab">SpreadsheetBench</p><div class="v">+11.3<small>pts</small></div><p class="s2">+1.9 over SkillOpt</p></div>
-      <div class="mini">
-        <div class="br hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:82.3%"></span><span class="v" style="left:82.3%">82.3</span></span></div>
-        <div class="br agent"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:71.0%"></span><span class="v" style="left:71.0%">71.0</span></span></div>
-        <div class="br agent"><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:72.3%"></span><span class="v" style="left:72.3%">72.3</span></span></div>
-        <div class="br opt"><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:80.4%"></span><span class="v" style="left:80.4%">80.4</span></span></div>
-        <div class="br opt"><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:65.3%"></span><span class="v" style="left:65.3%">65.3</span></span></div>
-        <div class="br opt"><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:40.7%"></span><span class="v" style="left:40.7%">40.7</span></span></div>
-      </div>
-    </div>
+<!-- ======================= SETTING + RESULTS ======================= -->
+<section class="setting">
+  <div>
+    <div class="kicker">The setting</div>
+    <h2>A real session runs once. Hone learns from it <em>after</em> it ends.</h2>
+    <p><b>AGENTS.md</b> is the instruction file a coding agent loads into its system prompt at session start. Optimizers tune it by re-running tasks; a real session cannot be replayed.</p>
+    <table class="versus">
+      <tr><th></th><th class="c">Re-runs tasks</th><th class="c">Needs pass/fail</th></tr>
+      <tr><td>SkillOpt · EvoSkill · Trace2Skill</td><td class="c yes">yes</td><td class="c yes">yes</td></tr>
+      <tr class="hone"><td>Hone needs: session traces,<br>plus optional plain-language feedback</td><td class="c no">no</td><td class="c no">no</td></tr>
+    </table>
   </div>
-  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer. The Pi agent is Hone's starting configuration; only AGENTS.md differs.</p>
-  <p class="cap"><b>Setup.</b> Hone saw traces and text feedback (“Expected … Got …”), no task re-run; OfficeQA: 200 tasks in 5 batches of 40; final file scored once on the full benchmark.</p>
+  <div class="results">
+    <div class="kicker">Results · task success, %</div>
+    <div class="hero">
+      <div class="who"><b>Hone</b>highest of<br>all six systems</div>
+      <div class="hn"><b>59.7<small>%</small></b><span>OfficeQA</span></div>
+      <div class="hn"><b>82.3<small>%</small></b><span>SpreadsheetBench</span></div>
+    </div>
+    <svg viewBox="0 12 372 86" font-family="Inter" aria-label="Task success by system">
+      <!-- labels 0-92 | OfficeQA track 100-200 (1 mm = 1 point), value at 206 | SpreadsheetBench track 244-344, value at 350 -->
+      <rect x="0" y="13.75" width="372" height="12" rx="2" fill="#fbe3d6"/>
+      <g font-size="9.4" text-anchor="end">
+        <text x="92" y="23" font-weight="700" fill="#d9501c">Hone</text>
+        <text x="92" y="35">Pi agent</text>
+        <text x="92" y="47">Codex CLI</text>
+        <text x="92" y="59">SkillOpt</text>
+        <text x="92" y="71">EvoSkill</text>
+        <text x="92" y="83">Trace2Skill</text>
+      </g>
+      <g stroke="#cfc7b8" stroke-width="0.5">
+        <line x1="100" x2="200" y1="19.75" y2="19.75"/><line x1="100" x2="200" y1="31.75" y2="31.75"/>
+        <line x1="100" x2="200" y1="43.75" y2="43.75"/><line x1="100" x2="200" y1="55.75" y2="55.75"/>
+        <line x1="100" x2="200" y1="67.75" y2="67.75"/><line x1="100" x2="200" y1="79.75" y2="79.75"/>
+        <line x1="244" x2="344" y1="19.75" y2="19.75"/><line x1="244" x2="344" y1="31.75" y2="31.75"/>
+        <line x1="244" x2="344" y1="43.75" y2="43.75"/><line x1="244" x2="344" y1="55.75" y2="55.75"/>
+        <line x1="244" x2="344" y1="67.75" y2="67.75"/><line x1="244" x2="344" y1="79.75" y2="79.75"/>
+      </g>
+      <!-- ring = the Pi agent Hone starts from; bar = Hone's gain -->
+      <line x1="156.7" x2="159.7" y1="19.75" y2="19.75" stroke="#d9501c" stroke-width="1.4"/>
+      <circle cx="156.7" cy="19.75" r="2.4" fill="#fbe3d6" stroke="#d9501c" stroke-width="0.8"/>
+      <line x1="315" x2="326.3" y1="19.75" y2="19.75" stroke="#d9501c" stroke-width="1.4"/>
+      <circle cx="315" cy="19.75" r="2.4" fill="#fbe3d6" stroke="#d9501c" stroke-width="0.8"/>
+      <g fill="#565b66">
+        <circle cx="156.7" cy="31.75" r="2.4"/><circle cx="154.9" cy="43.75" r="2.4"/><circle cx="150.6" cy="55.75" r="2.4"/>
+        <circle cx="141.5" cy="67.75" r="2.4"/><circle cx="120.9" cy="79.75" r="2.4"/>
+        <circle cx="315" cy="31.75" r="2.4"/><circle cx="316.3" cy="43.75" r="2.4"/><circle cx="324.4" cy="55.75" r="2.4"/>
+        <circle cx="309.3" cy="67.75" r="2.4"/><circle cx="284.7" cy="79.75" r="2.4"/>
+      </g>
+      <circle cx="159.7" cy="19.75" r="3.2" fill="#d9501c"/>
+      <circle cx="326.3" cy="19.75" r="3.2" fill="#d9501c"/>
+      <g font-family="Mono" font-size="9">
+        <text x="206" y="23" font-weight="700" fill="#b03f12">59.7</text>
+        <text x="206" y="35">56.7</text><text x="206" y="47">54.9</text><text x="206" y="59">50.6</text>
+        <text x="206" y="71">41.5</text><text x="206" y="83">20.9</text>
+        <text x="350" y="23" font-weight="700" fill="#b03f12">82.3</text>
+        <text x="350" y="35">71.0</text><text x="350" y="47">72.3</text><text x="350" y="59">80.4</text>
+        <text x="350" y="71">65.3</text><text x="350" y="83">40.7</text>
+      </g>
+      <g font-size="9.2" fill="#565b66" text-anchor="middle">
+        <text x="100" y="96">0</text><text x="150" y="96">50</text><text x="200" y="96">100</text>
+        <text x="244" y="96">0</text><text x="294" y="96">50</text><text x="344" y="96">100</text>
+      </g>
+      <g stroke="#565b66" stroke-width="0.4"><line x1="100" x2="100" y1="84" y2="87"/><line x1="150" x2="150" y1="84" y2="87"/><line x1="200" x2="200" y1="84" y2="87"/>
+        <line x1="244" x2="244" y1="84" y2="87"/><line x1="294" x2="294" y1="84" y2="87"/><line x1="344" x2="344" y1="84" y2="87"/></g>
+    </svg>
+    <p class="cap">The other optimizers re-run tasks with a pass/fail scorer; <b>Hone saw only traces and “Expected … Got …” text</b>, and its final file was scored once. Ring: the same Pi agent without Hone’s edits (+3.0, +11.3 points). All on GPT-5.4-mini.</p>
+  </div>
 </section>
 
-<section class="band alt" id="pos">
-  <div class="pos">
-    <h2>Five optimizers need <span class="nw">re-runs</span> and pass/fail labels. <span class="hn">Hone needs neither.</span></h2>
-    <div class="quad">
-      <p class="qa" style="grid-column:2;grid-row:1">No task re-runs</p><p class="qa" style="grid-column:3;grid-row:1">Needs task re-runs</p>
-      <p class="qa qr" style="grid-column:1;grid-row:2">No pass/fail labels</p><p class="qa qr" style="grid-column:1;grid-row:3">Needs pass/fail labels</p>
-      <div class="xh" style="grid-column:2/4;grid-row:2/4"></div><div class="xv" style="grid-column:2/4;grid-row:2/4"></div>
-      <div class="cell hone" style="grid-column:2;grid-row:2"><b>Hone</b><div class="chain"><span>read</span><i>→</i><span>question</span><i>→</i><span>verify</span><i>→</i><span>commit</span></div></div>
-      <div class="cell five" style="grid-column:3;grid-row:3"><b>SkillOpt · SkillOpt-Lite · SkillGrad<br>Trace2Skill · EvoSkill</b><div class="chain"><span>run</span><i>→</i><span>score</span><i>→</i><span>edit</span><i>→</i><span class="again">run again</span></div></div>
-    </div>
-  </div>
-</section>
+<!-- ======================= ARCHITECTURE ======================= -->
+<section class="arch">
+  <div class="kicker">How it works · MAJICS: Multi-Agent Judgment through Interactive Cross-examination and Synthesis</div>
+  <h2>Reviewers disagree. A judge cross-examines them. A verifier gates every edit.</h2>
 
-<section class="band arch" id="arch">
-  <h2>Reviewers disagree, a judge cross-examines, a verifier gates every edit.</h2>
-  <svg class="dia" viewBox="0 -24 840 364" font-family="Inter, sans-serif" role="img" aria-label="Hone architecture: optional user feedback and settled agent sessions form a frozen batch; three reviewers on different LLMs are cross-examined by a review judge into a review report; three proposers read the report and the experience memory and are cross-examined by a propose judge into a proposal of edits and a commit message; a verifier checks anchor and evidence; accepted edits are applied and committed to Git and the published AGENTS.md is served to the agent, which the agent fetches before its next session; the experience memory is updated after commits; a rejected proposal returns to the propose stage with the review reused">
-  <defs>
-    <marker id="ar" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#111318"/></marker>
-    <marker id="arh" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#4653c9"/></marker>
-    <marker id="arg" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#6b6658"/></marker>
-    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#b42318"/></marker>
-    <marker id="arb" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#3540a6"/></marker>
-  </defs>
+  <svg viewBox="0 0 820 334" font-family="Inter" aria-label="Hone architecture">
+    <defs>
+      <marker id="a-ink" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 6 6"><path d="M0,0 L6,3 L0,6 z" fill="#1a1c21"/></marker>
+      <marker id="a-rev" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse" viewBox="0 0 5 5"><path d="M0,0 L5,2.5 L0,5 z" fill="#34478a"/></marker>
+      <marker id="a-pro" markerWidth="5" markerHeight="5" refX="4.5" refY="2.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse" viewBox="0 0 5 5"><path d="M0,0 L5,2.5 L0,5 z" fill="#23704f"/></marker>
+      <marker id="a-gray" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 6 6"><path d="M0,0 L6,3 L0,6 z" fill="#7d7a73"/></marker>
+      <marker id="a-rej" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 6 6"><path d="M0,0 L6,3 L0,6 z" fill="#b0302f"/></marker>
+      <marker id="a-acc" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 7 7"><path d="M0,0 L7,3.5 L0,7 z" fill="#d9501c"/></marker>
+      <symbol id="i-msg" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></g></symbol>
+      <symbol id="i-pkg" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></g></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></g></symbol>
+      <symbol id="i-db" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></g></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7.5"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></g></symbol>
+      <symbol id="i-scale" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.920 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></g></symbol>
+      <symbol id="i-pen" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></g></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></g></symbol>
+      <symbol id="i-git" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><line x1="1" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="23" y2="12"/></g></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></g></symbol>
+      <g id="mine"><rect x="-5.8" y="-5.8" width="11.6" height="11.6" transform="rotate(45)" fill="#d9501c"/></g>
+    </defs>
 
-  <!-- 1 inputs -->
-  <rect x="0.5" y="8" width="150" height="46" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
-  <path d="M 10 18 h 18 a 3 3 0 0 1 3 3 v 9 a 3 3 0 0 1 -3 3 h -11 l -5 4.5 v -4.5 h -2 a 3 3 0 0 1 -3 -3 v -9 a 3 3 0 0 1 3 -3 z" fill="#fbe2b0" stroke="#d4861a" stroke-width="0.9"/>
-  <text x="44" y="29" font-size="12.5" font-weight="800" fill="#111318">User feedback</text>
-  <text x="44" y="43" font-size="10.5" fill="#474b56">optional</text>
-  <rect x="0.5" y="62" width="150" height="62" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
-  <g transform="translate(9,78) scale(0.62)">
-    <rect x="0" y="6" width="30" height="36" rx="2.5" fill="#fff" stroke="#111318" stroke-width="1.4"/>
-    <rect x="5" y="3" width="30" height="36" rx="2.5" fill="#fff" stroke="#111318" stroke-width="1.4"/>
-    <rect x="10" y="0" width="30" height="36" rx="2.5" fill="#fff" stroke="#111318" stroke-width="1.4"/>
-    <g stroke="#6b6658" stroke-width="2.6" stroke-linecap="round"><line x1="15" y1="9" x2="34" y2="9"/><line x1="15" y1="17" x2="30" y2="17"/><line x1="15" y1="25" x2="34" y2="25"/></g>
-  </g>
-  <text x="44" y="91" font-size="12.5" font-weight="800" fill="#111318">Settled agent</text>
-  <text x="44" y="106" font-size="12.5" font-weight="800" fill="#111318">sessions</text>
-  <circle cx="0.5" cy="8" r="8" fill="#4653c9"/><text x="0.5" y="12" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">1</text>
-  <path d="M 151 31 L 159 31 L 159 93 L 151 93 M 159 62 L 167 62" fill="none" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+    <!-- ===== inputs ===== -->
+    <rect x="0" y="6" width="140" height="44" rx="3" fill="#fffdf9" stroke="#8b867c" stroke-width="0.6"/>
+    <use href="#i-msg" x="9" y="15" width="13" height="13" style="color:#565b66"/>
+    <text x="29" y="26" font-size="11" font-weight="700">User feedback</text>
+    <text x="29" y="42" font-size="9" fill="#565b66">optional, free text</text>
 
-  <!-- 2 frozen batch -->
-  <rect x="169" y="8" width="84" height="116" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
-  <g transform="translate(193,28) scale(1.2)" fill="none" stroke="#111318" stroke-width="1.3" stroke-linejoin="round"><path d="M10 0 L20 5 L20 17 L10 22 L0 17 L0 5 Z"/><path d="M0 5 L10 10 L20 5 M10 10 L10 22"/></g>
-  <text x="211" y="82" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle">Frozen</text>
-  <text x="211" y="97" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle">batch</text>
-  <text x="211" y="113" font-size="10.5" fill="#474b56" text-anchor="middle">n traces</text>
-  <circle cx="169" cy="8" r="8" fill="#4653c9"/><text x="169" y="12" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">2</text>
-  <line x1="253" y1="62" x2="267" y2="62" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="0" y="58" width="140" height="62" rx="3" fill="#fffdf9" stroke="#8b867c" stroke-width="0.6"/>
+    <use href="#i-users" x="9" y="67" width="13" height="13" style="color:#565b66"/>
+    <text x="29" y="78" font-size="11" font-weight="700">Settled agent</text>
+    <text x="29" y="92" font-size="11" font-weight="700">sessions</text>
+    <text x="29" y="110" font-size="9" fill="#565b66">Pi extension traces</text>
 
-  <!-- 3 review -->
-  <rect x="269" y="8" width="352" height="116" rx="7" fill="#e2e5fb" stroke="#4653c9" stroke-width="1"/>
-  <text x="283" y="27" font-size="11" font-weight="800" fill="#3540a6" font-family="JetBrains Mono, monospace" letter-spacing="0.7">REVIEW</text>
-  <text x="351" y="27" font-size="11.5" fill="#111318">3 reviewers, different LLMs</text>
-  <g font-size="11.5" font-weight="800" fill="#111318">
-    <rect x="277" y="36" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="289" y="51.5">Reviewer 1</text>
-    <rect x="277" y="64" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="289" y="79.5">Reviewer 2</text>
-    <rect x="277" y="92" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="289" y="107.5">Reviewer 3</text>
-  </g>
-  <g stroke="#4653c9" stroke-width="1.3" fill="none">
-    <path d="M 410 47 C 424 47, 428 70, 442 73" marker-start="url(#arh)" marker-end="url(#arh)"/>
-    <path d="M 410 75 L 442 75" marker-start="url(#arh)" marker-end="url(#arh)"/>
-    <path d="M 410 103 C 424 103, 428 80, 442 77" marker-start="url(#arh)" marker-end="url(#arh)"/>
-  </g>
-  <rect x="444" y="36" width="168" height="78" rx="7" fill="#111318"/>
-  <text x="454" y="58" font-size="13" font-weight="800" fill="#fff">Review judge</text>
-  <text x="454" y="76" font-size="11" fill="#d9dbe3">cross-examines,</text>
-  <text x="454" y="91" font-size="11" fill="#d9dbe3">asks follow-ups</text>
-  <circle cx="604" cy="36" r="8" fill="#d4861a"/><text x="604" y="40.5" font-size="12" font-weight="800" text-anchor="middle" fill="#111318">?</text>
-  <circle cx="269" cy="8" r="8" fill="#4653c9"/><text x="269" y="12" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+    <path d="M140 28 H151 V89 H140" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
+    <line x1="151" y1="60" x2="164" y2="60" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
 
-  <!-- review report -->
-  <line x1="622" y1="68" x2="650" y2="68" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
-  <rect x="652" y="38" width="188" height="60" rx="6" fill="#fff" stroke="#4653c9" stroke-width="1.3"/>
-  <g transform="translate(664,56)"><path d="M0 0 h13 l5 5 v18 h-18 z" fill="#fff" stroke="#4653c9" stroke-width="1.2"/><g stroke="#4653c9" stroke-width="1.4"><line x1="4" y1="11" x2="14" y2="11"/><line x1="4" y1="16" x2="14" y2="16"/></g></g>
-  <text x="692" y="73" font-size="13" font-weight="800" fill="#111318">Review report</text>
-  <line x1="746" y1="99" x2="746" y2="194" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+    <rect x="166" y="6" width="100" height="114" rx="3" fill="#fffdf9" stroke="#1a1c21" stroke-width="0.6" stroke-dasharray="3 2"/>
+    <use href="#i-pkg" x="207" y="14" width="18" height="18" style="color:#565b66"/>
+    <text x="216" y="50" font-size="11" font-weight="700" text-anchor="middle">Frozen batch</text>
+    <text x="216" y="67" font-size="9" fill="#565b66" text-anchor="middle">n traces,</text>
+    <text x="216" y="79" font-size="9" fill="#565b66" text-anchor="middle">default 4;</text>
+    <text x="216" y="91" font-size="9" fill="#565b66" text-anchor="middle">fixed for</text>
+    <text x="216" y="103" font-size="9" fill="#565b66" text-anchor="middle">the whole run</text>
 
+    <line x1="266" y1="62" x2="286" y2="62" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <rect x="288" y="30" width="90" height="64" rx="3" fill="#fffdf9" stroke="#1a1c21" stroke-width="0.7"/>
+    <use href="#i-code" x="295" y="36" width="11" height="11" style="color:#565b66"/>
+    <text x="333" y="60" font-size="10.5" font-weight="700" text-anchor="middle">Evidence</text>
+    <text x="333" y="73" font-size="10.5" font-weight="700" text-anchor="middle">compiler</text>
+    <text x="333" y="88" font-size="9" fill="#565b66" text-anchor="middle">deterministic</text>
+    <use href="#mine" x="378" y="30"/><text x="378" y="33.45" font-size="9.6" font-weight="700" fill="#fff" text-anchor="middle">1</text>
 
-  <!-- mining labels: signals, patterns, decisions -->
-  <g fill="none" stroke="#c27a12" stroke-width="1.2">
-    <path d="M 181 1 V -3 H 253 V 1"/>
-    <path d="M 277 1 V -3 H 409 V 1"/>
-    <path d="M 444 1 V -3 H 612 V 1"/>
-  </g>
-  <g font-size="13" font-weight="800" fill="#7a4100" text-anchor="middle" font-family="Inter Display, Inter, sans-serif">
-    <text x="217" y="-9">Signals</text>
-    <text x="343" y="-9">Patterns</text>
-    <text x="528" y="-9">Decisions</text>
-  </g>
-  <!-- experience memory -->
-  <rect x="340" y="128" width="330" height="44" rx="6" fill="#fff" stroke="#6b6658" stroke-width="1.1" stroke-dasharray="4 2.5"/>
-  <g transform="translate(350,139)" fill="none" stroke="#6b6658" stroke-width="1.3"><ellipse cx="7" cy="3" rx="7" ry="3"/><path d="M0 3 v14 a7 3 0 0 0 14 0 v-14 M0 10 a7 3 0 0 0 14 0"/></g>
-  <text x="374" y="146" font-size="12.5" font-weight="800" fill="#111318">Experience memory</text>
-  <text x="374" y="162" font-size="10.5" fill="#474b56">past edits and their outcomes, read by the proposers</text>
-  <path d="M 640 173 L 640 194" fill="none" stroke="#6b6658" stroke-width="1.3" stroke-dasharray="4 2.5" marker-end="url(#arg)"/>
-  <path d="M 190 196 L 190 150 L 338 150" fill="none" stroke="#6b6658" stroke-width="1.3" stroke-dasharray="4 2.5" marker-end="url(#arg)"/>
-  <text x="198" y="144" font-size="10.5" fill="#474b56">updated after each commit</text>
+    <!-- ===== REVIEW ===== -->
+    <rect x="394" y="0" width="268" height="140" rx="5" fill="#e2e6f2" stroke="#34478a" stroke-width="0.8"/>
+    <text x="405" y="17" font-size="11" font-weight="700" fill="#34478a" letter-spacing="0.8">REVIEW</text>
+    <text x="458" y="17" font-size="9" fill="#34478a">3 reviewers, different LLMs</text>
 
-  <!-- the agent's next session -->
-  <rect x="0.5" y="134" width="170" height="28" rx="14" fill="#fff" stroke="#3540a6" stroke-width="1.3"/>
-  <text x="85.5" y="152.5" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle">Agent · next session</text>
-  <path d="M 64 195 L 64 165" fill="none" stroke="#3540a6" stroke-width="2.6" marker-end="url(#arb)"/>
-  <text x="73" y="176" font-size="10.5" font-weight="800" fill="#3540a6">fetches the latest</text>
-  <text x="73" y="189" font-size="10.5" font-weight="800" fill="#3540a6">AGENTS.md</text>
+    <line x1="378" y1="62" x2="399" y2="62" stroke="#1a1c21" stroke-width="0.7"/>
+    <path d="M399 39 V109" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
+    <line x1="399" y1="39" x2="405" y2="39" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <line x1="399" y1="74" x2="405" y2="74" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <line x1="399" y1="109" x2="405" y2="109" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
 
-  <!-- 4 propose -->
-  <g transform="translate(0,16)">
+    <g font-size="10">
+      <rect x="407" y="26" width="102" height="26" rx="13" fill="#fff" stroke="#34478a" stroke-width="0.6"/>
+      <use href="#i-search" x="415" y="33.5" width="11" height="11" style="color:#34478a"/>
+      <text x="431" y="42.5" fill="#1f2b55">Reviewer R₁</text>
+      <rect x="407" y="61" width="102" height="26" rx="13" fill="#fff" stroke="#34478a" stroke-width="0.6"/>
+      <use href="#i-search" x="415" y="68.5" width="11" height="11" style="color:#34478a"/>
+      <text x="431" y="77.5" fill="#1f2b55">Reviewer R₂</text>
+      <rect x="407" y="96" width="102" height="26" rx="13" fill="#fff" stroke="#34478a" stroke-width="0.6"/>
+      <use href="#i-search" x="415" y="103.5" width="11" height="11" style="color:#34478a"/>
+      <text x="431" y="112.5" fill="#1f2b55">Reviewer R₃</text>
+    </g>
+    <use href="#mine" x="509" y="120"/><text x="509" y="123.45" font-size="9.6" font-weight="700" fill="#fff" text-anchor="middle">2</text>
 
-  <rect x="498" y="180" width="342" height="116" rx="7" fill="#e2e5fb" stroke="#4653c9" stroke-width="1"/>
-  <text x="512" y="199" font-size="11" font-weight="800" fill="#3540a6" font-family="JetBrains Mono, monospace" letter-spacing="0.7">PROPOSE</text>
-  <text x="590" y="199" font-size="11.5" fill="#111318">3 proposers, different LLMs</text>
-  <g font-size="11.5" font-weight="800" fill="#111318">
-    <rect x="506" y="208" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="518" y="223.5">Proposer 1</text>
-    <rect x="506" y="236" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="518" y="251.5">Proposer 2</text>
-    <rect x="506" y="264" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="518" y="279.5">Proposer 3</text>
-  </g>
-  <g stroke="#4653c9" stroke-width="1.3" fill="none">
-    <path d="M 639 219 C 653 219, 657 242, 671 245" marker-start="url(#arh)" marker-end="url(#arh)"/>
-    <path d="M 639 247 L 671 247" marker-start="url(#arh)" marker-end="url(#arh)"/>
-    <path d="M 639 275 C 653 275, 657 252, 671 249" marker-start="url(#arh)" marker-end="url(#arh)"/>
-  </g>
-  <rect x="673" y="208" width="159" height="78" rx="7" fill="#111318"/>
-  <text x="683" y="230" font-size="13" font-weight="800" fill="#fff">Propose judge</text>
-  <text x="683" y="248" font-size="11" fill="#d9dbe3">cross-examines,</text>
-  <text x="683" y="263" font-size="11" fill="#d9dbe3">asks follow-ups</text>
-  <circle cx="824" cy="208" r="8" fill="#d4861a"/><text x="824" y="212.5" font-size="12" font-weight="800" text-anchor="middle" fill="#111318">?</text>
-  <circle cx="498" cy="180" r="8" fill="#4653c9"/><text x="498" y="184" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">4</text>
+    <g stroke="#34478a" stroke-width="0.8" fill="none" marker-start="url(#a-rev)" marker-end="url(#a-rev)">
+      <line x1="511" y1="41" x2="546" y2="58"/>
+      <line x1="511" y1="74" x2="546" y2="74"/>
+      <line x1="511" y1="107" x2="546" y2="90"/>
+    </g>
+    <rect x="548" y="26" width="106" height="96" rx="4" fill="#fff" stroke="#34478a" stroke-width="1.2"/>
+    <use href="#i-scale" x="593" y="32" width="16" height="16" style="color:#34478a"/>
+    <text x="601" y="63" font-size="11" font-weight="700" text-anchor="middle" fill="#1f2b55">Review judge</text>
+    <text x="601" y="80" font-size="9" text-anchor="middle" fill="#565b66">cross-examines,</text>
+    <text x="601" y="92" font-size="9" text-anchor="middle" fill="#565b66">writes the</text>
+    <text x="601" y="104" font-size="9" text-anchor="middle" fill="#565b66">consensus</text>
+    <use href="#mine" x="654" y="26"/><text x="654" y="29.45" font-size="9.6" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+    <text x="405" y="136" font-size="9" font-style="italic" fill="#34478a">↔ the judge re-queries the live reviewer sessions</text>
 
-  <!-- proposal -->
-  <line x1="497" y1="238" x2="478" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
-  <rect x="344" y="198" width="132" height="80" rx="6" fill="#fff" stroke="#4653c9" stroke-width="1.3"/>
-  <g transform="translate(356,210)"><path d="M0 0 h13 l5 5 v18 h-18 z" fill="#fff" stroke="#4653c9" stroke-width="1.2"/><g stroke="#4653c9" stroke-width="1.4"><line x1="4" y1="11" x2="14" y2="11"/><line x1="4" y1="16" x2="14" y2="16"/></g></g>
-  <text x="380" y="226" font-size="13" font-weight="800" fill="#111318">Proposal</text>
-  <text x="356" y="250" font-size="11" fill="#474b56">edits +</text>
-  <text x="356" y="265" font-size="11" fill="#474b56">commit message</text>
+    <line x1="654" y1="74" x2="683" y2="74" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <rect x="685" y="34" width="135" height="80" rx="3" fill="#fff" stroke="#34478a" stroke-width="1.1"/>
+    <use href="#i-file" x="694" y="43" width="13" height="13" style="color:#34478a"/>
+    <text x="712" y="54" font-size="11" font-weight="700" fill="#1f2b55">Consensus review</text>
+    <text x="694" y="74" font-size="9" fill="#565b66">findings, confidence,</text>
+    <text x="694" y="87" font-size="9" fill="#565b66">linked traces,</text>
+    <text x="694" y="100" font-size="9" fill="#565b66">open questions</text>
 
-  <!-- 5 verifier -->
-  <line x1="343" y1="238" x2="328" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
-  <rect x="246" y="180" width="80" height="116" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
-  <g transform="translate(270,192) scale(1.15)"><path d="M12 0 L24 5 V15 C24 24 18 29 12 32 C6 29 0 24 0 15 V5 Z" fill="#111318"/><path d="M6.5 16 L10.5 20 L18 11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>
-  <text x="286" y="250" font-size="13" font-weight="800" fill="#111318" text-anchor="middle">Verifier</text>
-  <text x="286" y="266" font-size="10.5" fill="#474b56" text-anchor="middle">anchor +</text>
-  <text x="286" y="279" font-size="10.5" fill="#474b56" text-anchor="middle">evidence</text>
-  <circle cx="246" cy="180" r="8" fill="#4653c9"/><text x="246" y="184" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">5</text>
-  <path d="M 286 297 L 286 312 Q 286 317 291 317 L 663 317 Q 668 317 668 312 L 668 298" fill="none" stroke="#b42318" stroke-width="1.3" stroke-dasharray="3.5 2.5" marker-end="url(#arr)"/>
-  <text x="304" y="311" font-size="11" fill="#b42318" font-weight="800">rejected: re-propose, the review is reused</text>
+    <text x="746" y="148" font-size="9" fill="#565b66" text-anchor="end">both stages run as</text>
+    <text x="746" y="160" font-size="9" fill="#565b66" text-anchor="end">sandboxed jobs</text>
 
-  <!-- accept -> git commit -->
-  <line x1="245" y1="238" x2="230" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
-  <text x="237.5" y="229" font-size="12" fill="#0d4a2a" font-weight="800" text-anchor="middle">✓</text>
-  <rect x="144" y="180" width="84" height="116" rx="6" fill="#111318"/>
-  <g transform="translate(176,194)" stroke="#a9b2ff" stroke-width="2.2" fill="none"><line x1="6" y1="0" x2="6" y2="30"/><circle cx="6" cy="9" r="4.8" fill="#111318"/><circle cx="6" cy="22" r="4.8" fill="#a9b2ff"/></g>
-  <text x="186" y="252" font-size="12.5" font-weight="800" fill="#fff" text-anchor="middle">Git commit</text>
-  <text x="186" y="268" font-size="10.5" fill="#d9dbe3" text-anchor="middle">edits applied</text>
+    <!-- report -> proposers -->
+    <path d="M752 114 V184 H652 V279" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
 
-  <!-- published AGENTS.md, served to the agent -->
-  <line x1="143" y1="238" x2="130" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
-  <rect x="0.5" y="180" width="128" height="116" rx="6" fill="#fff" stroke="#4653c9" stroke-width="1.4" stroke-dasharray="4 2.5"/>
-  <g transform="translate(51,192) scale(1.3)"><path d="M0 0 h11 l4 4 v15 h-15 z" fill="#fff" stroke="#111318" stroke-width="0.9"/><g stroke="#4653c9" stroke-width="1.5"><line x1="3" y1="8" x2="12" y2="8"/><line x1="3" y1="12" x2="12" y2="12"/><line x1="3" y1="16" x2="9" y2="16"/></g></g>
-  <text x="64" y="246" font-size="11" font-weight="800" fill="#3540a6" text-anchor="middle">Published</text>
-  <text x="64" y="263" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle" font-family="JetBrains Mono, monospace">AGENTS.md</text>
-  <text x="64" y="281" font-size="10.5" fill="#474b56" text-anchor="middle">served to the agent</text>
-  </g>
-</svg>
+    <!-- ===== PROPOSE ===== -->
+    <rect x="394" y="170" width="268" height="152" rx="5" fill="#dcece2" stroke="#23704f" stroke-width="0.8"/>
+    <path d="M662 184 H652 V279" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
+    <line x1="652" y1="211" x2="642" y2="211" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <line x1="652" y1="245" x2="642" y2="245" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <line x1="652" y1="279" x2="642" y2="279" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <text x="405" y="187" font-size="11" font-weight="700" fill="#23704f" letter-spacing="0.8">PROPOSE</text>
+    <text x="467" y="187" font-size="9" fill="#23704f">3 proposers, different LLMs</text>
 
-  <p class="rule">Reviewers mine <em>patterns across sessions</em>; a finding becomes an edit only if it <em>holds up under <span class="nw">cross-examination</span></em>.<br>The judge re-queries the panel until disagreements are resolved.</p>
-</section>
+    <g font-size="10">
+      <rect x="536" y="198" width="104" height="26" rx="13" fill="#fff" stroke="#23704f" stroke-width="0.6"/>
+      <use href="#i-pen" x="544" y="205.5" width="11" height="11" style="color:#23704f"/>
+      <text x="560" y="214.5" fill="#174a34">Proposer P₁</text>
+      <rect x="536" y="232" width="104" height="26" rx="13" fill="#fff" stroke="#23704f" stroke-width="0.6"/>
+      <use href="#i-pen" x="544" y="239.5" width="11" height="11" style="color:#23704f"/>
+      <text x="560" y="248.5" fill="#174a34">Proposer P₂</text>
+      <rect x="536" y="266" width="104" height="26" rx="13" fill="#fff" stroke="#23704f" stroke-width="0.6"/>
+      <use href="#i-pen" x="544" y="273.5" width="11" height="11" style="color:#23704f"/>
+      <text x="560" y="282.5" fill="#174a34">Proposer P₃</text>
+    </g>
+    <g stroke="#23704f" stroke-width="0.8" fill="none" marker-start="url(#a-pro)" marker-end="url(#a-pro)">
+      <line x1="534" y1="212" x2="512" y2="224"/>
+      <line x1="534" y1="245" x2="512" y2="245"/>
+      <line x1="534" y1="278" x2="512" y2="266"/>
+    </g>
+    <rect x="404" y="198" width="106" height="88" rx="4" fill="#fff" stroke="#23704f" stroke-width="1.2"/>
+    <use href="#i-scale" x="449" y="203" width="16" height="16" style="color:#23704f"/>
+    <text x="457" y="233" font-size="11" font-weight="700" text-anchor="middle" fill="#174a34">Propose judge</text>
+    <text x="457" y="250" font-size="9" text-anchor="middle" fill="#565b66">cross-examines,</text>
+    <text x="457" y="262" font-size="9" text-anchor="middle" fill="#565b66">fuses one</text>
+    <text x="457" y="274" font-size="9" text-anchor="middle" fill="#565b66">edit set</text>
+    <use href="#mine" x="404" y="198"/><text x="404" y="201.45" font-size="9.6" font-weight="700" fill="#fff" text-anchor="middle">3</text>
 
-<section class="band dark" id="demo">
-  <div class="dhead"><p class="rl-h"><span class="ok">Repeated complaints became rules.</span> <span class="no">A one-off did not.</span></p><p class="kicker">The demo <span class="tag">DEMO SCENARIO · HR OFFER LETTERS (SCRIPTED)</span></p></div>
-  <div class="stills">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback popover under the agent's reply: There's a £0 sign-on bonus line. If there's no bonus, just leave the line out. Send to Hone"></div><figcaption><span class="n">1</span>The user comments on a reply</figcaption></figure>
-    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s2"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review panel: the judge asks reviewers 1 and 2 a follow-up; reviewer 2 answers: Both ask for the line to be dropped outright. I withdraw it."></div><figcaption><span class="n">2</span>The judge questions two reviewers</figcaption></figure>
-    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s3"><div class="win"><img src="assets/stills/s3-commit.png" data-src-w="3360" data-stage-w="560" data-min-px="22" alt="AGENTS.md, verified: the rule about blocks that do not apply is widened to drop rows whose amount is 0"></div><figcaption><span class="n">3</span>Hone commits a verified edit</figcaption></figure>
-  </div>
+    <line x1="457" y1="286" x2="457" y2="292" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <rect x="404" y="293" width="246" height="23" rx="3" fill="#fff" stroke="#23704f" stroke-width="1.1"/>
+    <use href="#i-file" x="411" y="298.5" width="12" height="12" style="color:#23704f"/>
+    <text x="428" y="308.3" font-size="11" font-weight="700" fill="#174a34">Edit set</text>
+    <text x="482" y="308.3" font-size="9" fill="#565b66">edits + commit message</text>
+
+    <!-- experience memory -->
+    <rect x="685" y="206" width="135" height="76" rx="3" fill="#fffdf9" stroke="#1a1c21" stroke-width="0.6" stroke-dasharray="3 2"/>
+    <use href="#i-db" x="694" y="214" width="13" height="13" style="color:#565b66"/>
+    <text x="712" y="225" font-size="11" font-weight="700">Experience</text>
+    <text x="694" y="240" font-size="11" font-weight="700">memory</text>
+    <text x="694" y="258" font-size="9" fill="#565b66">past edits, rationale</text>
+    <text x="694" y="270" font-size="9" fill="#565b66">and outcomes</text>
+    <line x1="685" y1="262" x2="653" y2="262" stroke="#7d7a73" stroke-width="0.7" stroke-dasharray="3 2"/>
+
+    <!-- ===== verify, commit, publish ===== -->
+    <path d="M404 304.5 H380" fill="none" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <rect x="270" y="220" width="108" height="96" rx="4" fill="#f1e8d2" stroke="#806217" stroke-width="1.1"/>
+    <use href="#i-shield" x="316" y="226" width="16" height="16" style="color:#806217"/>
+    <text x="324" y="257" font-size="11.5" font-weight="700" text-anchor="middle" fill="#4f3c0c">Verifier</text>
+    <text x="324" y="273" font-size="9" text-anchor="middle" fill="#565b66">anchor matches</text>
+    <text x="324" y="285" font-size="9" text-anchor="middle" fill="#565b66">once in the file;</text>
+    <text x="324" y="297" font-size="9" text-anchor="middle" fill="#565b66">cited evidence</text>
+    <text x="324" y="309" font-size="9" text-anchor="middle" fill="#565b66">is in the batch</text>
+
+    <path d="M324 220 V158 H470 V168" fill="none" stroke="#b0302f" stroke-width="0.8" stroke-dasharray="4 2.4" marker-end="url(#a-rej)"/>
+    <text x="330" y="153" font-size="9" font-style="italic" fill="#b0302f">rejected: propose again, review reused</text>
+
+    <line x1="270" y1="268" x2="249" y2="268" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <text x="259.5" y="262" font-size="9" font-weight="700" fill="#23704f" text-anchor="middle">✓</text>
+    <rect x="151" y="220" width="96" height="96" rx="4" fill="#1a1c21"/>
+    <use href="#i-git" x="191" y="228" width="16" height="16" style="color:#f3efe7"/>
+    <text x="199" y="260" font-size="11" font-weight="700" text-anchor="middle" fill="#fff">Git commit</text>
+    <text x="199" y="277" font-size="9" text-anchor="middle" fill="#c9c5bc">edits applied,</text>
+    <text x="199" y="289" font-size="9" text-anchor="middle" fill="#c9c5bc">message by</text>
+    <text x="199" y="301" font-size="9" text-anchor="middle" fill="#c9c5bc">the judge</text>
+
+    <line x1="151" y1="268" x2="139" y2="268" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <rect x="0" y="220" width="137" height="96" rx="4" fill="#fff" stroke="#d9501c" stroke-width="1.6"/>
+    <use href="#i-file" x="10" y="229" width="15" height="15" style="color:#d9501c"/>
+    <text x="10" y="261" font-size="11" font-weight="700">Published</text>
+    <text x="10" y="276" font-family="Mono" font-size="11" font-weight="700" fill="#c24515">AGENTS.md</text>
+    <text x="10" y="294" font-size="9" fill="#565b66">every version kept:</text>
+    <text x="10" y="306" font-size="9" fill="#565b66">diff it, branch from it</text>
+
+    <!-- loop back to the agent -->
+    <line x1="40" y1="220" x2="40" y2="122" stroke="#d9501c" stroke-width="1.1" marker-end="url(#a-acc)"/>
+    <text x="47" y="150" font-size="9" fill="#a83b12" font-weight="600">the agent syncs</text>
+    <text x="47" y="162" font-size="9" fill="#a83b12" font-weight="600">the latest file</text>
+    <text x="47" y="174" font-size="9" fill="#a83b12" font-weight="600">before every session</text>
+    <path d="M118 220 V200 H216 V122" fill="none" stroke="#7d7a73" stroke-width="0.7" stroke-dasharray="3 2" marker-end="url(#a-gray)"/>
+    <text x="222" y="186" font-size="9" fill="#565b66">current file</text>
+    <text x="222" y="198" font-size="9" fill="#565b66">feeds the run</text>
+
+    <!-- experience update -->
+    <path d="M199 316 V330 H752 V284" fill="none" stroke="#7d7a73" stroke-width="0.7" stroke-dasharray="3 2" marker-end="url(#a-gray)"/>
+    <text x="759" y="300" font-size="9" fill="#565b66">every edit and</text>
+    <text x="759" y="312" font-size="9" fill="#565b66">its outcome</text>
+    <text x="759" y="324" font-size="9" fill="#565b66">is logged</text>
+  </svg>
+
   <div class="mine">
-    <div class="grid-wrap">
-      <div class="grid">
-        <p class="gth">Finding · demo session</p><div class="gc gth"><span class="bt"><i class="c n">1</i><i class="c n">2</i><i class="c n">3</i><i class="c n">4</i></span><span class="bt"><i class="c n">5</i><i class="c n">6</i><i class="c n">7</i><i class="c n">8</i></span><span class="bt"><i class="c n">9</i><i class="c n">10</i></span><span class="bt"><i class="c n">11</i><i class="c n">12</i><i class="c n">13</i></span></div><p class="gth">Outcome</p>
-        <p class="gf">Dates written month-first</p><div class="gc"><span class="bt"><i class="c on ring"></i><i class="c on"></i><i class="c on"></i><i class="c on"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i></span></div><p class="go ok">✓ became a rule</p>
-        <p class="gf">Manager copied from an old letter</p><div class="gc"><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c on ring"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i></span></div><p class="go ok">✓ became a rule</p>
-        <p class="gf">“Family name first”, for one candidate</p><div class="gc"><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c on ring"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i></span></div><p class="go no">× refused: one-off</p>
-        <p class="gf">£0 and 0-share lines left in</p><div class="gc"><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c on ring"></i><i class="c on ring"></i><i class="c"></i></span></div><p class="go ok">✓ became a rule</p>
-      </div>
-      <p class="gl"><b>Demo scenario (scripted), illustrative.</b> <i class="c on"></i> cited session <i class="c on ring"></i> the user commented. No support threshold: the manager rule rests on one session.</p>
-    </div>
-    <div class="booth"><h3>Live demo<br>at this booth</h3><p>Ask us to run it.</p></div>
+    <div class="lead"><b>A finding survives only if it is grounded in the traces and holds up when the judge questions models that disagree.</b></div>
+    <div><i><span>1</span></i><b>Process signals:</b> a compiler extracts evidence from tool-call sequences.</div>
+    <div><i><span>2</span></i><b>Behavior patterns:</b> repeated errors, inefficient tool sequences, format violations.</div>
+    <div><i><span>3</span></i><b>Decisions:</b> judges turn the analyses into a review, then one edit set.</div>
   </div>
 </section>
 
-<footer class="ftr">
-  <div><p class="gh">github.com/AaLexUser/hone &nbsp;·&nbsp; Acknowledgment: &lt;placeholder funding line&gt;</p>
-  <p class="scope">Today: one AGENTS.md, one domain at a time; two benchmarks, one target model, each file evaluated once.</p>
-  <p class="refs">Baselines: SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks: OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p></div>
-  <p class="pid">Paper ID: &lt;placeholder&gt;</p>
-</footer>
-</div>
+<!-- ======================= DEMO ======================= -->
+<section class="demo">
+  <div class="demo-head">
+    <div class="kicker">The demo</div>
+    <span class="tag">SCRIPTED SCENARIO</span>
+    <span class="disc">Sessions and model answers are scripted; Hone’s service runs the pipeline, verifies every edit and makes the commits.</span>
+  </div>
+  <div class="demo-title">
+    <h2>Thirteen offer letters, four runs: feedback in, rules out.</h2>
+    <p class="undo"><b>Check and undo:</b> each version is a Git commit with the judge’s rationale. Inspect its line diff or branch from any earlier version.</p>
+  </div>
+  <p class="demo-sub">An HR user has a coding agent fill an offer-letter template each day and comments on the result. AGENTS.md starts empty.</p>
 
+  <div class="ledger">
+    <div class="h">Run</div><div class="h">What the user wrote</div><div class="h">What Hone did to AGENTS.md</div>
+
+    <div class="cell c1"><div class="run"><b>1</b><span class="n">4 sessions</span><span class="ver">empty → v1</span></div></div>
+    <div class="cell">
+      <p class="q">“Write dates like 1 December 2026, as all our letters do”</p>
+      <p class="q">“There's a big empty gap where the relocation part was”</p>
+      <p class="q">“I need a PDF too; name it Offer_Lastname_Firstname”</p>
+      <p class="q">“Don't make up the manager, ask me”</p>
+    </div>
+    <div class="cell out">
+      <p class="lead"><span class="chip add">4 RULES ADDED</span>Feedback becomes rules.</p>
+      <ul>
+        <li><span class="m p">+</span><span>Write dates as <code>1 December 2026</code></span></li>
+        <li><span class="m p">+</span><span>Delete a block that does not apply, with its heading</span></li>
+        <li><span class="m p">+</span><span>Save .docx and .pdf as <code>Offer_&lt;Last&gt;_&lt;First&gt;</code></span></li>
+        <li><span class="m p">+</span><span>Missing field: ask the user, never invent it</span></li>
+      </ul>
+      <p class="x"><span class="chip hold">HELD BACK</span><s>Keep the template’s bold and underline</s></p>
+      <p class="ex"><i>Judge:</i> Which trace has feedback that supports it? <i>Proposer:</i> None does.</p>
+    </div>
+
+    <div class="cell c1"><div class="run"><b>2</b><span class="n">4 sessions</span><span class="ver">v1 → v2</span></div></div>
+    <div class="cell">
+      <p class="q">“Perfect, that's exactly it”</p>
+      <p class="q">“For this candidate write […] family name first”</p>
+      <p class="q">“Keep the template formatting; the salary line lost its bold”</p>
+      <p class="q">“The deadline line lost its bold and underline. Please keep the template formatting exactly.”</p>
+    </div>
+    <div class="cell out">
+      <p class="lead"><span class="chip add">2 EDITS</span>The held-back rule lands once feedback backs it.</p>
+      <ul>
+        <li><span class="m p">+</span><span>Fill placeholders run by run; check bold and underline</span></li>
+        <li><span class="m t">~</span><span>Convert the PDF from the .docx; never re-type it<span class="tw">REWRITTEN</span></span></li>
+      </ul>
+      <p class="x"><span class="chip refuse">REFUSED</span><s>Write Chinese candidates’ names family name first</s></p>
+      <p class="ex">The feedback says “for this candidate”: a one-off, not a standing rule.</p>
+    </div>
+
+    <div class="cell c1"><div class="run"><b>3</b><span class="n">2 sessions</span><span class="ver none">no commit</span></div></div>
+    <div class="cell">
+      <p class="q">“Perfect, that's exactly it”</p>
+      <p class="q none">(one session, no feedback)</p>
+    </div>
+    <div class="cell out">
+      <p class="lead"><span class="chip none">NO CHANGE</span>Nothing is wrong, so nothing changes.</p>
+      <p>No commit. Both letters follow every rule.</p>
+    </div>
+
+    <div class="cell c1 last"><div class="run"><b>4</b><span class="n">3 sessions</span><span class="ver">v2 → v3</span></div></div>
+    <div class="cell last">
+      <p class="q">“There's a '£0' sign-on bonus line. If there's no bonus, just leave the line out.”</p>
+      <p class="q">“Same thing with equity: '0 shares' looks odd, drop the line when there's none.”</p>
+      <p class="q">“Perfect, that's exactly it”</p>
+    </div>
+    <div class="cell out last">
+      <p class="lead"><span class="chip widen">1 RULE WIDENED</span>One rule, not two: a new case widens an old rule.</p>
+      <ul>
+        <li><span class="m t">~</span><span>The run-1 block rule now also drops lines whose amount is 0: no <code>£0</code>, no <code>0 shares</code></span></li>
+      </ul>
+      <p class="ex"><i>Judge:</i> Would widening the existing rule say the same thing with one bullet? <i>Proposer:</i> Yes.</p>
+      <p class="x"><span class="chip refuse">WITHDRAWN</span><s>Before leaving any template line out, ask the user</s></p>
+      <p class="ex"><i>Judge:</i> Which feedback supports asking? <i>Proposer:</i> None.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FOOTER ======================= -->
+<footer class="foot">
+  <img src="assets/qr-code.svg" alt="QR code: github.com/AaLexUser/hone">
+  <div>
+    <div class="code">Code: <b>github.com/AaLexUser/hone</b></div>
+    <div class="small">Open source, with a Pi agent extension and a web dashboard. One AGENTS.md, one domain at a time.<br>Benchmarks: OfficeQA (Opsahl-Ong et al. 2026), SpreadsheetBench (Ma et al. 2024). Baselines: SkillOpt (Yang et al. 2026), EvoSkill (Zhang et al. 2026), Trace2Skill (Ni et al. 2026). Acknowledgment: &lt;placeholder&gt;</div>
+  </div>
+  <div class="inst"><div>&lt;placeholder institution logo&gt;</div><div>&lt;placeholder institution logo&gt;</div></div>
+  <div class="paperid">Paper ID: &lt;placeholder&gt;</div>
+</footer>
+
+</div>
 </body>
 </html>
