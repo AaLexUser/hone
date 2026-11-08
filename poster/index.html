@@ -2,424 +2,437 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Hone · ICDM 2026 Demo Poster</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Hone · ICDM 2026 demo poster</title>
 <style>
-  /* Physical size: 90 cm wide × 120 cm high, portrait. Print or export to PDF at this size. */
-  @page { size: 900mm 1200mm; margin: 0; }
+/* ===== Fonts: local static TrueType files so the PDF embeds TrueType, not Type 3 ===== */
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Medium.ttf') format('truetype'); font-weight: 500; font-style: normal; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-MediumItalic.ttf') format('truetype'); font-weight: 500; font-style: italic; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-SemiBold.ttf') format('truetype'); font-weight: 600; font-style: normal; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-SemiBoldItalic.ttf') format('truetype'); font-weight: 600; font-style: italic; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-ExtraBold.ttf') format('truetype'); font-weight: 800; font-style: normal; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/Inter-Black.ttf') format('truetype'); font-weight: 900; font-style: normal; }
+@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-SemiBold.ttf') format('truetype'); font-weight: 600; }
+@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-Bold.ttf') format('truetype'); font-weight: 700; }
+@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-ExtraBold.ttf') format('truetype'); font-weight: 800; }
+@font-face { font-family: 'Inter Display'; src: url('assets/fonts/InterDisplay-Black.ttf') format('truetype'); font-weight: 900; }
+@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-weight: 400; }
+@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-Medium.ttf') format('truetype'); font-weight: 500; }
+@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-Bold.ttf') format('truetype'); font-weight: 700; }
+@font-face { font-family: 'JetBrains Mono'; src: url('assets/fonts/JetBrainsMono-ExtraBold.ttf') format('truetype'); font-weight: 800; }
 
-  :root {
-    --bg: #f7f7f9;
-    --panel: #ffffff;
-    --line: #e3e4ea;
-    --ink: #1d1f27;
-    --ink-2: #4a4e5c;
-    --ink-3: #7a7e8c;
-    --accent: #5458c8;
-    --accent-soft: #ecedfb;
-    --review: #1f8a8f;
-    --review-soft: #e6f4f4;
-    --propose: #8e4fc0;
-    --propose-soft: #f3ecfa;
-    --green: #16895c;
-    --green-soft: #e7f5ee;
-    --red: #c4343c;
-    --amber: #b8780f;
-    --amber-soft: #fbf3e2;
-    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
-  }
+/* ===== Page: 90 x 120 cm portrait. All sizes in mm. ===== */
+@page { size: 900mm 1200mm; margin: 0; }
+:root {
+  --ink: #111318; --ink-2: #262a34; --paper: #f4f2ed; --paper-2: #e8e5dc; --rule: #c9c3b6; --muted: #474b56;
+  --hone: #4653c9; --hone-deep: #3540a6; --hone-hi: #8f9bff; --hone-hi2: #a9b2ff; --hone-soft: #e2e5fb;
+  --on-dark-2: #c9ccd6; --amber-bg: #fbe2b0; --amber-ink: #5c3200; --amber: #d4861a;
+  --ok-bg: #d3eedb; --ok-ink: #0d4a2a; --bad: #b42318; --m: 30mm;
+  --sans: 'Inter', system-ui, sans-serif; --display: 'Inter Display', 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--paper); }
+body { font-family: var(--sans); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.poster { width: 900mm; height: 1200mm; position: relative; overflow: hidden; background: var(--paper); display: flex; flex-direction: column; }
+p, h1, h2, h3 { margin: 0; }
+b { font-weight: 700; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { width: 900mm; height: 1200mm; }
-  body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: Inter, system-ui, sans-serif;
-    font-size: 11mm;
-    line-height: 1.32;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+/* header (v2 conventions) */
+.hdr { background: var(--ink); color: #fff; padding: 7mm var(--m) 0; position: relative; }
+.hdr::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3mm; background: var(--hone); }
+.hdr-top { display: flex; align-items: center; justify-content: space-between; }
+.venue { display: flex; align-items: center; gap: 7mm; }
+.venue img { height: 19mm; display: block; }
+.venue .track { border-left: 0.5mm solid #4b5060; padding-left: 6mm; font-size: 9mm; line-height: 1.2; color: #d9dbe3; }
+.venue .track b { color: #fff; font-size: 10mm; letter-spacing: 0.02em; }
+.logos { display: flex; gap: 5mm; }
+.logo-ph { width: 62mm; height: 20mm; border: 0.5mm dashed #8d92a3; border-radius: 3mm; display: grid; place-items: center; text-align: center; font-size: 8.5mm; line-height: 1.1; color: #c3c6d1; }
+.hdr-main { display: grid; grid-template-columns: 1fr 68mm; gap: 10mm; align-items: center; margin-top: 3mm; }
+h1 { font-family: var(--display); font-size: 33mm; line-height: 1.03; font-weight: 800; letter-spacing: -0.025em; }
+h1 .name { color: var(--hone-hi); }
+.authors { margin-top: 4mm; font-size: 12.5mm; font-weight: 600; white-space: nowrap; }
+.authors sup { font-size: 8.5mm; }
+.authors .affil { margin-left: 6mm; font-size: 9mm; font-weight: 400; color: var(--on-dark-2); }
+.qr { text-align: center; }
+.qr .tile { background: #fff; border-radius: 3mm; padding: 4mm; }
+.qr .tile img { width: 100%; display: block; }
+.qr .lbl { margin-top: 2mm; font-size: 11mm; font-weight: 800; }
+.qr .url { font-size: 8.5mm; line-height: 1.15; color: #d9dbe3; }
+.thesis { margin: 5mm calc(-1 * var(--m)) 0; padding: 5mm var(--m) 5mm; border-top: 0.5mm solid #2f3440; font-family: var(--display); font-size: 26mm; line-height: 1.07; font-weight: 800; letter-spacing: -0.02em; }
+.thesis em { font-style: normal; color: var(--hone-hi); }
+.thesis .t2 { display: flex; align-items: center; gap: 14mm; }
+.thesis .t2 > p:first-child { white-space: nowrap; }
+.def { font-family: var(--sans); font-size: 10mm; line-height: 1.2; font-weight: 400; letter-spacing: 0; color: var(--on-dark-2); border-left: 0.6mm solid #4b5060; padding-left: 5mm; }
+.def code { font-family: var(--mono); color: #fff; font-weight: 700; }
 
-  .poster {
-    width: 900mm; height: 1200mm;
-    padding: 26mm 28mm 22mm;
-    display: grid;
-    grid-template-rows: auto auto auto 1fr auto;
-    gap: 14mm;
-  }
+/* hero results */
+.hero { background: var(--hone-deep); color: #fff; padding: 5mm var(--m) 9.5mm; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 calc(100% - 6mm)); }
+.hero .top { font-family: var(--display); font-size: 17mm; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+.hero .top span { font-weight: 600; }
+.halves { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18mm; margin-top: 4mm; }
+.half { display: grid; grid-template-columns: 172mm 1fr; column-gap: 4mm; align-items: start; }
+.half .mini { margin-top: 1mm; }
+.hl .lab { font-size: 12.5mm; font-weight: 800; line-height: 1; }
+.hl .v { font-family: var(--display); font-weight: 900; font-size: 56mm; line-height: 0.92; letter-spacing: -0.045em; margin-top: 1mm; }
+.hl .v small { font-size: 0.32em; letter-spacing: 0; margin-left: 2mm; font-weight: 800; }
+.hl .s { font-size: 10mm; line-height: 1.15; color: #eef0ff; }
+.hl .s2 { font-size: 10.5mm; line-height: 1.15; font-weight: 800; margin-top: 1mm; color: #fff; }
+.mini .br { display: grid; grid-template-columns: 52mm 1fr; column-gap: 2mm; align-items: center; height: 9.2mm; }
+.mini .br.hone { height: 21mm; }
+.mini .l { font-size: 8.8mm; font-weight: 600; text-align: right; padding-right: 3mm; white-space: nowrap; color: #eef0ff; }
+.mini .tr { position: relative; height: 6.4mm; margin-right: 40mm; }
+.mini .hone .tr { height: 13mm; }
+.mini .b { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(255,255,255,0.5); }
+.mini .agent .b { background: repeating-linear-gradient(135deg, rgba(255,255,255,0.8) 0 1.2mm, rgba(255,255,255,0.18) 1.2mm 2.4mm); }
+.mini .hone .b { background: #fff; }
+.mini .v { position: absolute; top: 50%; transform: translateY(-50%); padding-left: 1.8mm; font-size: 8.8mm; font-weight: 700; line-height: 1; white-space: nowrap; }
+.mini .hone .l { color: #fff; font-weight: 800; font-size: 11mm; }
+.mini .hone .v { font-family: var(--display); font-size: 21mm; font-weight: 900; letter-spacing: -0.02em; padding-left: 2.5mm; }
+.hero .cap { font-size: 8.8mm; line-height: 1.22; color: #eef0ff; white-space: nowrap; }
+.hero .cap:first-of-type { margin-top: 3mm; }
+.sw { display: inline-block; width: 7mm; height: 4.6mm; margin: 0 1.5mm 0 3mm; vertical-align: -0.4mm; }
+.sw.opt { background: rgba(255,255,255,0.5); }
+.sw.agent { background: repeating-linear-gradient(135deg, rgba(255,255,255,0.8) 0 1.2mm, rgba(255,255,255,0.18) 1.2mm 2.4mm); }
+.sw.hone { background: #fff; }
 
-  /* ---------- header ---------- */
-  header {
-    display: grid;
-    grid-template-columns: 58mm 1fr auto;
-    gap: 16mm;
-    align-items: center;
-  }
-  header .mark { width: 58mm; height: 58mm; }
-  h1 {
-    font-size: 25mm;
-    line-height: 1.06;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-  }
-  h1 .name { color: var(--accent); }
-  .authors { margin-top: 6mm; font-size: 11mm; font-weight: 500; }
-  .authors sup { font-size: 0.6em; }
-  .affil { margin-top: 2mm; font-size: 8.5mm; color: var(--ink-2); }
-  .badge {
-    display: flex; flex-direction: column; align-items: center; gap: 4mm;
-    font-size: 8mm; color: var(--ink-2); text-align: center;
-  }
-  .badge .venue {
-    background: var(--ink); color: #fff; border-radius: 4mm;
-    padding: 4mm 7mm; font-weight: 600; font-size: 9mm; letter-spacing: 0.02em;
-  }
-  .badge img { width: 62mm; height: 62mm; }
+/* bands */
+.band { padding: 6mm var(--m) 5mm; position: relative; }
+.band.alt { background: var(--paper-2); }
+.band.dark { background: var(--ink); color: #fff; }
+#demo { flex: 1 0 auto; }
+.kicker { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hone); }
+.dark .kicker { color: var(--hone-hi2); }
+.kicker .tag { display: inline-block; margin-left: 3mm; padding: 0.6mm 2.5mm; border-radius: 1.5mm; background: var(--amber-bg); color: var(--amber-ink); letter-spacing: 0.06em; }
+h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weight: 800; letter-spacing: -0.02em; }
 
-  /* ---------- cards ---------- */
-  .card {
-    background: var(--panel);
-    border: 0.6mm solid var(--line);
-    border-radius: 6mm;
-    padding: 12mm 13mm;
-  }
-  h2 {
-    font-size: 14mm; font-weight: 700; letter-spacing: -0.015em;
-    display: flex; align-items: baseline; gap: 5mm;
-  }
-  h2 .num {
-    font-size: 9mm; font-weight: 600; color: #fff; background: var(--accent);
-    border-radius: 50%; width: 14mm; height: 14mm; display: inline-grid; place-items: center;
-    flex: none; transform: translateY(-1mm);
-  }
-  .muted { color: var(--ink-3); }
-  .mono { font-family: var(--mono); }
+/* positioning: 2x2 */
+.pos { display: grid; grid-template-columns: 236mm 1fr; column-gap: 20mm; align-items: center; }
+.pos h2 { font-size: 19mm; }
+.pos h2 .hn { color: var(--hone-deep); }
+.nw { white-space: nowrap; }
+.quad { display: grid; grid-template-columns: 70mm 1fr 1fr; grid-template-rows: 10mm auto auto; }
+.quad .qa { font-size: 9.5mm; font-weight: 800; color: var(--ink); text-align: center; align-self: end; line-height: 1.08; }
+.quad .qa.qr { text-align: right; align-self: center; padding-right: 3mm; }
+.cell { margin: 2mm; border-radius: 3mm; padding: 3.5mm 4mm; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.5mm; text-align: center; position: relative; z-index: 1; }
+.cell.hone { background: var(--hone-deep); color: #fff; }
+.cell.hone > b { font-family: var(--display); font-size: 17mm; font-weight: 900; letter-spacing: -0.03em; line-height: 0.95; }
+.cell.five { background: #fff; box-shadow: inset 0 0 0 0.5mm #8b8578; color: var(--ink); }
+.cell.five > b { font-size: 9.5mm; line-height: 1.18; font-weight: 700; }
+.chain { display: flex; align-items: center; gap: 2mm; white-space: nowrap; }
+.chain span { font-size: 11mm; font-weight: 800; padding: 1.2mm 3mm 1.6mm; border-radius: 2mm; line-height: 1; }
+.chain i { font-style: normal; font-size: 10mm; font-weight: 800; }
+.hone .chain span { background: #fff; color: var(--hone-deep); }
+.hone .chain i { color: #fff; }
+.five .chain span { background: var(--paper-2); color: var(--ink); }
+.five .chain span.again { background: #fbe4e1; color: #7a1010; }
+.five .chain i { color: var(--muted); }
+.quad .xh, .quad .xv { pointer-events: none; }
+.quad .xh { border-top: 0.5mm solid #b9b2a3; align-self: center; height: 0; }
+.quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
-  .row-a { display: grid; grid-template-columns: 1fr 1.08fr; gap: 14mm; }
+/* architecture */
+.arch svg { width: 686mm; margin: 2mm auto 0; height: auto; display: block; overflow: visible; }
+.arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
+.arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
-  /* problem */
-  .assumptions { margin-top: 9mm; display: grid; gap: 6mm; }
-  .assume {
-    display: grid; grid-template-columns: 16mm 1fr; gap: 5mm; align-items: start;
-  }
-  .assume .x {
-    width: 16mm; height: 16mm; border-radius: 50%; background: #fbe9ea; color: var(--red);
-    display: grid; place-items: center; font-weight: 700; font-size: 10mm;
-  }
-  .assume b { font-weight: 600; text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 0.7mm; }
-  .assume .why { display: block; color: var(--ink-2); font-size: 9.5mm; }
-  .hone-says {
-    margin-top: 9mm; padding: 8mm 9mm; border-radius: 5mm;
-    background: var(--accent-soft); color: var(--ink);
-    display: grid; grid-template-columns: 16mm 1fr; gap: 5mm; align-items: center;
-    font-weight: 500;
-  }
-  .hone-says .ok {
-    width: 16mm; height: 16mm; border-radius: 50%; background: var(--accent); color: #fff;
-    display: grid; place-items: center; font-weight: 700; font-size: 9mm;
-  }
+/* demo */
+.stills { --sh: 162mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
+.shot { margin: 0; }
+.shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
+.shot img { height: 100%; width: auto; display: block; }
+.shot figcaption { margin-top: 3mm; font-size: 12mm; line-height: 1.1; font-weight: 800; color: #fff; display: flex; gap: 3mm; align-items: center; white-space: nowrap; }
+.shot .n { width: 13mm; height: 13mm; flex: none; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 9.5mm; box-shadow: 0 0 0 0.9mm var(--hone-hi); }
+.sar { width: 22mm; flex: none; margin-top: calc(var(--sh) / 2 - 14mm); }
+.mine { display: grid; grid-template-columns: 1fr 214mm; column-gap: 14mm; margin-top: 6mm; align-items: stretch; }
+.rl-h { font-family: var(--display); font-size: 17mm; font-weight: 800; letter-spacing: -0.015em; line-height: 1.05; }
+.rl-h .ok { color: #7fe3a1; } .rl-h .no { color: #ff9a8f; }
+.grid { display: grid; grid-template-columns: auto auto auto; justify-content: space-between; column-gap: 6mm; row-gap: 1.2mm; align-items: center; }
+.dhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10mm; }
+.gc.gth { padding-bottom: 0; }
+.gth { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-2); border-bottom: 0.4mm solid #4b5060; padding-bottom: 1mm; }
+.gf { font-size: 10.5mm; font-weight: 600; color: #fff; white-space: nowrap; }
+.gc { display: flex; gap: 3mm; }
+.bt { display: flex; }
+.c { display: inline-grid; place-items: center; width: 12.5mm; height: 10mm; font-style: normal; position: relative; }
+.c::before { content: ""; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: #5d6272; }
+.c.n::before { display: none; }
+.c.n { letter-spacing: -0.04em; font-family: var(--mono); font-size: 8.5mm; font-weight: 700; color: var(--on-dark-2); }
+.c.on::before { width: 6.4mm; height: 6.4mm; background: var(--hone-hi); }
+.c.ring::after { content: ""; position: absolute; inset: 0.6mm; border-radius: 50%; box-shadow: 0 0 0 0.7mm var(--amber); }
+.gn { font-family: var(--mono); font-size: 11mm; font-weight: 800; color: #fff; text-align: center; }
+.go { font-size: 10mm; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 2mm; white-space: nowrap; justify-self: start; }
+.go.ok { background: var(--ok-bg); color: var(--ok-ink); }
+.go.no { background: #fbe4e1; color: #5c0f0f; }
+.gl { margin-top: 2.5mm; font-size: 8.8mm; line-height: 1.25; color: var(--on-dark-2); }
+.gl b { color: #fff; }
+.gl .c { width: 7mm; height: 7mm; vertical-align: -1.6mm; margin: 0 0.5mm 0 2mm; }
+.gl .c.on::before { width: 5mm; height: 5mm; }
+.gl .c.ring::after { inset: 0.4mm; }
+.booth { background: #fff; color: var(--ink); border-radius: 4mm; padding: 7mm 8mm; display: flex; flex-direction: column; justify-content: center; gap: 4mm; border-top: 3mm solid var(--hone-hi); }
+.booth h3 { font-family: var(--display); font-size: 21mm; line-height: 1.02; font-weight: 900; letter-spacing: -0.02em; color: var(--hone-deep); }
+.booth p { font-size: 16mm; line-height: 1.1; font-weight: 700; }
 
-  .facts { margin-top: 8mm; display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
-  .fact { border: 0.5mm solid var(--line); border-radius: 4mm; padding: 5mm 6mm; display: grid; gap: 1mm; }
-  .fact .v { font-size: 15mm; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: var(--red); }
-  .fact .k { font-size: 8mm; color: var(--ink-2); line-height: 1.25; }
-  .src { font-size: 6.6mm; color: var(--ink-3); margin-top: 2mm; }
-
-  /* results */
-  .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 8mm; }
-  .hero .stat .big { font-size: 30mm; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--accent); }
-  .hero .stat .big small { font-size: 0.5em; }
-  .hero .stat .label { font-size: 9.5mm; font-weight: 600; margin-top: 2mm; }
-  .hero .stat .delta { font-size: 8.5mm; color: var(--green); font-weight: 600; }
-  .charts { margin-top: 8mm; display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; }
-  .chart-title { font-size: 8.5mm; font-weight: 600; color: var(--ink-2); margin-bottom: 2mm; }
-  .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
-  .chart text { font-family: Inter, system-ui, sans-serif; }
-  .note { margin-top: 5mm; font-size: 7.5mm; color: var(--ink-3); }
-
-  /* pipeline */
-  .row-b { display: grid; grid-template-columns: 1.42fr 1fr; gap: 14mm; }
-  .arch { margin-top: 6mm; }
-  .arch img { width: 100%; display: block; }
-  .acronym { font-size: 9mm; color: var(--ink-2); margin-top: 3mm; }
-  .acronym b { color: var(--ink); }
-  .why-list { margin-top: 8mm; display: grid; gap: 8mm; }
-  .why-item { display: grid; grid-template-columns: 20mm 1fr; gap: 6mm; align-items: start; }
-  .why-item svg { width: 20mm; height: 20mm; }
-  .why-item .t { font-weight: 600; }
-  .why-item .d { color: var(--ink-2); font-size: 9.5mm; }
-  .axes { margin-top: 9mm; display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
-  .axis {
-    border-radius: 4mm; padding: 5mm 6mm; font-size: 8.5mm; line-height: 1.25;
-  }
-  .axis.traces { background: var(--review-soft); color: #145e62; }
-  .axis.models { background: var(--propose-soft); color: #5f2f86; }
-  .axis b { display: block; font-size: 9.5mm; }
-
-  .live { margin-top: 9mm; }
-  .live figcaption { margin-top: 4mm; font-size: 8.5mm; color: var(--ink-2); display: flex; align-items: center; gap: 3mm; }
-  .live .pulse { width: 4.5mm; height: 4.5mm; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1.6mm var(--accent-soft); flex: none; }
-
-  /* demo */
-  .demo h2 .tag {
-    font-size: 8.5mm; font-weight: 600; color: var(--amber); background: var(--amber-soft);
-    border-radius: 3mm; padding: 1.5mm 4mm; letter-spacing: 0.02em;
-  }
-  .lead { margin-top: 3mm; font-size: 9.5mm; color: var(--ink-2); }
-  .story {
-    margin-top: 8mm;
-    display: grid; grid-template-columns: 1.78fr 1.78fr 2.8fr 1.32fr; gap: 9mm;
-    position: relative;
-  }
-  .step { display: grid; grid-template-rows: auto auto; gap: 4mm; position: relative; }
-  .shot {
-    border-radius: 3.5mm; overflow: hidden; border: 0.5mm solid var(--line);
-    background: #fff; box-shadow: 0 1.2mm 3mm rgba(20, 22, 40, 0.07);
-  }
-  .shot svg { display: block; width: 100%; height: auto; }
-  .step .cap { display: grid; grid-template-columns: 11mm 1fr; gap: 3.5mm; align-items: start; font-size: 9.6mm; line-height: 1.25; }
-  .step .cap .n {
-    width: 11mm; height: 11mm; border-radius: 50%; background: var(--ink); color: #fff;
-    display: grid; place-items: center; font-size: 6.5mm; font-weight: 600;
-  }
-  .step:not(:last-child)::after {
-    content: ""; position: absolute; right: -7.8mm; top: 22%;
-    width: 6.6mm; height: 6.6mm;
-    background: no-repeat center / contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 4l8 8-8 8' fill='none' stroke='%237a7e8c' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  }
-  .loop {
-    margin-top: 5mm; display: flex; align-items: center; gap: 4mm; justify-content: center;
-    font-size: 8.5mm; color: var(--ink-2);
-  }
-  .loop svg { width: 12mm; height: 12mm; }
-
-  .learned { margin-top: 9mm; display: grid; grid-template-columns: 1fr 14mm 1.25fr; gap: 4mm 5mm; align-items: center; }
-  .learned .h { font-size: 8mm; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
-  .quote {
-    background: var(--amber-soft); border-radius: 4mm 4mm 4mm 1mm; padding: 4mm 6mm;
-    font-size: 9mm; line-height: 1.25;
-  }
-  .arrow { color: var(--ink-3); font-size: 10mm; text-align: center; }
-  .rule {
-    font-family: var(--mono); font-size: 7.6mm; line-height: 1.3;
-    background: var(--green-soft); color: #0f5c3e; border-radius: 3mm;
-    padding: 4mm 6mm; border-left: 1.4mm solid var(--green);
-  }
-
-  /* footer */
-  footer {
-    display: grid; grid-template-columns: auto 1fr 1.1fr; gap: 12mm; align-items: center;
-    font-size: 7.5mm; color: var(--ink-2);
-    border-top: 0.6mm solid var(--line); padding-top: 9mm;
-  }
-  footer .repo { display: flex; align-items: center; gap: 7mm; }
-  footer .repo img { width: 34mm; height: 34mm; }
-  footer .repo .url { font-family: var(--mono); font-size: 9mm; color: var(--ink); font-weight: 500; }
-  footer .refs { font-size: 6.4mm; line-height: 1.35; color: var(--ink-3); }
+/* footer */
+.ftr { margin-top: auto; background: var(--ink); color: #d6d8e0; padding: 4mm var(--m) 4mm; display: grid; grid-template-columns: 1fr auto; gap: 10mm; align-items: center; font-size: 8.5mm; line-height: 1.25; border-top: 0.5mm solid #2f3440; }
+.ftr .gh { font-family: var(--mono); color: #fff; font-size: 9.5mm; font-weight: 700; }
+.ftr .scope { color: #fff; font-size: 9.5mm; font-weight: 600; margin-top: 1mm; }
+.ftr .refs { color: #c3c6d0; margin-top: 1mm; }
+.ftr .pid { font-family: var(--mono); font-size: 11mm; font-weight: 700; color: #fff; background: var(--ink-2); border: 0.5mm solid #6b7080; border-radius: 2mm; padding: 2mm 5mm; white-space: nowrap; }
 </style>
 </head>
 <body>
 <div class="poster">
 
-  <!-- ===================== HEADER ===================== -->
-  <header>
-    <img class="mark" src="assets/hone.svg" alt="Hone">
+<header class="hdr">
+  <div class="hdr-top">
+    <div class="venue">
+      <img src="assets/icdm2026-logo.png" alt="ICDM 2026 Shenyang, China">
+      <div class="track"><b>DEMO TRACK</b><br>IEEE International Conference on Data Mining</div>
+    </div>
+    <div class="logos"><div class="logo-ph">Institution logo<br>&lt;placeholder&gt;</div><div class="logo-ph">Institution logo<br>&lt;placeholder&gt;</div></div>
+  </div>
+  <div class="hdr-main">
     <div>
       <h1><span class="name">Hone</span>: Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
-      <div class="authors">Alexey Lapin<sup>1</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup></div>
-      <div class="affil">
-        <sup>1</sup>&lt;placeholder&gt;, &lt;placeholder&gt; &nbsp;·&nbsp; <sup>2</sup>&lt;placeholder&gt;, &lt;placeholder&gt;
-        &nbsp;·&nbsp; <span class="mono">&lt;placeholder&gt;</span>
-      </div>
+      <p class="authors">Alexey Lapin<sup>1</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup><span class="affil"><sup>1</sup>&lt;placeholder affiliation&gt; &nbsp;<sup>2</sup>&lt;placeholder affiliation&gt; &nbsp;·&nbsp; &lt;placeholder email&gt;</span></p>
     </div>
-    <div class="badge">
-      <div class="venue">ICDM 2026 · Demo</div>
-      <img src="assets/qr-github.svg" alt="QR code: github.com/AaLexUser/hone">
-      <div>Code &amp; demo</div>
-    </div>
-  </header>
+    <div class="qr"><div class="tile"><img src="assets/qr-code.svg" alt="QR code to github.com/AaLexUser/hone"></div><p class="lbl">Code</p><p class="url">github.com/<br>AaLexUser/hone</p></div>
+  </div>
+  <div class="thesis"><p>Hone improves AGENTS.md from sessions that <em>already happened</em>.</p><div class="t2"><p>No task is re-run.</p><p class="def"><code>AGENTS.md</code>: the instruction file a coding agent loads into its system prompt at every session.</p></div></div>
+</header>
 
-  <!-- ===================== PROBLEM + RESULTS ===================== -->
-  <section class="row-a">
-    <div class="card">
-      <h2><span class="num">1</span>Agents ship with a hand-tuned AGENTS.md</h2>
-      <div class="assumptions">
-        <div class="assume">
-          <div class="x">✕</div>
-          <div><b>Re-run the task after every edit</b><span class="why">Real sessions are one-shot: the user's problem cannot be replayed.</span></div>
-        </div>
-        <div class="assume">
-          <div class="x">✕</div>
-          <div><b>A pass/fail verifier per run</b><span class="why">Feedback is a free-text comment, if it exists at all.</span></div>
-        </div>
-      </div>
-      <div class="facts">
-        <div class="fact"><span class="v">≤4%</span><span class="k">success gain from handwritten context files</span></div>
-        <div class="fact"><span class="v">+20%</span><span class="k">inference cost, and generated files hurt</span></div>
-      </div>
-      <div class="src">Gloaguen et al., 2026</div>
-      <div class="hone-says">
-        <div class="ok">✓</div>
-        <div>Hone mines <b>settled sessions</b> and optional <b>free-text feedback</b>. No task is ever re-run.</div>
+<section class="hero">
+  <p class="top">Highest task success of six systems on both benchmarks. <span>Gain over the same Pi agent without Hone:</span></p>
+  <div class="halves">
+    <div class="half">
+      <div class="hl"><p class="lab">OfficeQA</p><div class="v">+3.0<small>pts</small></div></div>
+      <div class="mini">
+        <div class="br hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:59.7%"></span><span class="v" style="left:59.7%">59.7</span></span></div>
+        <div class="br agent"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:56.7%"></span><span class="v" style="left:56.7%">56.7</span></span></div>
+        <div class="br agent"><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:54.9%"></span><span class="v" style="left:54.9%">54.9</span></span></div>
+        <div class="br opt"><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:50.6%"></span><span class="v" style="left:50.6%">50.6</span></span></div>
+        <div class="br opt"><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:41.5%"></span><span class="v" style="left:41.5%">41.5</span></span></div>
+        <div class="br opt"><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:20.9%"></span><span class="v" style="left:20.9%">20.9</span></span></div>
       </div>
     </div>
+    <div class="half">
+      <div class="hl"><p class="lab">SpreadsheetBench</p><div class="v">+11.3<small>pts</small></div><p class="s2">+1.9 over SkillOpt</p></div>
+      <div class="mini">
+        <div class="br hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:82.3%"></span><span class="v" style="left:82.3%">82.3</span></span></div>
+        <div class="br agent"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:71.0%"></span><span class="v" style="left:71.0%">71.0</span></span></div>
+        <div class="br agent"><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:72.3%"></span><span class="v" style="left:72.3%">72.3</span></span></div>
+        <div class="br opt"><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:80.4%"></span><span class="v" style="left:80.4%">80.4</span></span></div>
+        <div class="br opt"><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:65.3%"></span><span class="v" style="left:65.3%">65.3</span></span></div>
+        <div class="br opt"><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:40.7%"></span><span class="v" style="left:40.7%">40.7</span></span></div>
+      </div>
+    </div>
+  </div>
+  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer. The Pi agent is Hone's starting configuration; only AGENTS.md differs.</p>
+  <p class="cap"><b>Setup.</b> Hone saw traces and text feedback (“Expected … Got …”), no task re-run; OfficeQA: 200 tasks in 5 batches of 40; final file scored once on the full benchmark.</p>
+</section>
 
-    <div class="card">
-      <h2><span class="num">2</span>Best AGENTS.md on both benchmarks</h2>
-      <div class="hero">
-        <div class="stat">
-          <div class="big">59.7<small>%</small></div>
-          <div class="label">OfficeQA</div>
-          <div class="delta">+3.0 pts over the best baseline</div>
-        </div>
-        <div class="stat">
-          <div class="big">82.3<small>%</small></div>
-          <div class="label">SpreadsheetBench</div>
-          <div class="delta">+1.9 pts over the best baseline</div>
-        </div>
-      </div>
-      <div class="charts">
-        <div class="chart" data-bench="OfficeQA"></div>
-        <div class="chart" data-bench="SpreadsheetBench"></div>
-      </div>
-      <div class="note">Task success, %. Target agent Pi with GPT-5.4-mini; only AGENTS.md differs between systems.</div>
+<section class="band alt" id="pos">
+  <div class="pos">
+    <h2>Five optimizers need <span class="nw">re-runs</span> and pass/fail labels. <span class="hn">Hone needs neither.</span></h2>
+    <div class="quad">
+      <p class="qa" style="grid-column:2;grid-row:1">No task re-runs</p><p class="qa" style="grid-column:3;grid-row:1">Needs task re-runs</p>
+      <p class="qa qr" style="grid-column:1;grid-row:2">No pass/fail labels</p><p class="qa qr" style="grid-column:1;grid-row:3">Needs pass/fail labels</p>
+      <div class="xh" style="grid-column:2/4;grid-row:2/4"></div><div class="xv" style="grid-column:2/4;grid-row:2/4"></div>
+      <div class="cell hone" style="grid-column:2;grid-row:2"><b>Hone</b><div class="chain"><span>read</span><i>→</i><span>question</span><i>→</i><span>verify</span><i>→</i><span>commit</span></div></div>
+      <div class="cell five" style="grid-column:3;grid-row:3"><b>SkillOpt · SkillOpt-Lite · SkillGrad<br>Trace2Skill · EvoSkill</b><div class="chain"><span>run</span><i>→</i><span>score</span><i>→</i><span>edit</span><i>→</i><span class="again">run again</span></div></div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- ===================== PIPELINE ===================== -->
-  <section class="row-b">
-    <div class="card">
-      <h2><span class="num">3</span>The MAJICS pipeline</h2>
-      <div class="acronym"><b>M</b>ulti-<b>A</b>gent <b>J</b>udgment through <b>I</b>nteractive <b>C</b>ross-examination and <b>S</b>ynthesis</div>
-      <div class="arch"><img src="assets/hone_architecture.svg" alt="Hone architecture: frozen batch, review panel and judge, report, propose panel and judge, verifier, published AGENTS.md"></div>
-    </div>
+<section class="band arch" id="arch">
+  <h2>Reviewers disagree, a judge cross-examines, a verifier gates every edit.</h2>
+  <svg class="dia" viewBox="0 -24 840 364" font-family="Inter, sans-serif" role="img" aria-label="Hone architecture: optional user feedback and settled agent sessions form a frozen batch; three reviewers on different LLMs are cross-examined by a review judge into a review report; three proposers read the report and the experience memory and are cross-examined by a propose judge into a proposal of edits and a commit message; a verifier checks anchor and evidence; accepted edits are applied and committed to Git and the published AGENTS.md is served to the agent, which the agent fetches before its next session; the experience memory is updated after commits; a rejected proposal returns to the propose stage with the review reused">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#111318"/></marker>
+    <marker id="arh" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="3.6" markerHeight="3.6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#4653c9"/></marker>
+    <marker id="arg" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#6b6658"/></marker>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#b42318"/></marker>
+    <marker id="arb" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="3.2" markerHeight="3.2" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="#3540a6"/></marker>
+  </defs>
 
-    <div class="card">
-      <h2><span class="num">4</span>Why it works</h2>
-      <div class="why-list">
-        <div class="why-item">
-          <svg viewBox="0 0 40 40"><circle cx="11" cy="12" r="6" fill="#e6f4f4" stroke="#1f8a8f" stroke-width="2"/><circle cx="29" cy="12" r="6" fill="#f3ecfa" stroke="#8e4fc0" stroke-width="2"/><circle cx="20" cy="29" r="6" fill="#ecedfb" stroke="#5458c8" stroke-width="2"/></svg>
-          <div><div class="t">Diverse panel</div><div class="d">Reviewers on different LLMs read the same batch independently.</div></div>
-        </div>
-        <div class="why-item">
-          <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="8" fill="#ecedfb" stroke="#5458c8" stroke-width="2"/><path d="M20 4v6M20 30v6M4 20h6M30 20h6" stroke="#5458c8" stroke-width="2.4" stroke-linecap="round"/><text x="20" y="24.5" text-anchor="middle" font-size="12" font-weight="700" fill="#5458c8">?</text></svg>
-          <div><div class="t">Judge cross-examines</div><div class="d">It re-queries live panelists (<span class="mono">ask_panel</span>) until disagreements resolve.</div></div>
-        </div>
-        <div class="why-item">
-          <svg viewBox="0 0 40 40"><rect x="5" y="9" width="13" height="22" rx="3" fill="#e6f4f4" stroke="#1f8a8f" stroke-width="2"/><rect x="22" y="9" width="13" height="22" rx="3" fill="#f3ecfa" stroke="#8e4fc0" stroke-width="2"/></svg>
-          <div><div class="t">Review, then propose</div><div class="d">Characterize the problem first; fixes come from the judged review.</div></div>
-        </div>
-        <div class="why-item">
-          <svg viewBox="0 0 40 40"><path d="M20 5l12 5v9c0 8-5 13-12 16C13 32 8 27 8 19v-9z" fill="#e7f5ee" stroke="#16895c" stroke-width="2"/><path d="M14 20l4 4 8-8" fill="none" stroke="#16895c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div><div class="t">Verified, versioned</div><div class="d">Every edit needs a unique anchor and real trace evidence, then a Git commit.</div></div>
-        </div>
-      </div>
-      <div class="axes">
-        <div class="axis traces"><b>Across traces</b>recurs in the batch</div>
-        <div class="axis models"><b>Across models</b>holds under questioning</div>
-      </div>
-      <figure class="live">
-        <div class="shot"><svg viewBox="80 585 1345 460"><image href="assets/run-live-crossexam.png" width="2880" height="1800"/></svg></div>
-        <figcaption><span class="pulse"></span>Live in the dashboard: the judge is asking reviewers 1 and 2</figcaption>
-      </figure>
-    </div>
-  </section>
+  <!-- 1 inputs -->
+  <rect x="0.5" y="8" width="150" height="46" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
+  <path d="M 10 18 h 18 a 3 3 0 0 1 3 3 v 9 a 3 3 0 0 1 -3 3 h -11 l -5 4.5 v -4.5 h -2 a 3 3 0 0 1 -3 -3 v -9 a 3 3 0 0 1 3 -3 z" fill="#fbe2b0" stroke="#d4861a" stroke-width="0.9"/>
+  <text x="44" y="29" font-size="12.5" font-weight="800" fill="#111318">User feedback</text>
+  <text x="44" y="43" font-size="10.5" fill="#474b56">optional</text>
+  <rect x="0.5" y="62" width="150" height="62" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
+  <g transform="translate(9,78) scale(0.62)">
+    <rect x="0" y="6" width="30" height="36" rx="2.5" fill="#fff" stroke="#111318" stroke-width="1.4"/>
+    <rect x="5" y="3" width="30" height="36" rx="2.5" fill="#fff" stroke="#111318" stroke-width="1.4"/>
+    <rect x="10" y="0" width="30" height="36" rx="2.5" fill="#fff" stroke="#111318" stroke-width="1.4"/>
+    <g stroke="#6b6658" stroke-width="2.6" stroke-linecap="round"><line x1="15" y1="9" x2="34" y2="9"/><line x1="15" y1="17" x2="30" y2="17"/><line x1="15" y1="25" x2="34" y2="25"/></g>
+  </g>
+  <text x="44" y="91" font-size="12.5" font-weight="800" fill="#111318">Settled agent</text>
+  <text x="44" y="106" font-size="12.5" font-weight="800" fill="#111318">sessions</text>
+  <circle cx="0.5" cy="8" r="8" fill="#4653c9"/><text x="0.5" y="12" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">1</text>
+  <path d="M 151 31 L 159 31 L 159 93 L 151 93 M 159 62 L 167 62" fill="none" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
 
-  <!-- ===================== DEMO ===================== -->
-  <section class="card demo">
-    <h2><span class="num">5</span>Live demo: one week of Mei's office work <span class="tag">TRY IT</span></h2>
-    <div class="lead">Mei, an HR coordinator, asks her agent for an offer letter every day and says what she dislikes. Hone turns her comments into rules.</div>
+  <!-- 2 frozen batch -->
+  <rect x="169" y="8" width="84" height="116" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
+  <g transform="translate(193,28) scale(1.2)" fill="none" stroke="#111318" stroke-width="1.3" stroke-linejoin="round"><path d="M10 0 L20 5 L20 17 L10 22 L0 17 L0 5 Z"/><path d="M0 5 L10 10 L20 5 M10 10 L10 22"/></g>
+  <text x="211" y="82" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle">Frozen</text>
+  <text x="211" y="97" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle">batch</text>
+  <text x="211" y="113" font-size="10.5" fill="#474b56" text-anchor="middle">n traces</text>
+  <circle cx="169" cy="8" r="8" fill="#4653c9"/><text x="169" y="12" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">2</text>
+  <line x1="253" y1="62" x2="267" y2="62" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
 
-    <div class="story">
-      <div class="step">
-        <div class="shot"><svg viewBox="740 100 1400 788"><image href="assets/t3-feedback.png" width="2880" height="1800"/></svg></div>
-        <div class="cap"><span class="n">1</span><span>Mei works in a web agent UI and leaves feedback</span></div>
-      </div>
-      <div class="step">
-        <div class="shot"><svg viewBox="290 770 1820 1024"><image href="assets/dashboard.png" width="2880" height="1800"/></svg></div>
-        <div class="cap"><span class="n">2</span><span>Sessions and comments stream into Hone</span></div>
-      </div>
-      <div class="step">
-        <div class="shot"><svg viewBox="45 310 2790 996"><image href="assets/run-done-viewport.png" width="2880" height="1800"/></svg></div>
-        <div class="cap"><span class="n">3</span><span>MAJICS run: review → propose → verify → commit</span></div>
-      </div>
-      <div class="step">
-        <div class="shot"><svg viewBox="1123 180 1469 1110"><image href="assets/versions.png" width="2880" height="1800"/></svg></div>
-        <div class="cap"><span class="n">4</span><span>A verified AGENTS.md diff, committed to Git</span></div>
-      </div>
-    </div>
-    <div class="loop">
-      <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3" fill="none" stroke="#7a7e8c" stroke-width="2" stroke-linecap="round"/><path d="M18 3v4h-4M6 21v-4h4" fill="none" stroke="#7a7e8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      The next session already runs on the new AGENTS.md.
-    </div>
+  <!-- 3 review -->
+  <rect x="269" y="8" width="352" height="116" rx="7" fill="#e2e5fb" stroke="#4653c9" stroke-width="1"/>
+  <text x="283" y="27" font-size="11" font-weight="800" fill="#3540a6" font-family="JetBrains Mono, monospace" letter-spacing="0.7">REVIEW</text>
+  <text x="351" y="27" font-size="11.5" fill="#111318">3 reviewers, different LLMs</text>
+  <g font-size="11.5" font-weight="800" fill="#111318">
+    <rect x="277" y="36" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="289" y="51.5">Reviewer 1</text>
+    <rect x="277" y="64" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="289" y="79.5">Reviewer 2</text>
+    <rect x="277" y="92" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="289" y="107.5">Reviewer 3</text>
+  </g>
+  <g stroke="#4653c9" stroke-width="1.3" fill="none">
+    <path d="M 410 47 C 424 47, 428 70, 442 73" marker-start="url(#arh)" marker-end="url(#arh)"/>
+    <path d="M 410 75 L 442 75" marker-start="url(#arh)" marker-end="url(#arh)"/>
+    <path d="M 410 103 C 424 103, 428 80, 442 77" marker-start="url(#arh)" marker-end="url(#arh)"/>
+  </g>
+  <rect x="444" y="36" width="168" height="78" rx="7" fill="#111318"/>
+  <text x="454" y="58" font-size="13" font-weight="800" fill="#fff">Review judge</text>
+  <text x="454" y="76" font-size="11" fill="#d9dbe3">cross-examines,</text>
+  <text x="454" y="91" font-size="11" fill="#d9dbe3">asks follow-ups</text>
+  <circle cx="604" cy="36" r="8" fill="#d4861a"/><text x="604" y="40.5" font-size="12" font-weight="800" text-anchor="middle" fill="#111318">?</text>
+  <circle cx="269" cy="8" r="8" fill="#4653c9"/><text x="269" y="12" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">3</text>
 
-    <div class="learned">
-      <div class="h">Mei said</div><div></div><div class="h">Hone wrote to AGENTS.md <span style="text-transform:none;letter-spacing:0;font-weight:500">(abridged)</span></div>
-      <div class="quote">“Write dates like 1 December 2026, as all our letters do”</div>
-      <div class="arrow">→</div>
-      <div class="rule">- Write every date as day month year, e.g. `1 December 2026`.</div>
-      <div class="quote">“There's a big empty gap where the relocation part was”</div>
-      <div class="arrow">→</div>
-      <div class="rule">- When a conditional block does not apply, delete it with its heading.</div>
-      <div class="quote">“Don't make up the manager, ask me”</div>
-      <div class="arrow">→</div>
-      <div class="rule">- If a field is missing, ask the user. Never invent it.</div>
-    </div>
-  </section>
+  <!-- review report -->
+  <line x1="622" y1="68" x2="650" y2="68" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+  <rect x="652" y="38" width="188" height="60" rx="6" fill="#fff" stroke="#4653c9" stroke-width="1.3"/>
+  <g transform="translate(664,56)"><path d="M0 0 h13 l5 5 v18 h-18 z" fill="#fff" stroke="#4653c9" stroke-width="1.2"/><g stroke="#4653c9" stroke-width="1.4"><line x1="4" y1="11" x2="14" y2="11"/><line x1="4" y1="16" x2="14" y2="16"/></g></g>
+  <text x="692" y="73" font-size="13" font-weight="800" fill="#111318">Review report</text>
+  <line x1="746" y1="99" x2="746" y2="194" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
 
-  <!-- ===================== FOOTER ===================== -->
-  <footer>
-    <div class="repo">
-      <div><div class="url">github.com/AaLexUser/hone</div>Open source · Pi extension · web dashboard</div>
+
+  <!-- mining labels: signals, patterns, decisions -->
+  <g fill="none" stroke="#c27a12" stroke-width="1.2">
+    <path d="M 181 1 V -3 H 253 V 1"/>
+    <path d="M 277 1 V -3 H 409 V 1"/>
+    <path d="M 444 1 V -3 H 612 V 1"/>
+  </g>
+  <g font-size="13" font-weight="800" fill="#7a4100" text-anchor="middle" font-family="Inter Display, Inter, sans-serif">
+    <text x="217" y="-9">Signals</text>
+    <text x="343" y="-9">Patterns</text>
+    <text x="528" y="-9">Decisions</text>
+  </g>
+  <!-- experience memory -->
+  <rect x="340" y="128" width="330" height="44" rx="6" fill="#fff" stroke="#6b6658" stroke-width="1.1" stroke-dasharray="4 2.5"/>
+  <g transform="translate(350,139)" fill="none" stroke="#6b6658" stroke-width="1.3"><ellipse cx="7" cy="3" rx="7" ry="3"/><path d="M0 3 v14 a7 3 0 0 0 14 0 v-14 M0 10 a7 3 0 0 0 14 0"/></g>
+  <text x="374" y="146" font-size="12.5" font-weight="800" fill="#111318">Experience memory</text>
+  <text x="374" y="162" font-size="10.5" fill="#474b56">past edits and their outcomes, read by the proposers</text>
+  <path d="M 640 173 L 640 194" fill="none" stroke="#6b6658" stroke-width="1.3" stroke-dasharray="4 2.5" marker-end="url(#arg)"/>
+  <path d="M 190 196 L 190 150 L 338 150" fill="none" stroke="#6b6658" stroke-width="1.3" stroke-dasharray="4 2.5" marker-end="url(#arg)"/>
+  <text x="198" y="144" font-size="10.5" fill="#474b56">updated after each commit</text>
+
+  <!-- the agent's next session -->
+  <rect x="0.5" y="134" width="170" height="28" rx="14" fill="#fff" stroke="#3540a6" stroke-width="1.3"/>
+  <text x="85.5" y="152.5" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle">Agent · next session</text>
+  <path d="M 64 195 L 64 165" fill="none" stroke="#3540a6" stroke-width="2.6" marker-end="url(#arb)"/>
+  <text x="73" y="176" font-size="10.5" font-weight="800" fill="#3540a6">fetches the latest</text>
+  <text x="73" y="189" font-size="10.5" font-weight="800" fill="#3540a6">AGENTS.md</text>
+
+  <!-- 4 propose -->
+  <g transform="translate(0,16)">
+
+  <rect x="498" y="180" width="342" height="116" rx="7" fill="#e2e5fb" stroke="#4653c9" stroke-width="1"/>
+  <text x="512" y="199" font-size="11" font-weight="800" fill="#3540a6" font-family="JetBrains Mono, monospace" letter-spacing="0.7">PROPOSE</text>
+  <text x="590" y="199" font-size="11.5" fill="#111318">3 proposers, different LLMs</text>
+  <g font-size="11.5" font-weight="800" fill="#111318">
+    <rect x="506" y="208" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="518" y="223.5">Proposer 1</text>
+    <rect x="506" y="236" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="518" y="251.5">Proposer 2</text>
+    <rect x="506" y="264" width="132" height="22" rx="11" fill="#fff" stroke="#111318" stroke-width="0.6"/><text x="518" y="279.5">Proposer 3</text>
+  </g>
+  <g stroke="#4653c9" stroke-width="1.3" fill="none">
+    <path d="M 639 219 C 653 219, 657 242, 671 245" marker-start="url(#arh)" marker-end="url(#arh)"/>
+    <path d="M 639 247 L 671 247" marker-start="url(#arh)" marker-end="url(#arh)"/>
+    <path d="M 639 275 C 653 275, 657 252, 671 249" marker-start="url(#arh)" marker-end="url(#arh)"/>
+  </g>
+  <rect x="673" y="208" width="159" height="78" rx="7" fill="#111318"/>
+  <text x="683" y="230" font-size="13" font-weight="800" fill="#fff">Propose judge</text>
+  <text x="683" y="248" font-size="11" fill="#d9dbe3">cross-examines,</text>
+  <text x="683" y="263" font-size="11" fill="#d9dbe3">asks follow-ups</text>
+  <circle cx="824" cy="208" r="8" fill="#d4861a"/><text x="824" y="212.5" font-size="12" font-weight="800" text-anchor="middle" fill="#111318">?</text>
+  <circle cx="498" cy="180" r="8" fill="#4653c9"/><text x="498" y="184" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">4</text>
+
+  <!-- proposal -->
+  <line x1="497" y1="238" x2="478" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+  <rect x="344" y="198" width="132" height="80" rx="6" fill="#fff" stroke="#4653c9" stroke-width="1.3"/>
+  <g transform="translate(356,210)"><path d="M0 0 h13 l5 5 v18 h-18 z" fill="#fff" stroke="#4653c9" stroke-width="1.2"/><g stroke="#4653c9" stroke-width="1.4"><line x1="4" y1="11" x2="14" y2="11"/><line x1="4" y1="16" x2="14" y2="16"/></g></g>
+  <text x="380" y="226" font-size="13" font-weight="800" fill="#111318">Proposal</text>
+  <text x="356" y="250" font-size="11" fill="#474b56">edits +</text>
+  <text x="356" y="265" font-size="11" fill="#474b56">commit message</text>
+
+  <!-- 5 verifier -->
+  <line x1="343" y1="238" x2="328" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+  <rect x="246" y="180" width="80" height="116" rx="6" fill="#fff" stroke="#111318" stroke-width="0.7"/>
+  <g transform="translate(270,192) scale(1.15)"><path d="M12 0 L24 5 V15 C24 24 18 29 12 32 C6 29 0 24 0 15 V5 Z" fill="#111318"/><path d="M6.5 16 L10.5 20 L18 11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <text x="286" y="250" font-size="13" font-weight="800" fill="#111318" text-anchor="middle">Verifier</text>
+  <text x="286" y="266" font-size="10.5" fill="#474b56" text-anchor="middle">anchor +</text>
+  <text x="286" y="279" font-size="10.5" fill="#474b56" text-anchor="middle">evidence</text>
+  <circle cx="246" cy="180" r="8" fill="#4653c9"/><text x="246" y="184" font-size="11" font-weight="800" fill="#fff" text-anchor="middle">5</text>
+  <path d="M 286 297 L 286 312 Q 286 317 291 317 L 663 317 Q 668 317 668 312 L 668 298" fill="none" stroke="#b42318" stroke-width="1.3" stroke-dasharray="3.5 2.5" marker-end="url(#arr)"/>
+  <text x="304" y="311" font-size="11" fill="#b42318" font-weight="800">rejected: re-propose, the review is reused</text>
+
+  <!-- accept -> git commit -->
+  <line x1="245" y1="238" x2="230" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+  <text x="237.5" y="229" font-size="12" fill="#0d4a2a" font-weight="800" text-anchor="middle">✓</text>
+  <rect x="144" y="180" width="84" height="116" rx="6" fill="#111318"/>
+  <g transform="translate(176,194)" stroke="#a9b2ff" stroke-width="2.2" fill="none"><line x1="6" y1="0" x2="6" y2="30"/><circle cx="6" cy="9" r="4.8" fill="#111318"/><circle cx="6" cy="22" r="4.8" fill="#a9b2ff"/></g>
+  <text x="186" y="252" font-size="12.5" font-weight="800" fill="#fff" text-anchor="middle">Git commit</text>
+  <text x="186" y="268" font-size="10.5" fill="#d9dbe3" text-anchor="middle">edits applied</text>
+
+  <!-- published AGENTS.md, served to the agent -->
+  <line x1="143" y1="238" x2="130" y2="238" stroke="#111318" stroke-width="1.3" marker-end="url(#ar)"/>
+  <rect x="0.5" y="180" width="128" height="116" rx="6" fill="#fff" stroke="#4653c9" stroke-width="1.4" stroke-dasharray="4 2.5"/>
+  <g transform="translate(51,192) scale(1.3)"><path d="M0 0 h11 l4 4 v15 h-15 z" fill="#fff" stroke="#111318" stroke-width="0.9"/><g stroke="#4653c9" stroke-width="1.5"><line x1="3" y1="8" x2="12" y2="8"/><line x1="3" y1="12" x2="12" y2="12"/><line x1="3" y1="16" x2="9" y2="16"/></g></g>
+  <text x="64" y="246" font-size="11" font-weight="800" fill="#3540a6" text-anchor="middle">Published</text>
+  <text x="64" y="263" font-size="12.5" font-weight="800" fill="#111318" text-anchor="middle" font-family="JetBrains Mono, monospace">AGENTS.md</text>
+  <text x="64" y="281" font-size="10.5" fill="#474b56" text-anchor="middle">served to the agent</text>
+  </g>
+</svg>
+
+  <p class="rule">Reviewers mine <em>patterns across sessions</em>; a finding becomes an edit only if it <em>holds up under <span class="nw">cross-examination</span></em>.<br>The judge re-queries the panel until disagreements are resolved.</p>
+</section>
+
+<section class="band dark" id="demo">
+  <div class="dhead"><p class="rl-h"><span class="ok">Repeated complaints became rules.</span> <span class="no">A one-off did not.</span></p><p class="kicker">The demo <span class="tag">DEMO SCENARIO · HR OFFER LETTERS (SCRIPTED)</span></p></div>
+  <div class="stills">
+    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback popover under the agent's reply: There's a £0 sign-on bonus line. If there's no bonus, just leave the line out. Send to Hone"></div><figcaption><span class="n">1</span>The user comments on a reply</figcaption></figure>
+    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
+    <figure class="shot s2"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review panel: the judge asks reviewers 1 and 2 a follow-up; reviewer 2 answers: Both ask for the line to be dropped outright. I withdraw it."></div><figcaption><span class="n">2</span>The judge questions two reviewers</figcaption></figure>
+    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
+    <figure class="shot s3"><div class="win"><img src="assets/stills/s3-commit.png" data-src-w="3360" data-stage-w="560" data-min-px="22" alt="AGENTS.md, verified: the rule about blocks that do not apply is widened to drop rows whose amount is 0"></div><figcaption><span class="n">3</span>Hone commits a verified edit</figcaption></figure>
+  </div>
+  <div class="mine">
+    <div class="grid-wrap">
+      <div class="grid">
+        <p class="gth">Finding · demo session</p><div class="gc gth"><span class="bt"><i class="c n">1</i><i class="c n">2</i><i class="c n">3</i><i class="c n">4</i></span><span class="bt"><i class="c n">5</i><i class="c n">6</i><i class="c n">7</i><i class="c n">8</i></span><span class="bt"><i class="c n">9</i><i class="c n">10</i></span><span class="bt"><i class="c n">11</i><i class="c n">12</i><i class="c n">13</i></span></div><p class="gth">Outcome</p>
+        <p class="gf">Dates written month-first</p><div class="gc"><span class="bt"><i class="c on ring"></i><i class="c on"></i><i class="c on"></i><i class="c on"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i></span></div><p class="go ok">✓ became a rule</p>
+        <p class="gf">Manager copied from an old letter</p><div class="gc"><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c on ring"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i></span></div><p class="go ok">✓ became a rule</p>
+        <p class="gf">“Family name first”, for one candidate</p><div class="gc"><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c on ring"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i></span></div><p class="go no">× refused: one-off</p>
+        <p class="gf">£0 and 0-share lines left in</p><div class="gc"><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c"></i><i class="c"></i></span><span class="bt"><i class="c on ring"></i><i class="c on ring"></i><i class="c"></i></span></div><p class="go ok">✓ became a rule</p>
+      </div>
+      <p class="gl"><b>Demo scenario (scripted), illustrative.</b> <i class="c on"></i> cited session <i class="c on ring"></i> the user commented. No support threshold: the manager rule rests on one session.</p>
     </div>
-    <div><b>Acknowledgments.</b> &lt;placeholder&gt;</div>
-    <div class="refs">
-      Baselines: SkillOpt (Yang et al., 2026), EvoSkill (Zhang et al., 2026), Trace2Skill (Ni et al., 2026).
-      Benchmarks: OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024). Sandboxes: Harbor.
-    </div>
-  </footer>
+    <div class="booth"><h3>Live demo<br>at this booth</h3><p>Ask us to run it.</p></div>
+  </div>
+</section>
+
+<footer class="ftr">
+  <div><p class="gh">github.com/AaLexUser/hone &nbsp;·&nbsp; Acknowledgment: &lt;placeholder funding line&gt;</p>
+  <p class="scope">Today: one AGENTS.md, one domain at a time; two benchmarks, one target model, each file evaluated once.</p>
+  <p class="refs">Baselines: SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks: OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p></div>
+  <p class="pid">Paper ID: &lt;placeholder&gt;</p>
+</footer>
 </div>
 
-<script>
-  // Results from Table I of the paper. Edit here; both charts redraw from this table.
-  const RESULTS = [
-    { system: 'Hone', OfficeQA: 59.7, SpreadsheetBench: 82.3 },
-    { system: 'Pi agent', OfficeQA: 56.7, SpreadsheetBench: 71.0 },
-    { system: 'Codex CLI', OfficeQA: 54.9, SpreadsheetBench: 72.3 },
-    { system: 'SkillOpt', OfficeQA: 50.6, SpreadsheetBench: 80.4 },
-    { system: 'EvoSkill', OfficeQA: 41.5, SpreadsheetBench: 65.3 },
-    { system: 'Trace2Skill', OfficeQA: 20.9, SpreadsheetBench: 40.7 },
-  ]
-  const HIGHLIGHT = 'Hone'
-
-  for (const el of document.querySelectorAll('.chart')) {
-    const bench = el.dataset.bench
-    const rows = [...RESULTS].sort((a, b) => b[bench] - a[bench])
-    const W = 200, labelW = 52, valueW = 22, barH = 11, gap = 4.5
-    const plotW = W - labelW - valueW
-    const H = rows.length * (barH + gap) - gap
-    const bars = rows.map((r, i) => {
-      const y = i * (barH + gap)
-      const w = (r[bench] / 100) * plotW
-      const hl = r.system === HIGHLIGHT
-      const fill = hl ? '#5458c8' : '#8e919a'
-      const rad = 2
-      const d = `M${labelW},${y} h${w - rad} a${rad},${rad} 0 0 1 ${rad},${rad} v${barH - 2 * rad} a${rad},${rad} 0 0 1 -${rad},${rad} h-${w - rad} z`
-      const weight = hl ? 700 : 500
-      const ink = hl ? '#1d1f27' : '#4a4e5c'
-      return `<text x="${labelW - 3}" y="${y + barH / 2}" dy="0.35em" text-anchor="end" font-size="8.2" font-weight="${weight}" fill="${ink}">${r.system}</text>
-        <path d="${d}" fill="${fill}"/>
-        <text x="${labelW + w + 2.5}" y="${y + barH / 2}" dy="0.35em" font-size="8.2" font-weight="${weight}" fill="${ink}">${r[bench].toFixed(1)}</text>`
-    }).join('')
-    el.innerHTML = `<div class="chart-title">${bench}</div>
-      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${bench} task success by system">
-        <line x1="${labelW}" y1="-1" x2="${labelW}" y2="${H + 1}" stroke="#c9cbd3" stroke-width="0.6"/>
-        ${bars}
-      </svg>`
-  }
-</script>
 </body>
 </html>
