@@ -1,59 +1,67 @@
 <div class="poster">
 
-<header class="hdr">
-  <div class="hdr-top">
-    <div class="venue">
-      <img src="assets/icdm2026-logo.png" alt="ICDM 2026 Shenyang, China">
-      <div class="track"><b>DEMO TRACK</b><br>IEEE International Conference on Data Mining</div>
+<header class="hdr" id="hdr">
+  <div>
+    <p class="venue">IEEE ICDM 2026 · DEMO TRACK</p>
+    <div class="titlerow">
+      <p class="name">Hone</p>
+      <h1>Mining Agent Trajectories to Optimize<br>AGENTS.md via Cross-Examination</h1>
     </div>
-    <div class="logos"><img src="assets/itmo-logo-white.png" alt="ITMO University"></div>
+    <p class="authors">Alexey Lapin<sup>1,2</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup></p>
+    <p class="affil"><sup>1</sup>AI Talent Hub, ITMO University &nbsp; <sup>2</sup>AI Institute, ITMO University, St. Petersburg, Russia<br>a.lapin@itmo.ru &nbsp;&nbsp; nnikitin@itmo.ru</p>
   </div>
-  <div class="hdr-main">
-    <div>
-      <h1><span class="name">Hone</span> · Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
-      <p class="authors">Alexey Lapin<sup>1,2</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup><span class="affil"><sup>1</sup>AI Talent Hub, ITMO University &nbsp;<sup>2</sup>AI Institute, ITMO University, St. Petersburg, Russia &nbsp;·&nbsp; a.lapin@itmo.ru &nbsp;·&nbsp; nnikitin@itmo.ru</span></p>
-    </div>
-    <div class="qr"><div class="tile"><img src="assets/qr-code.svg" alt="QR code to github.com/AaLexUser/hone"></div><p class="lbl">Code</p><p class="url">github.com/<br>AaLexUser/hone</p></div>
+  <div class="side">
+    <img class="logo" src="assets/itmo-logo-white.png" alt="ITMO University">
+    <div class="qr"><div class="tile"><img src="assets/qr-code.svg" alt="QR code to github.com/AaLexUser/hone"><p>Code</p></div></div>
   </div>
-  <div class="thesis"><p>Hone improves AGENTS.md from sessions that <em>already happened</em>.</p><div class="t2"><p>It never re-runs a task.</p><p class="def"><code>AGENTS.md</code> is the instruction file a coding agent loads into its system prompt at every session.</p></div></div>
 </header>
 
-@@HERO@@
-
-
-<section class="band arch" id="arch">
-  <h2>Reviewers disagree, a judge cross-examines, a verifier gates every edit.</h2>
-  @@SVG@@
-  <div class="stages">
-    <p><i>1</i><b>Trace collection.</b> Sessions arrive as traces with optional user feedback.</p>
-    <p><i>2</i><b>Batch assembly.</b> Unanalyzed traces form a frozen batch, fixed for the whole run.</p>
-    <p><i>3</i><b>Review.</b> Reviewers on different models analyze the batch, and the judge cross-examines them.</p>
-    <p><i>4</i><b>Propose.</b> Proposers read the report and past decisions, and the judge fuses one edit set.</p>
-    <p><i>5</i><b>Verify and commit.</b> Anchors match once and cite the batch. If not, only propose re-runs.</p>
-  </div>
-  <p class="mining">A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
-</section>
-
-<section class="band dark" id="demo">
-  <h2 class="uh">Use your agent as usual. <em>Hone edits its AGENTS.md between sessions.</em></h2>
-  <div class="stills r1">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><span class="n">1</span><span>You comment on a reply in the agent's chat</span></figcaption></figure>
-    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s2"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch, and you start a run or turn on auto-optimize</span></figcaption></figure>
-    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s3"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage. The judge asks two reviewers a follow-up, and one withdraws its claim"></div><figcaption><span class="n">3</span><span>The judge cross-examines the reviewers, then the proposers</span></figcaption></figure>
-  </div>
-  <div class="stills r2">
-    <figure class="shot s4"><div class="win"><img src="assets/stills/s3b-commit.png" data-src-w="4680" data-stage-w="780" data-min-px="21" alt="The verified commit with the judge's commit message and the diff to AGENTS.md"></div><figcaption><span class="n">4</span><span>Hone commits verified edits with the judge's message</span></figcaption></figure>
-    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s5"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3840" data-stage-w="640" data-min-px="22" alt="AGENTS.md history with the current version marked and Set as current and Branch from here on an older one"></div><figcaption><span class="n">5</span><span>Every version stays in Git, and the agent fetches the current one</span></figcaption></figure>
+<section class="band intro" id="intro">
+  <p class="lead">Can a coding agent learn from sessions that <em>already happened?</em></p>
+  <div>
+    <p class="txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at the start of every session.</b> Skill optimizers improve it by re-executing tasks after each edit and scoring them pass or fail. Real sessions happen once, and feedback is at most a short comment from the user. Hone learns from these finished sessions and comments, and it never re-executes a task.</p>
   </div>
 </section>
 
-<footer class="ftr">
-  <div><p class="ack">Supported by the Ministry of Economic Development of the Russian Federation (IGK 000000C313925P4C0002), Agreement № 139-15-2025-010.</p>
-  <p class="scope">Scope today is one AGENTS.md for one domain at a time, evaluated on two benchmarks with one target model, each file once.</p>
-  <p class="refs">Baselines. SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p></div>
+<section class="band sec" id="how">
+  <h2><span class="n">1</span>How Hone works</h2>
+  <div class="panel diagram">@@SVG@@</div>
+  <div class="points">
+    <p class="txt"><b>Review.</b> Three reviewers on different LLMs read the same batch. A judge questions them where they disagree.</p>
+    <p class="txt"><b>Propose.</b> Three proposers turn the review and past edits into edits. A second judge merges them into one set.</p>
+    <p class="txt"><b>Verify.</b> An edit must match text that appears once in <code>AGENTS.md</code> and cite sessions from the batch.</p>
+    <p class="txt"><b>Keep.</b> A finding becomes an edit only if it repeats across sessions and holds up under questioning.</p>
+  </div>
+</section>
+
+<section class="band sec" id="results">
+  <h2><span class="n">2</span>Results on two benchmarks</h2>
+@@CHARTS@@
+  <div class="results-text">
+    <p class="txt">Hone scored highest on both benchmarks, 3.0 and 11.3 points above the Pi agent it started from. The two differ only in <code>AGENTS.md</code>.</p>
+    <p class="txt">All systems use GPT-5.4-mini. Hone saw only traces and text feedback, and it optimizes one <code>AGENTS.md</code> for one domain at a time.</p>
+  </div>
+</section>
+
+<section class="band sec demo" id="demo">
+  <h2><span class="n">3</span>What the demo shows</h2>
+  <div class="row r1">
+    <figure class="card panel"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><b>A</b>You comment on a reply in the agent's chat.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><b>B</b>Sessions fill a batch. You start a run or turn on auto-optimize.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage. The judge asks two reviewers a follow-up, and one withdraws its claim"></div><figcaption><b>C</b>The judge questions the reviewers, and one withdraws its claim.</figcaption></figure>
+  </div>
+  <div class="row r2">
+    <figure class="card panel"><div class="win"><img src="assets/stills/s3b-commit.png" data-src-w="4680" data-stage-w="780" data-min-px="21" alt="The verified commit with the judge's commit message and the diff to AGENTS.md"></div><figcaption><b>D</b>Hone commits the verified edit with the judge's message.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3840" data-stage-w="640" data-min-px="22" alt="AGENTS.md history with the current version marked and Set as current and Branch from here on an older one"></div><figcaption><b>E</b>Every version stays in Git. The agent fetches the current one.</figcaption></figure>
+  </div>
+</section>
+
+<footer class="ftr" id="ftr">
+  <div>
+    <p><b>Code</b> github.com/AaLexUser/hone</p>
+    <p>Supported by the Ministry of Economic Development of the Russian Federation (IGK 000000C313925P4C0002), Agreement № 139-15-2025-010.</p>
+    <p>Baselines. SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p>
+  </div>
   <p class="pid">Paper ID &lt;placeholder&gt;</p>
 </footer>
 </div>
