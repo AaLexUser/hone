@@ -6,7 +6,9 @@ dependencies = [
     "fastapi>=0.116",
     "harbor>=0.21.0",
     "pydantic>=2.11",
+    "python-docx>=1.1",
     "pyyaml>=6.0",
+    "reportlab>=4.0",
     "uvicorn>=0.35",
 ]
 
