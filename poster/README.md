@@ -2,8 +2,8 @@
 
 The poster is 90 by 120 cm, portrait. `index.html` is self-contained, with fonts, the ITMO logo, the code QR and the screenshots in `assets/`.
 
-- `out/hone-poster.pdf` is the print file, 900 by 1200 mm, with embedded fonts.
-- `out/preview.png` is a screen preview.
+- `hone-poster.pdf` is the final print file, 900 by 1200 mm, one page, with embedded fonts.
+- `tools/go.sh` writes a fresh `out/hone-poster.pdf` and `out/preview.png` (not committed). Copy the PDF here after a rebuild.
 
 ## Fill in before printing
 
