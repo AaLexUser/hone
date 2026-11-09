@@ -105,7 +105,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 778mm; margin: 8mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 778mm; margin: 7mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
