@@ -22,7 +22,7 @@ def chart(bench):
     return f'    <div class="panel chart">\n      <p class="bench">{bench}, task success %</p>\n{bars}\n    </div>'
 
 
-CHARTS = '  <div class="charts">\n' + chart('OfficeQA') + '\n' + chart('SpreadsheetBench') + '\n  </div>'
+CHARTS = chart('OfficeQA') + '\n' + chart('SpreadsheetBench')
 
 html = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Hone · ICDM 2026 demo poster</title>\n<style>\n'
         + read('fonts.css') + read('body.css') + '</style>\n</head>\n<body>\n'
