@@ -73,7 +73,7 @@ h1 .name { color: var(--hone-hi); }
 .sw.hone { background: #fff; }
 
 /* bands */
-.band { padding: 6mm var(--m) 5mm; position: relative; }
+.band { padding: 10mm var(--m) 9mm; position: relative; }
 .band.alt { background: var(--paper-2); }
 .band.dark { background: var(--ink); color: #fff; }
 #demo { flex: 1 0 auto; }
@@ -108,12 +108,12 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 820mm; margin: 3mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 840mm; margin: 6mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
 /* demo */
-.stills { --sh: 162mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
+.stills { --sh: 182mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
 .shot { margin: 0; }
 .shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
 .shot img { height: 100%; width: auto; display: block; }
@@ -160,9 +160,9 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .story { display: grid; grid-template-columns: 1.22fr 1.1fr 0.75fr 1fr; gap: 6mm; margin-top: 7mm; }
 .sb { background: var(--ink-2); border-radius: 2.5mm; padding: 4mm 5mm 4.5mm; box-shadow: inset 0 0 0 0.5mm #3a3f4c; display: flex; flex-direction: column; gap: 1.6mm; }
 .sb.cur { box-shadow: inset 0 0 0 0.8mm var(--hone-hi); }
-.sb-k { font-family: var(--mono); font-size: 9mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
-.sb .q { font-size: 10.5mm; line-height: 1.18; font-style: italic; color: #ffd98a; }
-.sb .o { margin-top: auto; font-size: 10.5mm; line-height: 1.15; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 1.8mm; width: fit-content; }
+.sb-k { font-family: var(--mono); font-size: 9.5mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
+.sb .q { font-size: 11.5mm; line-height: 1.18; font-style: italic; color: #ffd98a; }
+.sb .o { margin-top: auto; font-size: 11.5mm; line-height: 1.15; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 1.8mm; width: fit-content; }
 .sb .o + .o { margin-top: 1.6mm; }
 .sb .o.ok { background: var(--ok-bg); color: var(--ok-ink); }
 .sb .o.no { background: #fbe4e1; color: #5c0f0f; }

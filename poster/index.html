@@ -98,7 +98,7 @@ h1 .name { color: var(--hone-hi); }
 .sw.hone { background: #fff; }
 
 /* bands */
-.band { padding: 6mm var(--m) 5mm; position: relative; }
+.band { padding: 10mm var(--m) 9mm; position: relative; }
 .band.alt { background: var(--paper-2); }
 .band.dark { background: var(--ink); color: #fff; }
 #demo { flex: 1 0 auto; }
@@ -133,12 +133,12 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 820mm; margin: 3mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 840mm; margin: 6mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
 /* demo */
-.stills { --sh: 162mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
+.stills { --sh: 182mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
 .shot { margin: 0; }
 .shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
 .shot img { height: 100%; width: auto; display: block; }
@@ -185,9 +185,9 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .story { display: grid; grid-template-columns: 1.22fr 1.1fr 0.75fr 1fr; gap: 6mm; margin-top: 7mm; }
 .sb { background: var(--ink-2); border-radius: 2.5mm; padding: 4mm 5mm 4.5mm; box-shadow: inset 0 0 0 0.5mm #3a3f4c; display: flex; flex-direction: column; gap: 1.6mm; }
 .sb.cur { box-shadow: inset 0 0 0 0.8mm var(--hone-hi); }
-.sb-k { font-family: var(--mono); font-size: 9mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
-.sb .q { font-size: 10.5mm; line-height: 1.18; font-style: italic; color: #ffd98a; }
-.sb .o { margin-top: auto; font-size: 10.5mm; line-height: 1.15; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 1.8mm; width: fit-content; }
+.sb-k { font-family: var(--mono); font-size: 9.5mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
+.sb .q { font-size: 11.5mm; line-height: 1.18; font-style: italic; color: #ffd98a; }
+.sb .o { margin-top: auto; font-size: 11.5mm; line-height: 1.15; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 1.8mm; width: fit-content; }
 .sb .o + .o { margin-top: 1.6mm; }
 .sb .o.ok { background: var(--ok-bg); color: var(--ok-ink); }
 .sb .o.no { background: #fbe4e1; color: #5c0f0f; }
@@ -267,20 +267,10 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
       </div>
     </div>
   </div>
-  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer. The Pi agent is Hone's starting configuration; only AGENTS.md differs.</p>
+  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer (re-runs tasks with a verifier). The Pi agent is Hone's starting configuration; only AGENTS.md differs.</p>
   <p class="cap"><b>Setup.</b> Each task ran once; Hone saw its trace and feedback from the answer key (“Expected … Got …”), never a re-run. OfficeQA: 200 tasks, 5 batches of 40; final file scored once.</p>
 </section>
 
-<section class="band alt" id="pos">
-  <div class="pos">
-    <h2>Five optimizers re-run every task to score an edit. <span class="hn">Hone never re-runs one.</span></h2>
-    <div class="ptab">
-      <p class="ph"></p><p class="ph">Re-runs tasks</p><p class="ph">Outcome signal</p><p class="ph">Loop</p>
-      <p class="pn">SkillOpt · SkillOpt-Lite · SkillGrad · Trace2Skill · EvoSkill</p><p class="yn y">yes</p><p class="sig y">pass/fail, every run</p><div class="chain five"><span>run</span><i>→</i><span>score</span><i>→</i><span>edit</span><i>→</i><span class="again">run again</span></div>
-      <p class="pn hn">Hone</p><p class="yn n">no</p><p class="sig n">optional free text</p><div class="chain hone"><span>read</span><i>→</i><span>question</span><i>→</i><span>verify</span><i>→</i><span>commit</span></div>
-    </div>
-  </div>
-</section>
 
 <section class="band arch" id="arch">
   <p class="kicker">How it works · MAJICS: Multi-Agent Judgment through Interactive Cross-examination and Synthesis</p>
@@ -502,8 +492,8 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
   <div class="story">
     <div class="sb"><p class="sb-k">Batch 1 of 4 · AGENTS.md empty</p><p class="q">“Write dates like 1 December 2026”</p><p class="q">“Don’t make up the manager, ask me”</p><p class="o ok">+ 4 rules added</p><p class="o hold">held back: formatting (no feedback yet)</p></div>
     <div class="sb"><p class="sb-k">Batch 2</p><p class="q">“The salary line lost its bold”</p><p class="q">“For this candidate: family name first”</p><p class="o ok">+ formatting rule, now asked for</p><p class="o no">refused: a one-off, not a rule</p></div>
-    <div class="sb"><p class="sb-k">Batch 3</p><p class="q">“Perfect, that’s exactly it”</p><p class="o same">no change: nothing to fix</p></div>
-    <div class="sb cur"><p class="sb-k">Batch 4 · shown above</p><p class="q">“There’s a ‘£0’ sign-on bonus line…”</p><p class="q">“‘0 shares’ looks odd…”</p><p class="o ok">~ one rule widened, none added</p></div>
+    <div class="sb"><p class="sb-k">Batch 3</p><p class="q">“Perfect, that’s exactly it”</p><p class="o same">no change needed</p></div>
+    <div class="sb cur"><p class="sb-k">Batch 4 · shown above</p><p class="q">“…a ‘£0’ sign-on bonus line…”</p><p class="q">“‘0 shares’ looks odd…”</p><p class="o ok">~ one rule widened, none added</p></div>
   </div>
 </section>
 
