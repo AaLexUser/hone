@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from . import ids, logedits, patch
@@ -75,13 +76,27 @@ def _roster_payload(s: HoneConfig) -> list[dict[str, Any]]:
 class Hone:
     def __init__(self, settings: HoneConfig) -> None:
         self.s = settings
-        self.dirs = DataDirs(settings.service.data_dir)
-        self.git = GitRepo(self.dirs.repo)
-        self.db = Db(settings.service.data_dir / "app.sqlite")
         self.bus = Bus()
+        self._open()
+
+    def _open(self) -> None:
+        self.dirs = DataDirs(self.s.service.data_dir)
+        self.git = GitRepo(self.dirs.repo)
+        self.db = Db(self.s.service.data_dir / "app.sqlite")
         self._run_task: asyncio.Task | None = None
         self._live: dict[str, dict[str, Any]] = {}
         self._bootstrap()
+
+    async def reopen(self, rewrite: Callable[[], None]) -> None:
+        """Stop the live run, close the store, let `rewrite` replace the data
+        dir, and open it again. The bus and its subscribers stay."""
+        task = self._run_task
+        if task is not None and not task.done():
+            task.cancel()
+            await asyncio.wait({task})
+        self.close()
+        rewrite()
+        self._open()
 
     # ------------------------------------------------------------------ boot
 
