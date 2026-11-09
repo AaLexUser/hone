@@ -22,6 +22,7 @@ folder at session start and publishes the session trace after each reply.
 |---|---|
 | `0001` | `hone.status` and `hone.feedback` RPCs (`packages/contracts/src/hone.ts`, `apps/server/src/hone/Hone.ts`) |
 | `0002` | The header chip and the reply rating control (`apps/web/src/components/chat/HoneControls.tsx`) |
+| `0003` | The booth demo seeder, the `hone.demoReset` and `hone.threadFeedback` RPCs, and the Hone page and Reset demo button in the sidebar (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/HonePage.tsx`) |
 
 The t3code server calls Hone, so the browser never holds the Hone token and Hone needs no CORS.
 Feedback finds the thread's Pi session file from t3code's stored thread record, so it works after
@@ -71,3 +72,28 @@ Then:
 
 The extension skips `--no-session` processes, which t3code starts to discover models and commands,
 so it does not write `AGENTS.md` into the t3code server's folder.
+
+## Booth demo
+
+Start the t3code server with `HONE_DEMO=1` next to a Hone service that also runs with
+`HONE_DEMO=1`. Nothing changes when it is off.
+
+```sh
+export HONE_DEMO=1
+export HONE_DEMO_DIR="$HOME/Documents/Offer letters"   # the demo project folder
+```
+
+- On every start, and on the Reset demo button in the sidebar, the server calls Hone's
+  `POST /api/demo/reset`. It deletes the previous demo project and its chats, rewrites
+  `HONE_DEMO_DIR` from Hone's files, and loads the prepared chats with their tool calls,
+  replies and documents. Open browsers update at once and stay signed in. If Hone is not up yet,
+  the start retries for five minutes.
+- `HONE_DEMO_DIR` defaults to `hone-demo` in the t3code data folder. Everything in it is replaced
+  on each reset.
+- Each prepared chat is bound to its own copy of the Pi session file, so a new message continues
+  the same Pi session. The rating control on its replies shows the feedback Hone already holds.
+- Demo chats open with the Files panel. Drag files from `Inbox/` into the composer to start a
+  live chat.
+- The Hone button next to Settings, Usage and Pull requests shows the Hone dashboard inside
+  t3code. It loads `HONE_DASHBOARD_URL`, or `HONE_URL` when that is not set, so the browser must
+  reach that address. The header chip opens the same page.

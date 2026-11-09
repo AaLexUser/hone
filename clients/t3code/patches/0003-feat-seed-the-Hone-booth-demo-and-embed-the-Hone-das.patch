@@ -1,0 +1,1965 @@
+From 605c9e7f585ab4ea020f6772a1fbf0c5aaf47f08 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Mon, 9 Nov 2026 19:14:59 +0000
+Subject: [PATCH] feat: seed the Hone booth demo and embed the Hone dashboard
+
+With HONE_DEMO=1 the server asks Hone for its prepared demo on start and on
+the new hone.demoReset RPC. It force deletes the previous demo project,
+rewrites the project folder, writes each Pi session under a fresh file name
+and records each chat as completed runs bound to that session. A new message
+in a prepared chat resumes the same Pi session, and its replies keep the Hone
+rating control.
+
+The rating control shows the feedback Hone already holds for the session,
+read through the new hone.threadFeedback RPC. The sidebar gets a Hone button
+that opens the dashboard inside t3code and, in demo mode, a Reset demo button
+with a short confirmation. Demo chats open with the Files panel, so the Inbox
+files can be dragged into the composer.
+---
+ apps/server/src/auth/RpcAuthorization.ts      |   2 +
+ apps/server/src/hone/Hone.ts                  | 205 ++++----
+ apps/server/src/hone/HoneDemo.ts              | 230 +++++++++
+ apps/server/src/hone/piSessionHistory.test.ts | 148 ++++++
+ apps/server/src/hone/piSessionHistory.ts      | 458 ++++++++++++++++++
+ .../src/observability/RpcInstrumentation.ts   |   2 +
+ .../src/orchestration-v2/runtimeLayer.ts      |   6 +
+ .../src/serverRuntimeStartup.autoPull.test.ts |   2 +
+ apps/server/src/serverRuntimeStartup.test.ts  |   2 +
+ apps/server/src/serverRuntimeStartup.ts       |   4 +
+ apps/server/src/ws.test.ts                    |   2 +
+ apps/server/src/ws.ts                         |   4 +
+ apps/web/src/components/ChatView.tsx          |   2 +
+ apps/web/src/components/chat/HoneControls.tsx | 108 ++++-
+ .../components/chat/TimelineAssistantRows.tsx |   1 +
+ apps/web/src/components/hone/HonePage.tsx     |  81 ++++
+ .../src/components/sidebar/SidebarChrome.tsx  |  30 +-
+ apps/web/src/routeTree.gen.ts                 |  21 +
+ apps/web/src/routes/_chat.hone.tsx            |   7 +
+ apps/web/src/state/hone.ts                    |  27 +-
+ packages/contracts/src/hone.ts                |  20 +-
+ packages/contracts/src/rpc.ts                 |  26 +-
+ 22 files changed, 1291 insertions(+), 97 deletions(-)
+ create mode 100644 apps/server/src/hone/HoneDemo.ts
+ create mode 100644 apps/server/src/hone/piSessionHistory.test.ts
+ create mode 100644 apps/server/src/hone/piSessionHistory.ts
+ create mode 100644 apps/web/src/components/hone/HonePage.tsx
+ create mode 100644 apps/web/src/routes/_chat.hone.tsx
+
+diff --git a/apps/server/src/auth/RpcAuthorization.ts b/apps/server/src/auth/RpcAuthorization.ts
+index e86fb0d1..884ad615 100644
+--- a/apps/server/src/auth/RpcAuthorization.ts
++++ b/apps/server/src/auth/RpcAuthorization.ts
+@@ -164,6 +164,8 @@ export const RPC_REQUIRED_SCOPES = {
+   [WS_METHODS.providerUploadFeedback]: AuthOrchestrationOperateScope,
+   [WS_METHODS.honeStatus]: AuthOrchestrationReadScope,
+   [WS_METHODS.honeFeedback]: AuthOrchestrationOperateScope,
++  [WS_METHODS.honeThreadFeedback]: AuthOrchestrationReadScope,
++  [WS_METHODS.honeDemoReset]: AuthOrchestrationOperateScope,
+   [WS_METHODS.mcpAppsCallTool]: AuthOrchestrationOperateScope,
+   [WS_METHODS.mcpAppsToolInfo]: AuthOrchestrationReadScope,
+   [WS_METHODS.mcpAppsReadResource]: AuthOrchestrationReadScope,
+diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
+index c59df5d1..eb5e5118 100644
+--- a/apps/server/src/hone/Hone.ts
++++ b/apps/server/src/hone/Hone.ts
+@@ -3,6 +3,9 @@ import {
+   type HoneFeedbackInput,
+   type HoneFeedbackResult,
+   type HoneStatus,
++  type HoneThreadFeedback,
++  type HoneThreadFeedbackInput,
++  type ThreadId,
+ } from "@t3tools/contracts";
+ import * as Config from "effect/Config";
+ import * as Effect from "effect/Effect";
+@@ -17,6 +20,8 @@ const HoneConfig = Config.all({
+   url: Config.String("HONE_URL").pipe(Config.option),
+   token: Config.Redacted("HONE_TOKEN").pipe(Config.option),
+   dashboardUrl: Config.String("HONE_DASHBOARD_URL").pipe(Config.option),
++  demo: Config.Boolean("HONE_DEMO").pipe(Config.withDefault(false)),
++  demoDir: Config.String("HONE_DEMO_DIR").pipe(Config.option),
+ });
+ 
+ const HoneState = Schema.Struct({
+@@ -34,15 +39,15 @@ const PiSessionHeader = Schema.fromJsonString(
+   Schema.Struct({ type: Schema.Literal("session"), id: Schema.String }),
+ );
+ const decodePiSessionHeader = Schema.decodeUnknownOption(PiSessionHeader);
+-const isHoneError = Schema.is(HoneError);
++export const isHoneError = Schema.is(HoneError);
+ 
+ const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+ 
+-const readConfig = Effect.orDie(HoneConfig);
++export const readHoneConfig = Effect.orDie(HoneConfig);
+ 
+-const baseUrl = (url: string) => url.replace(/\/+$/, "");
++export const honeBaseUrl = (url: string) => url.replace(/\/+$/, "");
+ 
+-function unreachableStatus(dashboardUrl: string | null): HoneStatus {
++function unreachableStatus(dashboardUrl: string | null, demo: boolean): HoneStatus {
+   return {
+     reachable: false,
+     dashboardUrl,
+@@ -53,13 +58,14 @@ function unreachableStatus(dashboardUrl: string | null): HoneStatus {
+     pendingCount: 0,
+     batchSize: 0,
+     run: null,
++    demo,
+   };
+ }
+ 
+ export const honeStatus = Effect.gen(function* () {
+-  const config = yield* readConfig;
+-  if (Option.isNone(config.url)) return unreachableStatus(null);
+-  const url = baseUrl(config.url.value);
++  const config = yield* readHoneConfig;
++  if (Option.isNone(config.url)) return unreachableStatus(null, config.demo);
++  const url = honeBaseUrl(config.url.value);
+   const dashboardUrl = Option.getOrElse(config.dashboardUrl, () => url);
+   const http = yield* HttpClient.HttpClient;
+   return yield* http.execute(HttpClientRequest.get(`${url}/api/state`)).pipe(
+@@ -77,10 +83,11 @@ export const honeStatus = Effect.gen(function* () {
+         pendingCount: state.traces.filter((trace) => trace.status === "new").length,
+         batchSize: state.batchSize,
+         run: state.run ?? null,
++        demo: config.demo,
+       };
+     }),
+     Effect.timeout("3 seconds"),
+-    Effect.orElseSucceed(() => unreachableStatus(dashboardUrl)),
++    Effect.orElseSucceed(() => unreachableStatus(dashboardUrl, config.demo)),
+   );
+ }).pipe(Effect.withSpan("hone.status"));
+ 
+@@ -110,84 +117,116 @@ export function piSessionIdOf(sessionFile: string, contents: string): string | n
+   return sessionFile.split(/[\\/]/).at(-1)?.match(UUID_PATTERN)?.[0] ?? null;
+ }
+ 
+-export const honeFeedback = Effect.fn("hone.feedback")(
+-  function* (input: HoneFeedbackInput) {
+-    const text = honeFeedbackText(input);
+-    if (text === null) {
+-      return yield* new HoneError({ reason: "rejected", message: "Add a rating or a comment." });
+-    }
+-    const config = yield* readConfig;
+-    if (Option.isNone(config.url)) {
+-      return yield* new HoneError({ reason: "unreachable", message: "HONE_URL is not set." });
+-    }
+-    // Read from the stored projection so feedback still works after Pi's process exits.
+-    const threadManagement = yield* ThreadManagementService.ThreadManagementService;
+-    const projection = yield* threadManagement.getThreadRecords(input.threadId, [
+-      "providerThreads",
+-    ]);
+-    const piThreads = projection.providerThreads.filter((thread) => thread.driver === "pi");
+-    const piThread =
+-      piThreads.find((thread) => thread.id === projection.thread.activeProviderThreadId) ??
+-      piThreads.at(-1);
+-    const sessionFile = piThread?.nativeThreadRef?.nativeId ?? null;
+-    if (sessionFile === null) {
+-      return yield* new HoneError({
+-        reason: "no-pi-session",
+-        message: "This thread has no Pi session yet.",
+-      });
+-    }
+-    const fileSystem = yield* FileSystem.FileSystem;
+-    const contents = yield* fileSystem
+-      .readFileString(sessionFile)
+-      .pipe(Effect.orElseSucceed(() => ""));
+-    const sessionId = piSessionIdOf(sessionFile, contents);
+-    if (sessionId === null) {
+-      return yield* new HoneError({
+-        reason: "no-pi-session",
+-        message: "Could not read the Pi session id.",
+-      });
+-    }
+-    const traceId = honeTraceId(sessionId);
+-    const http = yield* HttpClient.HttpClient;
+-    const request = HttpClientRequest.post(
+-      `${baseUrl(config.url.value)}/api/traces/${traceId}/feedback`,
+-    ).pipe(
+-      Option.isSome(config.token)
+-        ? HttpClientRequest.bearerToken(config.token.value)
+-        : (request) => request,
+-      HttpClientRequest.bodyJsonUnsafe({ text }),
+-    );
+-    const response = yield* http.execute(request).pipe(
++/** Hone's trace id for the thread's Pi session, read from the stored projection so it still works after Pi's process exits. */
++const threadTraceId = Effect.fn("hone.threadTraceId")(function* (threadId: ThreadId) {
++  const threadManagement = yield* ThreadManagementService.ThreadManagementService;
++  const projection = yield* threadManagement.getThreadRecords(threadId, ["providerThreads"]);
++  const piThreads = projection.providerThreads.filter((thread) => thread.driver === "pi");
++  const piThread =
++    piThreads.find((thread) => thread.id === projection.thread.activeProviderThreadId) ??
++    piThreads.at(-1);
++  const sessionFile = piThread?.nativeThreadRef?.nativeId ?? null;
++  if (sessionFile === null) {
++    return yield* new HoneError({
++      reason: "no-pi-session",
++      message: "This thread has no Pi session yet.",
++    });
++  }
++  const fileSystem = yield* FileSystem.FileSystem;
++  const contents = yield* fileSystem
++    .readFileString(sessionFile)
++    .pipe(Effect.orElseSucceed(() => ""));
++  const sessionId = piSessionIdOf(sessionFile, contents);
++  if (sessionId === null) {
++    return yield* new HoneError({
++      reason: "no-pi-session",
++      message: "Could not read the Pi session id.",
++    });
++  }
++  return honeTraceId(sessionId);
++});
++
++const asHoneError = <A, E extends { readonly message: string }, R>(
++  effect: Effect.Effect<A, E, R>,
++): Effect.Effect<A, HoneError, R> =>
++  Effect.mapError(effect, (error) =>
++    isHoneError(error)
++      ? error
++      : new HoneError({
++          reason: "no-pi-session",
++          message: `Could not load the thread: ${error.message}`,
++        }),
++  );
++
++export const honeFeedback = Effect.fn("hone.feedback")(function* (input: HoneFeedbackInput) {
++  const text = honeFeedbackText(input);
++  if (text === null) {
++    return yield* new HoneError({ reason: "rejected", message: "Add a rating or a comment." });
++  }
++  const config = yield* readHoneConfig;
++  if (Option.isNone(config.url)) {
++    return yield* new HoneError({ reason: "unreachable", message: "HONE_URL is not set." });
++  }
++  const traceId = yield* threadTraceId(input.threadId);
++  const http = yield* HttpClient.HttpClient;
++  const request = HttpClientRequest.post(
++    `${honeBaseUrl(config.url.value)}/api/traces/${traceId}/feedback`,
++  ).pipe(
++    Option.isSome(config.token)
++      ? HttpClientRequest.bearerToken(config.token.value)
++      : (request) => request,
++    HttpClientRequest.bodyJsonUnsafe({ text }),
++  );
++  const response = yield* http.execute(request).pipe(
++    Effect.timeout("5 seconds"),
++    Effect.mapError(
++      () => new HoneError({ reason: "unreachable", message: "Could not reach Hone." }),
++    ),
++  );
++  if (response.status === 404) {
++    return yield* new HoneError({
++      reason: "not-published",
++      message: "Hone has not received this session yet. Try again after the reply finishes.",
++    });
++  }
++  if (response.status < 200 || response.status >= 300) {
++    return yield* new HoneError({
++      reason: "rejected",
++      message: `Hone rejected the feedback (HTTP ${response.status}).`,
++    });
++  }
++  return { traceId } satisfies HoneFeedbackResult;
++}, asHoneError);
++
++const HoneTrace = Schema.Struct({ feedback: Schema.NullishOr(Schema.String) });
++
++/** The feedback Hone already holds for the thread's session. It is null until Hone has the session. */
++export const honeThreadFeedback = Effect.fn("hone.threadFeedback")(function* (
++  input: HoneThreadFeedbackInput,
++) {
++  const config = yield* readHoneConfig;
++  if (Option.isNone(config.url)) {
++    return yield* new HoneError({ reason: "unreachable", message: "HONE_URL is not set." });
++  }
++  const traceId = yield* threadTraceId(input.threadId);
++  const http = yield* HttpClient.HttpClient;
++  const response = yield* http
++    .execute(HttpClientRequest.get(`${honeBaseUrl(config.url.value)}/api/traces/${traceId}`))
++    .pipe(
+       Effect.timeout("5 seconds"),
+       Effect.mapError(
+         () => new HoneError({ reason: "unreachable", message: "Could not reach Hone." }),
+       ),
+     );
+-    if (response.status === 404) {
+-      return yield* new HoneError({
+-        reason: "not-published",
+-        message: "Hone has not received this session yet. Try again after the reply finishes.",
+-      });
+-    }
+-    if (response.status < 200 || response.status >= 300) {
+-      return yield* new HoneError({
+-        reason: "rejected",
+-        message: `Hone rejected the feedback (HTTP ${response.status}).`,
+-      });
+-    }
+-    return { traceId } satisfies HoneFeedbackResult;
+-  },
+-  (effect) =>
+-    effect.pipe(
+-      Effect.catchIf(
+-        (error) => !isHoneError(error),
+-        (error) =>
+-          Effect.fail(
+-            new HoneError({
+-              reason: "no-pi-session",
+-              message: `Could not load the thread: ${error.message}`,
+-            }),
+-          ),
+-      ),
++  if (response.status === 404) {
++    return { traceId, feedback: null } satisfies HoneThreadFeedback;
++  }
++  const trace = yield* response.json.pipe(
++    Effect.flatMap(Schema.decodeUnknownEffect(HoneTrace)),
++    Effect.mapError(
++      () => new HoneError({ reason: "rejected", message: "Hone sent an unreadable trace." }),
+     ),
+-);
++  );
++  const feedback = trace.feedback?.trim() ?? "";
++  return { traceId, feedback: feedback === "" ? null : feedback } satisfies HoneThreadFeedback;
++}, asHoneError);
+diff --git a/apps/server/src/hone/HoneDemo.ts b/apps/server/src/hone/HoneDemo.ts
+new file mode 100644
+index 00000000..7910332c
+--- /dev/null
++++ b/apps/server/src/hone/HoneDemo.ts
+@@ -0,0 +1,230 @@
++import {
++  CommandId,
++  HoneError,
++  type HoneDemoResetResult,
++  type ModelSelection,
++  ProjectId,
++  ProviderInstanceId,
++  ThreadId,
++} from "@t3tools/contracts";
++import { resolvePiSessionsDir } from "@t3tools/provider-pi/server/usage";
++import * as HostProcess from "@t3tools/shared/HostProcess";
++import * as Context from "effect/Context";
++import * as Crypto from "effect/Crypto";
++import * as DateTime from "effect/DateTime";
++import * as Effect from "effect/Effect";
++import * as FileSystem from "effect/FileSystem";
++import * as Layer from "effect/Layer";
++import * as Option from "effect/Option";
++import * as Path from "effect/Path";
++import * as Schedule from "effect/Schedule";
++import * as Schema from "effect/Schema";
++import * as Semaphore from "effect/Semaphore";
++import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
++
++import * as ServerConfig from "../config.ts";
++import * as EventSink from "../orchestration-v2/EventSink.ts";
++import * as ProjectService from "../project/ProjectService.ts";
++import { honeBaseUrl, isHoneError, readHoneConfig } from "./Hone.ts";
++import { piChatEvents } from "./piSessionHistory.ts";
++
++/** What Hone's `POST /api/demo/reset` returns. Session paths use `{{WORKSPACE}}` for the project folder. */
++const DemoManifest = Schema.Struct({
++  project: Schema.Struct({ title: Schema.NonEmptyString }),
++  files: Schema.Array(Schema.Struct({ path: Schema.NonEmptyString, base64: Schema.String })),
++  chats: Schema.Array(
++    Schema.Struct({
++      title: Schema.NonEmptyString,
++      sessionId: Schema.NonEmptyString,
++      jsonl: Schema.String,
++    }),
++  ),
++});
++type DemoManifest = typeof DemoManifest.Type;
++
++const WORKSPACE_PLACEHOLDER = "{{WORKSPACE}}";
++const PI_INSTANCE = ProviderInstanceId.make("pi");
++const PI_MODEL: ModelSelection = { instanceId: PI_INSTANCE, model: "default" };
++
++const demoError = (message: string) => new HoneError({ reason: "rejected", message });
++
++/** Pi keeps one session folder per working directory, named as Pi's session manager names it. */
++export function piSessionDirName(cwd: string): string {
++  return `--${cwd.replace(/^[/\\]/, "").replace(/[/\\:]/g, "-")}--`;
++}
++
++/** Manifest paths stay inside the project folder. */
++export function isSafeRelativePath(path: string): boolean {
++  return (
++    !path.startsWith("/") &&
++    !/^[A-Za-z]:/.test(path) &&
++    !path.split(/[/\\]/).some((part) => part === ".." || part === "")
++  );
++}
++
++export class HoneDemo extends Context.Service<
++  HoneDemo,
++  {
++    /** Restores Hone's prepared state and reseeds the demo project with fresh ids. */
++    readonly reset: Effect.Effect<HoneDemoResetResult, HoneError>;
++    /** Resets once Hone answers, when the server runs with HONE_DEMO=1. */
++    readonly resetAtStartup: Effect.Effect<void>;
++  }
++>()("t3/hone/HoneDemo") {}
++
++const make = Effect.gen(function* () {
++  const serverConfig = yield* ServerConfig.ServerConfig;
++  const projects = yield* ProjectService.ProjectService;
++  const eventSink = yield* EventSink.EventSinkV2;
++  const fileSystem = yield* FileSystem.FileSystem;
++  const path = yield* Path.Path;
++  const crypto = yield* Crypto.Crypto;
++  const http = yield* HttpClient.HttpClient;
++  const hostEnvironment = yield* HostProcess.Environment;
++  const homeDirectory = yield* HostProcess.HomeDirectory;
++  const lock = yield* Semaphore.make(1);
++
++  /** Hone writes the real folder into its own copy of the sessions, so its trace pages match t3code. */
++  const fetchManifest = Effect.fn("HoneDemo.fetchManifest")(function* (workspace: string) {
++    const config = yield* readHoneConfig;
++    if (!config.demo) return yield* demoError("The server is not in demo mode.");
++    if (Option.isNone(config.url)) {
++      return yield* new HoneError({ reason: "unreachable", message: "HONE_URL is not set." });
++    }
++    const request = HttpClientRequest.post(`${honeBaseUrl(config.url.value)}/api/demo/reset`).pipe(
++      Option.isSome(config.token)
++        ? HttpClientRequest.bearerToken(config.token.value)
++        : (request) => request,
++      HttpClientRequest.bodyJsonUnsafe({ workspace }),
++    );
++    const response = yield* http.execute(request).pipe(
++      // Hone builds its prepared data once a day, which takes a while on the first reset.
++      Effect.timeout("3 minutes"),
++      Effect.mapError(
++        () => new HoneError({ reason: "unreachable", message: "Could not reach Hone." }),
++      ),
++    );
++    if (response.status < 200 || response.status >= 300) {
++      return yield* demoError(`Hone refused the demo reset (HTTP ${response.status}).`);
++    }
++    return yield* response.json.pipe(
++      Effect.flatMap(Schema.decodeUnknownEffect(DemoManifest)),
++      Effect.mapError(() => demoError("Hone sent a demo manifest this server cannot read.")),
++    );
++  });
++
++  const writeProjectFolder = Effect.fn("HoneDemo.writeProjectFolder")(function* (
++    folder: string,
++    manifest: DemoManifest,
++  ) {
++    yield* fileSystem.remove(folder, { recursive: true, force: true });
++    yield* fileSystem.makeDirectory(folder, { recursive: true });
++    for (const file of manifest.files) {
++      if (!isSafeRelativePath(file.path)) {
++        return yield* demoError(`The demo file path ${file.path} leaves the project folder.`);
++      }
++      const target = path.join(folder, file.path);
++      yield* fileSystem.makeDirectory(path.dirname(target), { recursive: true });
++      yield* fileSystem.writeFile(target, Buffer.from(file.base64, "base64"));
++    }
++  });
++
++  /** The project folder, resolved the way the project stores it, since Pi names its session folder after it. */
++  const projectFolder = Effect.gen(function* () {
++    const config = yield* readHoneConfig;
++    const folder = path.resolve(
++      Option.getOrElse(config.demoDir, () => path.join(serverConfig.baseDir, "hone-demo")),
++    );
++    yield* fileSystem.makeDirectory(folder, { recursive: true });
++    return yield* fileSystem.realPath(folder);
++  });
++
++  const seed = Effect.fn("HoneDemo.seed")(function* (folder: string, manifest: DemoManifest) {
++    const previous = yield* projects.getByWorkspaceRoot(folder);
++    if (Option.isSome(previous)) {
++      yield* projects.delete({
++        commandId: CommandId.make(`hone-demo:delete:${yield* crypto.randomUUIDv4()}`),
++        projectId: previous.value.id,
++        force: true,
++      });
++    }
++    yield* writeProjectFolder(folder, manifest);
++
++    const projectId = ProjectId.make(yield* crypto.randomUUIDv4());
++    const { workspaceRoot } = yield* projects.create({
++      commandId: CommandId.make(`hone-demo:create:${projectId}`),
++      projectId,
++      title: manifest.project.title,
++      workspaceRoot: folder,
++    });
++    yield* projects.update({
++      commandId: CommandId.make(`hone-demo:model:${projectId}`),
++      projectId,
++      defaultModelSelection: PI_MODEL,
++    });
++
++    // Pi appends to a session file when a chat continues, so every reset writes clean copies
++    // under new names. A name stays bound to the deleted thread that used it.
++    const sessionsDir = path.join(
++      resolvePiSessionsDir(hostEnvironment, homeDirectory, path),
++      piSessionDirName(workspaceRoot),
++    );
++    yield* fileSystem.remove(sessionsDir, { recursive: true, force: true });
++    yield* fileSystem.makeDirectory(sessionsDir, { recursive: true });
++
++    const workspaceInJson = workspaceRoot.replaceAll("\\", "\\\\").replaceAll('"', '\\"');
++    const stamp = DateTime.formatIso(yield* DateTime.now).replace(/[:.]/g, "-");
++    let chatCount = 0;
++    for (const chat of manifest.chats) {
++      const sessionFile = path.join(sessionsDir, `${stamp}_${chat.sessionId}.jsonl`);
++      const jsonl = chat.jsonl.replaceAll(WORKSPACE_PLACEHOLDER, workspaceInJson);
++      yield* fileSystem.writeFileString(sessionFile, jsonl);
++      const events = piChatEvents({
++        threadId: ThreadId.make(yield* crypto.randomUUIDv4()),
++        projectId,
++        title: chat.title,
++        providerInstanceId: PI_INSTANCE,
++        modelSelection: PI_MODEL,
++        sessionFile,
++        jsonl,
++      });
++      if (events.length === 0) {
++        yield* Effect.logWarning("Skipped a demo chat with no user message", { title: chat.title });
++        continue;
++      }
++      yield* eventSink.write({ events });
++      chatCount += 1;
++    }
++    return { projectId, chatCount } satisfies HoneDemoResetResult;
++  });
++
++  const reset = Effect.gen(function* () {
++    const folder = yield* projectFolder;
++    return yield* seed(folder, yield* fetchManifest(folder));
++  }).pipe(
++    Effect.mapError((error) =>
++      isHoneError(error) ? error : demoError(`The demo reset failed: ${error.message}`),
++    ),
++    Effect.tapError((error) =>
++      Effect.logWarning("Hone demo reset failed", { message: error.message }),
++    ),
++    lock.withPermits(1),
++    Effect.withSpan("HoneDemo.reset"),
++  );
++
++  const resetAtStartup = Effect.gen(function* () {
++    const config = yield* readHoneConfig;
++    if (!config.demo) return;
++    // Hone may still be starting when t3code starts.
++    const result = yield* reset.pipe(
++      Effect.retry({ schedule: Schedule.spaced("5 seconds"), times: 60 }),
++    );
++    yield* Effect.logInfo("Seeded the Hone demo", result);
++  }).pipe(
++    Effect.catch((error) => Effect.logError("Could not seed the Hone demo", { cause: error })),
++  );
++
++  return { reset, resetAtStartup } satisfies HoneDemo["Service"];
++});
++
++export const layer = Layer.effect(HoneDemo, make).pipe(Layer.provide(FetchHttpClient.layer));
+diff --git a/apps/server/src/hone/piSessionHistory.test.ts b/apps/server/src/hone/piSessionHistory.test.ts
+new file mode 100644
+index 00000000..8851855c
+--- /dev/null
++++ b/apps/server/src/hone/piSessionHistory.test.ts
+@@ -0,0 +1,148 @@
++import {
++  OrchestrationV2DomainEvent,
++  ProjectId,
++  ProviderInstanceId,
++  ThreadId,
++} from "@t3tools/contracts";
++import { describe, expect, it } from "@effect/vitest";
++import * as Schema from "effect/Schema";
++
++import { isSafeRelativePath, piSessionDirName } from "./HoneDemo.ts";
++import { piChatEvents } from "./piSessionHistory.ts";
++
++type PayloadOf<T> = OrchestrationV2DomainEvent extends infer E
++  ? E extends { readonly type: infer U; readonly payload: infer P }
++    ? T extends U
++      ? P
++      : never
++    : never
++  : never;
++
++const line = (value: unknown) => JSON.stringify(value);
++const message = (id: string, parentId: string | null, at: string, body: unknown) =>
++  line({ type: "message", id, parentId, timestamp: `2026-11-14T05:${at}.000Z`, message: body });
++
++const jsonl = [
++  line({ type: "session", version: 3, id: "01a1538a-1241-780f-9a98-57543af269fa", cwd: "/w" }),
++  line({ type: "model_change", id: "m0", parentId: null, timestamp: "2026-11-14T05:00:00.000Z" }),
++  message("u1", "m0", "00:01", { role: "user", content: [{ type: "text", text: "Offer letter" }] }),
++  message("a1", "u1", "00:02", {
++    role: "assistant",
++    content: [
++      { type: "thinking", thinking: "Read the approval." },
++      { type: "toolCall", id: "call_1", name: "bash", arguments: { command: "pdftotext a.pdf -" } },
++      { type: "toolCall", id: "call_2", name: "read", arguments: { path: "Inbox/data.json" } },
++    ],
++  }),
++  message("r1", "a1", "00:03", {
++    role: "toolResult",
++    toolCallId: "call_1",
++    toolName: "bash",
++    content: [{ type: "text", text: "Salary 90000" }],
++    isError: false,
++  }),
++  message("r2", "r1", "00:04", {
++    role: "toolResult",
++    toolCallId: "call_2",
++    toolName: "read",
++    content: [{ type: "text", text: "{}" }],
++    isError: false,
++  }),
++  message("a2", "r2", "00:05", {
++    role: "assistant",
++    content: [
++      { type: "toolCall", id: "call_3", name: "write", arguments: { path: "x.md", content: "hi" } },
++    ],
++  }),
++  message("r3", "a2", "00:06", {
++    role: "toolResult",
++    toolCallId: "call_3",
++    toolName: "write",
++    content: [{ type: "text", text: "ok" }],
++    isError: false,
++  }),
++  message("a3", "r3", "00:07", {
++    role: "assistant",
++    content: [{ type: "text", text: "Done. [Offer letter.docx](Offer letter.docx)" }],
++  }),
++  message("u2", "a3", "01:00", { role: "user", content: "Also the PDF" }),
++  message("a4", "u2", "01:05", { role: "assistant", content: [{ type: "text", text: "Here." }] }),
++].join("\n");
++
++const seed = {
++  threadId: ThreadId.make("thread-1"),
++  projectId: ProjectId.make("project-1"),
++  title: "Offer letter for Mei",
++  providerInstanceId: ProviderInstanceId.make("pi"),
++  modelSelection: { instanceId: ProviderInstanceId.make("pi"), model: "default" },
++  sessionFile: "/sessions/--w--/2026_01a1538a.jsonl",
++  jsonl,
++};
++
++describe("piChatEvents", () => {
++  const events = piChatEvents(seed);
++  const payloads = <T extends OrchestrationV2DomainEvent["type"]>(type: T) =>
++    events.flatMap((event) => (event.type === type ? [event.payload] : [])) as Array<PayloadOf<T>>;
++
++  it("writes events the orchestration schema accepts", () => {
++    const encode = Schema.encodeUnknownSync(OrchestrationV2DomainEvent);
++    for (const event of events) expect(() => encode(event)).not.toThrow();
++    expect(new Set(events.map((event) => event.id)).size).toBe(events.length);
++  });
++
++  it("makes one completed run per user turn", () => {
++    const runs = payloads("run.created");
++    expect(runs.map((run) => [run.ordinal, run.status])).toEqual([
++      [1, "completed"],
++      [2, "completed"],
++    ]);
++    expect(
++      payloads("message.updated")
++        .filter((m) => m.role === "user")
++        .map((m) => m.text),
++    ).toEqual(["Offer letter", "Also the PDF"]);
++  });
++
++  it("binds the thread to the Pi session file so the next message resumes it", () => {
++    const [providerThread] = payloads("provider-thread.updated");
++    expect(providerThread?.nativeThreadRef?.nativeId).toBe(seed.sessionFile);
++    expect(providerThread?.lastRunOrdinal).toBe(2);
++    expect(payloads("thread.created")[0]?.activeProviderThreadId).toBe(providerThread?.id);
++    const replies = payloads("turn-item.updated").filter(
++      (item) => item.type === "assistant_message",
++    );
++    expect(replies.map((item) => item.providerThreadId)).toEqual([
++      providerThread?.id,
++      providerThread?.id,
++    ]);
++  });
++
++  it("maps tool calls the way the Pi adapter does", () => {
++    const tools = payloads("turn-item.updated").flatMap((item) =>
++      item.type === "command_execution"
++        ? [[item.type, item.input, item.output]]
++        : item.type === "dynamic_tool"
++          ? [[item.type, item.toolName, item.output]]
++          : item.type === "file_change"
++            ? [[item.type, item.fileName, item.newStr]]
++            : [],
++    );
++    expect(tools).toEqual([
++      ["command_execution", "pdftotext a.pdf -", "Salary 90000"],
++      ["dynamic_tool", "read", "{}"],
++      ["file_change", "x.md", "hi"],
++    ]);
++  });
++});
++
++describe("demo paths", () => {
++  it("names the session folder as Pi does", () => {
++    expect(piSessionDirName("/Users/mei/Offer letters")).toBe("--Users-mei-Offer letters--");
++  });
++
++  it("keeps manifest files inside the project folder", () => {
++    expect(isSafeRelativePath("Inbox/Offer letter template.docx")).toBe(true);
++    expect(isSafeRelativePath("../escape.docx")).toBe(false);
++    expect(isSafeRelativePath("/etc/passwd")).toBe(false);
++  });
++});
+diff --git a/apps/server/src/hone/piSessionHistory.ts b/apps/server/src/hone/piSessionHistory.ts
+new file mode 100644
+index 00000000..8c652e70
+--- /dev/null
++++ b/apps/server/src/hone/piSessionHistory.ts
+@@ -0,0 +1,458 @@
++import {
++  EventId,
++  MessageId,
++  type ModelSelection,
++  type OrchestrationV2DomainEvent,
++  type OrchestrationV2ProviderThread,
++  type OrchestrationV2TurnItem,
++  type ProjectId,
++  ProviderDriverKind,
++  type ProviderInstanceId,
++  type ThreadId,
++} from "@t3tools/contracts";
++import { derive } from "@t3tools/provider-core/server/IdAllocator";
++import * as DateTime from "effect/DateTime";
++import * as Option from "effect/Option";
++import * as Schema from "effect/Schema";
++
++/** One Pi session entry. Pi stores a tree, and `parentId` links each entry to the one before it. */
++interface PiEntry {
++  readonly id: string;
++  readonly parentId: string | null;
++  readonly timestamp: string;
++  readonly message: Record<string, unknown> | null;
++}
++
++const PI = ProviderDriverKind.make("pi");
++const decodeJsonLine = Schema.decodeUnknownOption(Schema.fromJsonString(Schema.Unknown));
++
++const isRecord = (value: unknown): value is Record<string, unknown> =>
++  typeof value === "object" && value !== null && !Array.isArray(value);
++
++const stringField = (record: unknown, key: string): string | undefined => {
++  const value = isRecord(record) ? record[key] : undefined;
++  return typeof value === "string" ? value : undefined;
++};
++
++function contentBlocks(message: Record<string, unknown>): ReadonlyArray<Record<string, unknown>> {
++  const content = message["content"];
++  if (typeof content === "string") return [{ type: "text", text: content }];
++  return Array.isArray(content) ? content.filter(isRecord) : [];
++}
++
++const blocksText = (blocks: ReadonlyArray<Record<string, unknown>>) =>
++  blocks
++    .filter((block) => block["type"] === "text")
++    .map((block) => stringField(block, "text") ?? "")
++    .join("");
++
++/** The conversation Pi resumes from, which is the path from the session's last entry back to its root. */
++function piSessionPath(jsonl: string): ReadonlyArray<PiEntry> {
++  const entries = new Map<string, PiEntry>();
++  let leaf: PiEntry | undefined;
++  for (const line of jsonl.split("\n")) {
++    if (line.trim() === "") continue;
++    const decoded = decodeJsonLine(line);
++    if (Option.isNone(decoded)) continue;
++    const parsed = decoded.value;
++    const id = stringField(parsed, "id");
++    const timestamp = stringField(parsed, "timestamp");
++    if (id === undefined || timestamp === undefined || Number.isNaN(Date.parse(timestamp)))
++      continue;
++    if (stringField(parsed, "type") === "session") continue;
++    const message = isRecord(parsed) ? parsed["message"] : undefined;
++    const entry: PiEntry = {
++      id,
++      parentId: stringField(parsed, "parentId") ?? null,
++      timestamp,
++      message: stringField(parsed, "type") === "message" && isRecord(message) ? message : null,
++    };
++    entries.set(id, entry);
++    leaf = entry;
++  }
++  const path: Array<PiEntry> = [];
++  for (let entry = leaf; entry !== undefined;) {
++    path.push(entry);
++    entry = entry.parentId === null ? undefined : entries.get(entry.parentId);
++  }
++  return path.toReversed();
++}
++
++export interface PiChatSeed {
++  readonly threadId: ThreadId;
++  readonly projectId: ProjectId;
++  readonly title: string;
++  readonly providerInstanceId: ProviderInstanceId;
++  readonly modelSelection: ModelSelection;
++  /** Absolute path of the session file Pi resumes with `switch_session`. */
++  readonly sessionFile: string;
++  readonly jsonl: string;
++}
++
++/**
++ * The events a finished Pi chat would have left behind. Each user turn is one completed run, tool
++ * calls map the way the Pi adapter maps them, and the provider thread is bound to the session
++ * file so the next message resumes the same Pi session.
++ */
++export function piChatEvents(seed: PiChatSeed): ReadonlyArray<OrchestrationV2DomainEvent> {
++  const path = piSessionPath(seed.jsonl);
++  const toolResults = new Map<string, PiEntry>();
++  for (const entry of path) {
++    const callId = stringField(entry.message, "toolCallId");
++    if (entry.message?.["role"] === "toolResult" && callId !== undefined) {
++      toolResults.set(callId, entry);
++    }
++  }
++  const turns: Array<Array<PiEntry>> = [];
++  for (const entry of path) {
++    const role = entry.message?.["role"];
++    if (role === "user") turns.push([entry]);
++    else if (role === "assistant" || role === "toolResult") turns.at(-1)?.push(entry);
++  }
++  const first = turns[0]?.[0];
++  if (first === undefined) return [];
++
++  const { threadId } = seed;
++  const at = (timestamp: string) => DateTime.makeUnsafe(timestamp);
++  const createdAt = at(first.timestamp);
++  const lastEntry = path.at(-1)!;
++  const updatedAt = at(lastEntry.timestamp);
++  const providerThreadId = derive.providerThread({ driver: PI, nativeThreadId: seed.sessionFile });
++  const providerThread: OrchestrationV2ProviderThread = {
++    id: providerThreadId,
++    driver: PI,
++    providerInstanceId: seed.providerInstanceId,
++    providerSessionId: null,
++    appThreadId: threadId,
++    ownerNodeId: null,
++    nativeThreadRef: { driver: PI, nativeId: seed.sessionFile, strength: "strong" },
++    nativeConversationHeadRef: { driver: PI, nativeId: lastEntry.id, strength: "strong" },
++    status: "idle",
++    firstRunOrdinal: 1,
++    lastRunOrdinal: turns.length,
++    handoffIds: [],
++    forkedFrom: null,
++    pendingBackgroundTasks: [],
++    createdAt,
++    updatedAt,
++  };
++
++  let eventCount = 0;
++  const eventId = () => EventId.make(`hone-demo:${threadId}:${eventCount++}`);
++  const events: Array<OrchestrationV2DomainEvent> = [
++    {
++      id: eventId(),
++      type: "thread.created",
++      threadId,
++      providerInstanceId: seed.providerInstanceId,
++      occurredAt: createdAt,
++      payload: {
++        createdBy: "user",
++        creationSource: "web",
++        id: threadId,
++        projectId: seed.projectId,
++        title: seed.title,
++        providerInstanceId: seed.providerInstanceId,
++        modelSelection: seed.modelSelection,
++        runtimeMode: "full-access",
++        interactionMode: "default",
++        branch: null,
++        worktreePath: null,
++        activeProviderThreadId: providerThreadId,
++        lineage: { parentThreadId: null, relationshipToParent: null, rootThreadId: threadId },
++        forkedFrom: null,
++        createdAt,
++        updatedAt,
++        archivedAt: null,
++        // The prepared history spans weeks. Keep every chat in the sidebar instead of auto settling it.
++        settledOverride: "active",
++        settledAt: null,
++        lastVisitedAt: updatedAt,
++        deletedAt: null,
++      },
++    },
++    {
++      id: eventId(),
++      type: "provider-thread.updated",
++      threadId,
++      driver: PI,
++      providerInstanceId: seed.providerInstanceId,
++      occurredAt: createdAt,
++      payload: providerThread,
++    },
++  ];
++
++  turns.forEach((turn, index) => {
++    const userEntry = turn[0]!;
++    const replies = turn.filter((entry) => entry.message?.["role"] === "assistant");
++    const runId = derive.run({ threadId, ordinal: index + 1 });
++    const nodeId = derive.rootNode({ runId });
++    const attemptId = derive.runAttempt({ runId, attemptOrdinal: 1 });
++    const userMessageId = MessageId.make(`${threadId}:user:${userEntry.id}`);
++    const startedAt = at(userEntry.timestamp);
++    const completedAt = at(turn.at(-1)!.timestamp);
++    const runMeta = {
++      threadId,
++      runId,
++      nodeId,
++      providerInstanceId: seed.providerInstanceId,
++    } as const;
++    const itemBase = (id: OrchestrationV2TurnItem["id"], start: string, end: string) => ({
++      id,
++      threadId,
++      runId,
++      nodeId,
++      providerThreadId,
++      providerTurnId: null,
++      nativeItemRef: null,
++      parentItemId: null,
++      ordinal: 0,
++      status: "completed" as const,
++      title: null,
++      startedAt: at(start),
++      completedAt: at(end),
++      updatedAt: at(end),
++    });
++    const userText = blocksText(contentBlocks(userEntry.message!));
++
++    events.push(
++      {
++        id: eventId(),
++        type: "run.created",
++        ...runMeta,
++        occurredAt: startedAt,
++        payload: {
++          id: runId,
++          threadId,
++          ordinal: index + 1,
++          providerInstanceId: seed.providerInstanceId,
++          modelSelection: seed.modelSelection,
++          providerThreadId,
++          userMessageId,
++          rootNodeId: nodeId,
++          activeAttemptId: attemptId,
++          status: "completed",
++          queuePosition: null,
++          requestedAt: startedAt,
++          startedAt,
++          completedAt,
++          checkpointId: null,
++          contextHandoffId: null,
++          workspacePreparation: { type: "root" },
++        },
++      },
++      {
++        id: eventId(),
++        type: "run-attempt.created",
++        ...runMeta,
++        occurredAt: startedAt,
++        payload: {
++          id: attemptId,
++          nativeThreadId: seed.sessionFile,
++          runId,
++          attemptOrdinal: 1,
++          rootNodeId: nodeId,
++          providerInstanceId: seed.providerInstanceId,
++          providerThreadId,
++          providerTurnId: null,
++          reason: "initial",
++          status: "completed",
++          startedAt,
++          completedAt,
++        },
++      },
++      {
++        id: eventId(),
++        type: "node.updated",
++        ...runMeta,
++        occurredAt: startedAt,
++        payload: {
++          id: nodeId,
++          threadId,
++          runId,
++          parentNodeId: null,
++          rootNodeId: nodeId,
++          kind: "root_turn",
++          status: "completed",
++          countsForRun: true,
++          providerThreadId,
++          providerTurnId: null,
++          nativeItemRef: null,
++          runtimeRequestId: null,
++          checkpointScopeId: null,
++          startedAt,
++          completedAt,
++        },
++      },
++      {
++        id: eventId(),
++        type: "message.updated",
++        ...runMeta,
++        occurredAt: startedAt,
++        payload: {
++          createdBy: "user",
++          creationSource: "web",
++          id: userMessageId,
++          threadId,
++          runId,
++          nodeId,
++          role: "user",
++          text: userText,
++          attachments: [],
++          streaming: false,
++          createdAt: startedAt,
++          updatedAt: startedAt,
++        },
++      },
++      {
++        id: eventId(),
++        type: "turn-item.updated",
++        ...runMeta,
++        occurredAt: startedAt,
++        payload: {
++          ...itemBase(
++            derive.userTurnItem({ messageId: userMessageId }),
++            userEntry.timestamp,
++            userEntry.timestamp,
++          ),
++          createdBy: "user",
++          creationSource: "web",
++          type: "user_message",
++          messageId: userMessageId,
++          inputIntent: "turn_start",
++          text: userText,
++          attachments: [],
++        },
++      },
++    );
++
++    for (const reply of replies) {
++      contentBlocks(reply.message!).forEach((block, blockIndex) => {
++        const nativeItemId = `${threadId}:${reply.id}:c${blockIndex}`;
++        const itemId = derive.turnItemFromProviderItem({ driver: PI, nativeItemId });
++        const occurredAt = at(reply.timestamp);
++        const push = (item: OrchestrationV2TurnItem) =>
++          events.push({
++            id: eventId(),
++            type: "turn-item.updated",
++            ...runMeta,
++            driver: PI,
++            occurredAt: item.completedAt ?? occurredAt,
++            payload: item,
++          });
++        if (block["type"] === "thinking") {
++          const text = stringField(block, "thinking")?.trim() ?? "";
++          if (text === "") return;
++          push({
++            ...itemBase(itemId, reply.timestamp, reply.timestamp),
++            type: "reasoning",
++            text,
++            streaming: false,
++          });
++          return;
++        }
++        if (block["type"] === "text") {
++          const text = stringField(block, "text") ?? "";
++          if (text.trim() === "") return;
++          const messageId = derive.messageFromProviderItem({ driver: PI, nativeItemId });
++          events.push({
++            id: eventId(),
++            type: "message.updated",
++            ...runMeta,
++            driver: PI,
++            occurredAt,
++            payload: {
++              createdBy: "agent",
++              creationSource: "provider",
++              id: messageId,
++              threadId,
++              runId,
++              nodeId,
++              role: "assistant",
++              text,
++              attachments: [],
++              streaming: false,
++              createdAt: occurredAt,
++              updatedAt: occurredAt,
++            },
++          });
++          push({
++            ...itemBase(itemId, reply.timestamp, reply.timestamp),
++            type: "assistant_message",
++            messageId,
++            text,
++            streaming: false,
++          });
++          return;
++        }
++        if (block["type"] === "toolCall") {
++          const resultEntry = toolResults.get(stringField(block, "id") ?? "");
++          const item = toolItem(
++            block,
++            resultEntry?.message ?? null,
++            itemBase(itemId, reply.timestamp, resultEntry?.timestamp ?? reply.timestamp),
++          );
++          if (item !== null) push(item);
++        }
++      });
++    }
++  });
++  return events;
++}
++
++type ItemBase = Omit<
++  Extract<OrchestrationV2TurnItem, { type: "reasoning" }>,
++  "type" | "text" | "streaming"
++>;
++
++/** Mirrors the Pi adapter. Bash runs a command, edit and write change a file, and any other tool is a dynamic tool. */
++function toolItem(
++  call: Record<string, unknown>,
++  result: Record<string, unknown> | null,
++  itemBase: ItemBase,
++): OrchestrationV2TurnItem | null {
++  const callId = stringField(call, "id");
++  const toolName = stringField(call, "name");
++  if (callId === undefined || toolName === undefined) return null;
++  const args = isRecord(call["arguments"]) ? call["arguments"] : {};
++  const output = result === null ? "" : blocksText(contentBlocks(result));
++  const failed = result?.["isError"] === true;
++  const base = {
++    ...itemBase,
++    nativeItemRef: { driver: PI, nativeId: callId, strength: "strong" as const },
++    status: failed ? ("failed" as const) : ("completed" as const),
++    title: toolName,
++  };
++  if (toolName === "bash") {
++    const details = result?.["details"];
++    const exitCode = isRecord(details) ? details["exitCode"] : undefined;
++    return {
++      ...base,
++      type: "command_execution",
++      input: stringField(args, "command") ?? "",
++      ...(output === "" ? {} : { output }),
++      ...(typeof exitCode === "number" ? { exitCode } : {}),
++    };
++  }
++  const fileName = stringField(args, "path") ?? stringField(args, "file_path");
++  if ((toolName === "edit" || toolName === "write") && fileName !== undefined) {
++    const diffStr =
++      stringField(result?.["details"], "patch") ??
++      (failed && output.trim() !== "" ? output : undefined);
++    const newStr = toolName === "write" ? stringField(args, "content") : undefined;
++    return {
++      ...base,
++      type: "file_change",
++      fileName,
++      ...(diffStr === undefined ? {} : { diffStr }),
++      ...(newStr === undefined ? {} : { newStr }),
++    };
++  }
++  return {
++    ...base,
++    type: "dynamic_tool",
++    toolName,
++    input: args,
++    ...(output === "" ? {} : { output }),
++  };
++}
+diff --git a/apps/server/src/observability/RpcInstrumentation.ts b/apps/server/src/observability/RpcInstrumentation.ts
+index e8219fe7..decbb357 100644
+--- a/apps/server/src/observability/RpcInstrumentation.ts
++++ b/apps/server/src/observability/RpcInstrumentation.ts
+@@ -167,6 +167,8 @@ const RPC_AGGREGATES = {
+   [WS_METHODS.providerUploadFeedback]: "provider",
+   [WS_METHODS.honeStatus]: "hone",
+   [WS_METHODS.honeFeedback]: "hone",
++  [WS_METHODS.honeThreadFeedback]: "hone",
++  [WS_METHODS.honeDemoReset]: "hone",
+   [WS_METHODS.mcpAppsCallTool]: "provider",
+   [WS_METHODS.mcpAppsToolInfo]: "provider",
+   [WS_METHODS.mcpAppsUpdateModelContext]: "provider",
+diff --git a/apps/server/src/orchestration-v2/runtimeLayer.ts b/apps/server/src/orchestration-v2/runtimeLayer.ts
+index 1b546275..a7477a22 100644
+--- a/apps/server/src/orchestration-v2/runtimeLayer.ts
++++ b/apps/server/src/orchestration-v2/runtimeLayer.ts
+@@ -13,6 +13,7 @@ import * as TextGeneration from "../textGeneration/TextGeneration.ts";
+ import * as ProviderAuthService from "../provider/ProviderAuthService.ts";
+ import * as AgentSessionImporter from "../project/AgentSessionImporter.ts";
+ import * as AgentSessionScanner from "../project/AgentSessionScanner.ts";
++import * as HoneDemo from "../hone/HoneDemo.ts";
+ import * as ProjectService from "../project/ProjectService.ts";
+ import * as ProjectSetupScriptRunner from "../project/ProjectSetupScriptRunner.ts";
+ import * as ManagedProjectFolders from "../project/ManagedProjectFolders.ts";
+@@ -247,6 +248,10 @@ const layerAgentSessionImporterProvided = AgentSessionImporter.layer.pipe(
+   ),
+ );
+ 
++const layerHoneDemoProvided = HoneDemo.layer.pipe(
++  Layer.provide(Layer.mergeAll(layerProjectService, layerEventSink)),
++);
++
+ const layerThreadManagementProvided = ThreadManagementService.layerWithLegacyImporter.pipe(
+   Layer.provide(
+     Layer.mergeAll(
+@@ -389,6 +394,7 @@ export const layerProduction = Layer.mergeAll(
+   ),
+   layerProviderContinuationWorkerProvided,
+   layerAgentSessionImporterProvided,
++  layerHoneDemoProvided,
+   EffectOutbox.layerPruneWorker.pipe(Layer.provide(EffectOutbox.layer)),
+ ).pipe(
+   Layer.provide(ResourceCleanupService.layer.pipe(Layer.provide(layerScheduledTaskProvided))),
+diff --git a/apps/server/src/serverRuntimeStartup.autoPull.test.ts b/apps/server/src/serverRuntimeStartup.autoPull.test.ts
+index 549aae79..2622eee6 100644
+--- a/apps/server/src/serverRuntimeStartup.autoPull.test.ts
++++ b/apps/server/src/serverRuntimeStartup.autoPull.test.ts
+@@ -27,6 +27,7 @@ import * as ThreadManagement from "./orchestration-v2/ThreadManagementService.ts
+ import * as ExternalLauncher from "./process/externalLauncher.ts";
+ import * as ProjectService from "./project/ProjectService.ts";
+ import * as AgentAwarenessRelay from "./relay/AgentAwarenessRelay.ts";
++import * as HoneDemo from "./hone/HoneDemo.ts";
+ import { ServerActivation } from "./serverActivation.ts";
+ import * as ServerLifecycleEvents from "./serverLifecycleEvents.ts";
+ import * as ServerRuntimeStartup from "./serverRuntimeStartup.ts";
+@@ -119,6 +120,7 @@ it.effect("parks automatic pull until activation without delaying command readin
+         Layer.mock(Orchestrator.OrchestratorV2)({ recoverDelegatedTasks: Effect.void }),
+         Layer.mock(ProviderSessionManager.ProviderSessionManagerV2)({ shutdown: Effect.void }),
+         Layer.mock(AgentAwarenessRelay.AgentAwarenessRelay)({ start: () => Effect.void }),
++        Layer.mock(HoneDemo.HoneDemo)({ resetAtStartup: Effect.void }),
+         Layer.mock(EffectWorker.OrchestrationEffectWorkerV2)({ runOnce: Effect.never }),
+         Layer.mock(ServerLifecycleEvents.ServerLifecycleEvents)({
+           publish: (event) => Effect.succeed({ ...event, sequence: 1 }),
+diff --git a/apps/server/src/serverRuntimeStartup.test.ts b/apps/server/src/serverRuntimeStartup.test.ts
+index bef61bbc..85737f13 100644
+--- a/apps/server/src/serverRuntimeStartup.test.ts
++++ b/apps/server/src/serverRuntimeStartup.test.ts
+@@ -41,6 +41,7 @@ import * as ThreadManagement from "./orchestration-v2/ThreadManagementService.ts
+ import * as ExternalLauncher from "./process/externalLauncher.ts";
+ import * as ProjectService from "./project/ProjectService.ts";
+ import * as AgentAwarenessRelay from "./relay/AgentAwarenessRelay.ts";
++import * as HoneDemo from "./hone/HoneDemo.ts";
+ import { ServerActivation } from "./serverActivation.ts";
+ import * as ServerLifecycleEvents from "./serverLifecycleEvents.ts";
+ import * as ServerSettings from "./serverSettings.ts";
+@@ -118,6 +119,7 @@ it.effect.each([
+         Layer.mock(Orchestrator.OrchestratorV2)({ recoverDelegatedTasks: Effect.void }),
+         Layer.mock(ProviderSessionManager.ProviderSessionManagerV2)({ shutdown: Effect.void }),
+         Layer.mock(AgentAwarenessRelay.AgentAwarenessRelay)({ start: () => Effect.void }),
++        Layer.mock(HoneDemo.HoneDemo)({ resetAtStartup: Effect.void }),
+         Layer.mock(EffectWorker.OrchestrationEffectWorkerV2)({ runOnce: Effect.never }),
+         Layer.mock(ServerLifecycleEvents.ServerLifecycleEvents)({
+           publish: (event) =>
+diff --git a/apps/server/src/serverRuntimeStartup.ts b/apps/server/src/serverRuntimeStartup.ts
+index 54fef56e..e54ba8a8 100644
+--- a/apps/server/src/serverRuntimeStartup.ts
++++ b/apps/server/src/serverRuntimeStartup.ts
+@@ -45,6 +45,7 @@ import * as AgentAwarenessRelay from "./relay/AgentAwarenessRelay.ts";
+ import * as ServerLifecycleEvents from "./serverLifecycleEvents.ts";
+ import * as ServerSettings from "./serverSettings.ts";
+ import { forkParked, forkParkedFiber } from "./serverActivation.ts";
++import * as HoneDemo from "./hone/HoneDemo.ts";
+ import * as AnalyticsService from "./telemetry/AnalyticsService.ts";
+ import { getServerOwners } from "./telemetry/Identify.ts";
+ import * as ServerEnvironment from "./environment/ServerEnvironment.ts";
+@@ -453,6 +454,7 @@ const make = Effect.fn("serverRuntimeStartup.make")(function* (options?: Startup
+   const serverEnvironment = yield* ServerEnvironment.ServerEnvironment;
+   const crypto = yield* Crypto.Crypto;
+   const launcher = yield* ServiceLauncherClient.ServiceLauncherClient;
++  const honeDemo = yield* HoneDemo.HoneDemo;
+ 
+   const commandGate = yield* makeCommandGate;
+   const httpListening = yield* Deferred.make<void>();
+@@ -579,6 +581,8 @@ const make = Effect.fn("serverRuntimeStartup.make")(function* (options?: Startup
+       forkParked,
+     );
+ 
++    yield* runStartupPhase("hone.demo.reset", honeDemo.resetAtStartup).pipe(forkParked);
++
+     const importPendingTranscripts = legacyV1ThreadImporter.importPendingTranscripts.pipe(
+       Effect.tap((summary) =>
+         summary.importedThreadCount === 0
+diff --git a/apps/server/src/ws.test.ts b/apps/server/src/ws.test.ts
+index 3b7c9be6..84aab269 100644
+--- a/apps/server/src/ws.test.ts
++++ b/apps/server/src/ws.test.ts
+@@ -47,6 +47,7 @@ import * as CommandOutputHub from "./orchestration-v2/CommandOutputHub.ts";
+ import * as CodexInstallation from "./provider/CodexInstallation.ts";
+ import * as DeviceService from "./device/DeviceService.ts";
+ import * as DocumentText from "./provider/DocumentText.ts";
++import * as HoneDemo from "./hone/HoneDemo.ts";
+ import * as DirectEndpoints from "./environment/DirectEndpoints.ts";
+ import * as EnvironmentAuth from "./auth/EnvironmentAuth.ts";
+ import * as EnvironmentTheme from "./environmentTheme.ts";
+@@ -529,6 +530,7 @@ it.effect("shell snapshots omit idle children and older settled threads only on
+ // Build the production RPC layer; unrelated capabilities fail if this test calls them.
+ const layerUnusedConfigRpcServices = Layer.mergeAll(
+   Layer.mock(DocumentText.DocumentText)({}),
++  Layer.mock(HoneDemo.HoneDemo)({}),
+   FetchHttpClient.layer,
+   Layer.mock(ServerSecretStore.ServerSecretStore)({}),
+   Layer.mock(WorkspacePaths.WorkspacePaths)({}),
+diff --git a/apps/server/src/ws.ts b/apps/server/src/ws.ts
+index acd27626..2a82a191 100644
+--- a/apps/server/src/ws.ts
++++ b/apps/server/src/ws.ts
+@@ -193,6 +193,7 @@ import { terminalOutputStream, withTerminalOutputWindow } from "./terminal/Outpu
+ import * as ServerBrowser from "./preview/ServerBrowser.ts";
+ import * as DeviceService from "./device/DeviceService.ts";
+ import * as Hone from "./hone/Hone.ts";
++import * as HoneDemo from "./hone/HoneDemo.ts";
+ import { remoteSshDeviceHosts } from "./device/localSshDeviceHost.ts";
+ import * as PreviewManager from "./preview/Manager.ts";
+ import { issueAssetUrl } from "./assets/AssetAccess.ts";
+@@ -1351,6 +1352,7 @@ export const layerWsRpc = (
+       const projectEnrichment = yield* ProjectEnrichmentService.ProjectEnrichmentService;
+       const agentSessionScanner = yield* AgentSessionScanner.AgentSessionScanner;
+       const agentSessionImporter = yield* AgentSessionImporter.AgentSessionImporter;
++      const honeDemo = yield* HoneDemo.HoneDemo;
+       const checkpointDiffQuery = yield* CheckpointDiffQuery.CheckpointDiffQuery;
+       const nativeChildWork = yield* NativeChildWorkQuery.NativeChildWorkQuery;
+       const keybindings = yield* Keybindings.Keybindings;
+@@ -2483,6 +2485,8 @@ export const layerWsRpc = (
+           ),
+         [WS_METHODS.honeStatus]: (_input) => Hone.honeStatus,
+         [WS_METHODS.honeFeedback]: (input) => Hone.honeFeedback(input),
++        [WS_METHODS.honeThreadFeedback]: (input) => Hone.honeThreadFeedback(input),
++        [WS_METHODS.honeDemoReset]: (_input) => honeDemo.reset,
+         [WS_METHODS.serverUpdateProvider]: (input) =>
+           providerMaintenanceRunner.updateProvider(input),
+         [WS_METHODS.providerConsumeResetCredit]:
+diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
+index 6fd54db6..afcdebb1 100644
+--- a/apps/web/src/components/ChatView.tsx
++++ b/apps/web/src/components/ChatView.tsx
+@@ -4,6 +4,7 @@ import { sourceControlClients } from "@t3tools/client-runtime/source-control-cli
+ import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
+ import { queuedRunEditBlockedReason } from "@t3tools/client-runtime/queued-run-edit";
+ import { ScrollToEndButton, WorkspaceFileDropOverlay } from "./chat/TimelineOverlays";
++import { useHoneDemoFilesPanel } from "./chat/HoneControls";
+ import { usePasteToFocusComposer } from "./chat/usePasteToFocusComposer";
+ import { announcedRun, isDetailBehindShell } from "./chat/threadActivityAnnouncement";
+ import {
+@@ -1160,6 +1161,7 @@ export default function ChatView(props: ChatViewProps) {
+     if (!activeThreadRef || !activeEnvironmentBootstrapComplete) return;
+     useRightPanelStore.getState().reconcileFileSurfaces(activeThreadRef, activeProject !== null);
+   }, [activeEnvironmentBootstrapComplete, activeProject, activeThreadRef]);
++  useHoneDemoFilesPanel(activeThreadRef, activeProject !== null);
+ 
+   const primaryEnvironmentId = primaryEnvironment?.environmentId ?? null;
+   const activeEnvironment =
+diff --git a/apps/web/src/components/chat/HoneControls.tsx b/apps/web/src/components/chat/HoneControls.tsx
+index d4c2b76f..fa0447d5 100644
+--- a/apps/web/src/components/chat/HoneControls.tsx
++++ b/apps/web/src/components/chat/HoneControls.tsx
+@@ -2,12 +2,23 @@ import {
+   isAtomCommandInterrupted,
+   squashAtomCommandFailure,
+ } from "@t3tools/client-runtime/state/runtime";
+-import type { EnvironmentId, HoneFeedbackRating, HoneStatus, ThreadId } from "@t3tools/contracts";
++import { scopedThreadKey } from "@t3tools/client-runtime/environment";
++import type {
++  EnvironmentId,
++  HoneFeedbackRating,
++  HoneStatus,
++  ScopedThreadRef,
++  ThreadId,
++} from "@t3tools/contracts";
++import { Link, useNavigate } from "@tanstack/react-router";
+ import { ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
+ import { useEffect, useRef, useState } from "react";
+ 
++import { type DraftId, useComposerDraftStore } from "~/composerDraftStore";
++import { requestConfirmDialog } from "~/confirmDialog";
+ import { cn } from "~/lib/utils";
+-import { honeEnvironment } from "~/state/hone";
++import { useRightPanelStore } from "~/rightPanelStore";
++import { honeEnvironment, honeFeedbackRating } from "~/state/hone";
+ import { useEnvironmentQuery } from "~/state/query";
+ import { useAtomCommand } from "~/state/use-atom-command";
+ import { ConnectionStatusDot } from "../ConnectionStatusDot";
+@@ -19,7 +30,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+ 
+ /** Which AGENTS.md the agent runs and how close Hone is to rewriting it. */
+ export function HoneStatusChip({ environmentId }: { readonly environmentId: EnvironmentId }) {
+-  const status = useEnvironmentQuery(honeEnvironment.status({ environmentId, input: {} })).data;
++  const status = useHoneStatus(environmentId);
+   useHoneUpdateToasts(status);
+   if (status === null || status.dashboardUrl === null) return null;
+   const optimizing = status.reachable && status.run !== null;
+@@ -27,10 +38,8 @@ export function HoneStatusChip({ environmentId }: { readonly environmentId: Envi
+     <Tooltip>
+       <TooltipTrigger
+         render={
+-          <a
+-            href={status.dashboardUrl}
+-            target="_blank"
+-            rel="noreferrer"
++          <Link
++            to="/hone"
+             aria-label="Open the Hone dashboard"
+             className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
+           />
+@@ -74,6 +83,63 @@ export function HoneStatusChip({ environmentId }: { readonly environmentId: Envi
+   );
+ }
+ 
++export function useHoneStatus(environmentId: EnvironmentId | null): HoneStatus | null {
++  return useEnvironmentQuery(
++    environmentId === null ? null : honeEnvironment.status({ environmentId, input: {} }),
++  ).data;
++}
++
++/** Asks first, then has the server reload the prepared demo chats. Open chats update live. */
++export function useHoneDemoReset(environmentId: EnvironmentId | null) {
++  const resetDemo = useAtomCommand(honeEnvironment.demoReset, { reportFailure: false });
++  const navigate = useNavigate();
++  const resetting = useRef(false);
++  return async () => {
++    if (environmentId === null || resetting.current) return;
++    const confirmed = await requestConfirmDialog(
++      "Reset the demo?\nThis deletes every chat in the demo project, new ones included, and loads the prepared chats and files again.",
++      { variant: "destructive" },
++    );
++    if (confirmed !== true) return;
++    resetting.current = true;
++    const toastId = toastManager.add({ type: "loading", title: "Resetting the demo..." });
++    const result = await resetDemo({ environmentId, input: {} });
++    resetting.current = false;
++    if (result._tag === "Success") {
++      // An unsent new chat from the last visitor would otherwise stay in the sidebar.
++      const drafts = useComposerDraftStore.getState();
++      for (const draftId of Object.keys(drafts.draftThreadsByThreadKey)) {
++        drafts.clearDraftThread(draftId as DraftId);
++      }
++      toastManager.update(toastId, {
++        type: "success",
++        title: "Demo reset",
++        description: `${result.value.chatCount} prepared chats are ready.`,
++      });
++      void navigate({ to: "/" });
++      return;
++    }
++    const error = squashAtomCommandFailure(result);
++    toastManager.update(toastId, {
++      type: "error",
++      title: "Could not reset the demo",
++      description: error instanceof Error ? error.message : "An error occurred.",
++    });
++  };
++}
++
++/** In the booth demo a chat opens with the Files panel, so the Inbox files are one drag from the composer. */
++export function useHoneDemoFilesPanel(threadRef: ScopedThreadRef | null, hasWorkspace: boolean) {
++  const demo = useHoneStatus(threadRef?.environmentId ?? null)?.demo === true;
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the Files panel once for a demo chat that has no panel state yet
++  useEffect(() => {
++    if (!demo || !hasWorkspace || threadRef === null) return;
++    const panels = useRightPanelStore.getState();
++    if (panels.byThreadKey[scopedThreadKey(threadRef)] !== undefined) return;
++    panels.openFile(threadRef, ".");
++  }, [demo, hasWorkspace, threadRef]);
++}
++
+ function useHoneUpdateToasts(status: HoneStatus | null) {
+   const previous = useRef<HoneStatus | null>(null);
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- raises imperative toasts when a poll shows a new session or AGENTS.md version
+@@ -118,13 +184,21 @@ const RATINGS = [
+ export function HoneFeedbackControl({
+   environmentId,
+   threadId,
++  showFeedback,
+ }: {
+   readonly environmentId: EnvironmentId;
+   readonly threadId: ThreadId;
++  /** Shows the feedback Hone already holds for the session next to the buttons. */
++  readonly showFeedback: boolean;
+ }) {
+   const sendFeedback = useAtomCommand(honeEnvironment.feedback, { reportFailure: false });
++  const held = useEnvironmentQuery(
++    honeEnvironment.threadFeedback({ environmentId, input: { threadId } }),
++  );
++  const heldFeedback = held.data?.feedback ?? null;
+   const [openRating, setOpenRating] = useState<HoneFeedbackRating | null>(null);
+-  const [sentRating, setSentRating] = useState<HoneFeedbackRating | null>(null);
++  const [ratedNow, setRatedNow] = useState<HoneFeedbackRating | null>(null);
++  const sentRating = ratedNow ?? honeFeedbackRating(heldFeedback);
+   const [comment, setComment] = useState("");
+   const [sending, setSending] = useState(false);
+ 
+@@ -136,8 +210,9 @@ export function HoneFeedbackControl({
+     });
+     setSending(false);
+     if (result._tag === "Success") {
+-      setSentRating(rating);
++      setRatedNow(rating);
+       setOpenRating(null);
++      held.refresh();
+       toastManager.add({
+         type: "success",
+         title: `Feedback sent to Hone (${result.value.traceId})`,
+@@ -208,6 +283,21 @@ export function HoneFeedbackControl({
+           </PopoverPopup>
+         </Popover>
+       ))}
++      {showFeedback && heldFeedback !== null ? (
++        <Tooltip>
++          <TooltipTrigger
++            render={<span className="ml-1 max-w-80 truncate text-muted-foreground text-xs" />}
++          >
++            {heldFeedback.split("\n").at(-1)}
++          </TooltipTrigger>
++          <TooltipPopup side="top" className="max-w-96 whitespace-pre-wrap">
++            <div className="flex flex-col gap-1">
++              <span className="font-medium">Feedback Hone has for this session</span>
++              <span>{heldFeedback}</span>
++            </div>
++          </TooltipPopup>
++        </Tooltip>
++      ) : null}
+     </div>
+   );
+ }
+diff --git a/apps/web/src/components/chat/TimelineAssistantRows.tsx b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+index 5d89f134..33aa1380 100644
+--- a/apps/web/src/components/chat/TimelineAssistantRows.tsx
++++ b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+@@ -202,6 +202,7 @@ function AssistantMessageMeta({
+         <HoneFeedbackControl
+           environmentId={ctx.activeThreadEnvironmentId}
+           threadId={projectedItem.sourceThreadId}
++          showFeedback={honeReply === "latest"}
+         />
+       ) : null}
+       {!message.streaming && (
+diff --git a/apps/web/src/components/hone/HonePage.tsx b/apps/web/src/components/hone/HonePage.tsx
+new file mode 100644
+index 00000000..6dc7d389
+--- /dev/null
++++ b/apps/web/src/components/hone/HonePage.tsx
+@@ -0,0 +1,81 @@
++import { ExternalLinkIcon } from "lucide-react";
++import type { SVGProps } from "react";
++
++import { isElectron } from "~/env";
++import { usePrimaryEnvironmentId } from "~/state/environments";
++import { useHoneStatus } from "../chat/HoneControls";
++import { Button } from "../ui/button";
++import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty";
++import { SidebarInset } from "../ui/sidebar";
++import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "../WorkspaceBreadcrumb";
++import { WorkspacePageHeader } from "../WorkspacePageHeader";
++
++/** Hone's mark drawn as a line icon, three document lines with the middle one honed to a point. */
++export function HoneGlyph(props: SVGProps<SVGSVGElement>) {
++  return (
++    <svg
++      xmlns="http://www.w3.org/2000/svg"
++      viewBox="0 0 24 24"
++      fill="none"
++      stroke="currentColor"
++      strokeWidth={2}
++      strokeLinecap="round"
++      strokeLinejoin="round"
++      aria-hidden
++      {...props}
++    >
++      <path d="M5 6.5h8" />
++      <path d="M5 12h10" />
++      <path d="M15 10.25 19.5 12 15 13.75Z" fill="currentColor" />
++      <path d="M5 17.5h5.5" />
++    </svg>
++  );
++}
++
++/** The Hone dashboard inside t3code, so the optimizer is one click from the chats. */
++export function HonePage() {
++  const status = useHoneStatus(usePrimaryEnvironmentId());
++  const dashboardUrl = status?.dashboardUrl ?? null;
++  return (
++    <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none">
++      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background">
++        <WorkspacePageHeader electron={isElectron} className="border-b border-border">
++          <WorkspaceBreadcrumb ariaLabel="Hone breadcrumb">
++            <WorkspaceBreadcrumbItem current>
++              <h1 className="truncate">Hone</h1>
++            </WorkspaceBreadcrumbItem>
++          </WorkspaceBreadcrumb>
++          <div className="min-w-0 flex-1" />
++          {dashboardUrl === null ? null : (
++            <Button
++              size="xs"
++              variant="ghost"
++              render={<a href={dashboardUrl} target="_blank" rel="noreferrer" />}
++            >
++              Open in a new tab
++              <ExternalLinkIcon />
++            </Button>
++          )}
++        </WorkspacePageHeader>
++        {status === null ? null : dashboardUrl === null ? (
++          <Empty className="flex-1">
++            <EmptyHeader>
++              <EmptyTitle>Hone is not connected</EmptyTitle>
++              <EmptyDescription>
++                Start the server with HONE_URL, or HONE_DASHBOARD_URL, to show the Hone dashboard
++                here.
++              </EmptyDescription>
++            </EmptyHeader>
++          </Empty>
++        ) : (
++          // oxlint-disable-next-line react/iframe-missing-sandbox -- Hone is another origin, and its dashboard needs scripts and its own origin for its API calls and saved theme.
++          <iframe
++            src={dashboardUrl}
++            title="Hone dashboard"
++            className="min-h-0 w-full flex-1 border-0 bg-background"
++          />
++        )}
++      </div>
++    </SidebarInset>
++  );
++}
+diff --git a/apps/web/src/components/sidebar/SidebarChrome.tsx b/apps/web/src/components/sidebar/SidebarChrome.tsx
+index dd41ddd2..308490e5 100644
+--- a/apps/web/src/components/sidebar/SidebarChrome.tsx
++++ b/apps/web/src/components/sidebar/SidebarChrome.tsx
+@@ -1,4 +1,10 @@
+-import { ArrowLeftIcon, ArrowRightIcon, ChartNoAxesColumnIcon, SettingsIcon } from "lucide-react";
++import {
++  ArrowLeftIcon,
++  ArrowRightIcon,
++  ChartNoAxesColumnIcon,
++  RotateCcwIcon,
++  SettingsIcon,
++} from "lucide-react";
+ import type { ReactNode } from "react";
+ import { memo } from "react";
+ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+@@ -13,7 +19,9 @@ import {
+ } from "../../navigationHistory";
+ import { primaryServerKeybindingsAtom } from "../../state/server";
+ import { cn } from "../../lib/utils";
+-import { usePullRequestsSupported } from "../../state/environments";
++import { usePrimaryEnvironmentId, usePullRequestsSupported } from "../../state/environments";
++import { useHoneDemoReset, useHoneStatus } from "../chat/HoneControls";
++import { HoneGlyph } from "../hone/HonePage";
+ import { T3Wordmark } from "../T3Wordmark";
+ import {
+   resolveEnvironmentIdentificationPillLabel,
+@@ -226,6 +234,9 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+     select: (location) => isSidebarUtilityPage(location.pathname),
+   });
+   const pullRequestsSupported = usePullRequestsSupported();
++  const primaryEnvironmentId = usePrimaryEnvironmentId();
++  const honeStatus = useHoneStatus(primaryEnvironmentId);
++  const resetHoneDemo = useHoneDemoReset(primaryEnvironmentId);
+   const closeMobileSidebar = () => {
+     if (isMobile) {
+       setOpenMobile(false);
+@@ -250,6 +261,11 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+     void navigate({ to: "/usage" });
+   };
+ 
++  const handleHoneClick = () => {
++    closeMobileSidebar();
++    void navigate({ to: "/hone" });
++  };
++
+   const handleBackClick = () => {
+     closeMobileSidebar();
+     void navigateToMainApp();
+@@ -283,6 +299,16 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+             label="Usage"
+             onClick={handleUsageClick}
+           />
++          {honeStatus?.dashboardUrl ? (
++            <SidebarUtilityItem icon={<HoneGlyph />} label="Hone" onClick={handleHoneClick} />
++          ) : null}
++          {honeStatus?.demo ? (
++            <SidebarUtilityItem
++              icon={<RotateCcwIcon />}
++              label="Reset demo"
++              onClick={() => void resetHoneDemo()}
++            />
++          ) : null}
+         </>
+       )}
+       <SidebarThreadUndoNotice />
+diff --git a/apps/web/src/routeTree.gen.ts b/apps/web/src/routeTree.gen.ts
+index 0e26ab6e..58e96731 100644
+--- a/apps/web/src/routeTree.gen.ts
++++ b/apps/web/src/routeTree.gen.ts
+@@ -21,6 +21,7 @@ import { Route as ChatUsageRouteImport } from './routes/_chat.usage'
+ import { Route as ChatSettingsRouteImport } from './routes/_chat.settings'
+ import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
+ import { Route as ChatNewRouteImport } from './routes/_chat.new'
++import { Route as ChatHoneRouteImport } from './routes/_chat.hone'
+ import { Route as ChatSettingsWorktreesRouteImport } from './routes/_chat.settings.worktrees'
+ import { Route as ChatSettingsThreadsRouteImport } from './routes/_chat.settings.threads'
+ import { Route as ChatSettingsStorageRouteImport } from './routes/_chat.settings.storage'
+@@ -109,6 +110,11 @@ const ChatNewRoute = ChatNewRouteImport.update({
+   path: '/new',
+   getParentRoute: () => ChatRoute,
+ } as any)
++const ChatHoneRoute = ChatHoneRouteImport.update({
++  id: '/hone',
++  path: '/hone',
++  getParentRoute: () => ChatRoute,
++} as any)
+ const ChatSettingsWorktreesRoute = ChatSettingsWorktreesRouteImport.update({
+   id: '/worktrees',
+   path: '/worktrees',
+@@ -262,6 +268,7 @@ export interface FileRoutesByFullPath {
+   '/guest': typeof GuestRoute
+   '/pair': typeof PairRoute
+   '/welcome': typeof WelcomeRoute
++  '/hone': typeof ChatHoneRoute
+   '/new': typeof ChatNewRoute
+   '/pull-requests': typeof ChatPullRequestsRoute
+   '/settings': typeof ChatSettingsRouteWithChildren
+@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
+   '/guest': typeof GuestRoute
+   '/pair': typeof PairRoute
+   '/welcome': typeof WelcomeRoute
++  '/hone': typeof ChatHoneRoute
+   '/new': typeof ChatNewRoute
+   '/pull-requests': typeof ChatPullRequestsRoute
+   '/settings': typeof ChatSettingsRouteWithChildren
+@@ -345,6 +353,7 @@ export interface FileRoutesById {
+   '/guest': typeof GuestRoute
+   '/pair': typeof PairRoute
+   '/welcome': typeof WelcomeRoute
++  '/_chat/hone': typeof ChatHoneRoute
+   '/_chat/new': typeof ChatNewRoute
+   '/_chat/pull-requests': typeof ChatPullRequestsRoute
+   '/_chat/settings': typeof ChatSettingsRouteWithChildren
+@@ -389,6 +398,7 @@ export interface FileRouteTypes {
+     | '/guest'
+     | '/pair'
+     | '/welcome'
++    | '/hone'
+     | '/new'
+     | '/pull-requests'
+     | '/settings'
+@@ -429,6 +439,7 @@ export interface FileRouteTypes {
+     | '/guest'
+     | '/pair'
+     | '/welcome'
++    | '/hone'
+     | '/new'
+     | '/pull-requests'
+     | '/settings'
+@@ -471,6 +482,7 @@ export interface FileRouteTypes {
+     | '/guest'
+     | '/pair'
+     | '/welcome'
++    | '/_chat/hone'
+     | '/_chat/new'
+     | '/_chat/pull-requests'
+     | '/_chat/settings'
+@@ -603,6 +615,13 @@ declare module '@tanstack/react-router' {
+       preLoaderRoute: typeof ChatNewRouteImport
+       parentRoute: typeof ChatRoute
+     }
++    '/_chat/hone': {
++      id: '/_chat/hone'
++      path: '/hone'
++      fullPath: '/hone'
++      preLoaderRoute: typeof ChatHoneRouteImport
++      parentRoute: typeof ChatRoute
++    }
+     '/_chat/settings/worktrees': {
+       id: '/_chat/settings/worktrees'
+       path: '/worktrees'
+@@ -865,6 +884,7 @@ const ChatSettingsRouteWithChildren = ChatSettingsRoute._addFileChildren(
+ )
+ 
+ interface ChatRouteChildren {
++  ChatHoneRoute: typeof ChatHoneRoute
+   ChatNewRoute: typeof ChatNewRoute
+   ChatPullRequestsRoute: typeof ChatPullRequestsRoute
+   ChatSettingsRoute: typeof ChatSettingsRouteWithChildren
+@@ -875,6 +895,7 @@ interface ChatRouteChildren {
+ }
+ 
+ const ChatRouteChildren: ChatRouteChildren = {
++  ChatHoneRoute: ChatHoneRoute,
+   ChatNewRoute: ChatNewRoute,
+   ChatPullRequestsRoute: ChatPullRequestsRoute,
+   ChatSettingsRoute: ChatSettingsRouteWithChildren,
+diff --git a/apps/web/src/routes/_chat.hone.tsx b/apps/web/src/routes/_chat.hone.tsx
+new file mode 100644
+index 00000000..862fcfc6
+--- /dev/null
++++ b/apps/web/src/routes/_chat.hone.tsx
+@@ -0,0 +1,7 @@
++import { createFileRoute } from "@tanstack/react-router";
++
++import { HonePage } from "../components/hone/HonePage";
++
++export const Route = createFileRoute("/_chat/hone")({
++  component: HonePage,
++});
+diff --git a/apps/web/src/state/hone.ts b/apps/web/src/state/hone.ts
+index 83aeb968..04cc7024 100644
+--- a/apps/web/src/state/hone.ts
++++ b/apps/web/src/state/hone.ts
+@@ -4,7 +4,13 @@ import {
+   createEnvironmentRpcCommand,
+   createEnvironmentRpcQueryAtomFamily,
+ } from "@t3tools/client-runtime/state/runtime";
+-import { type EnvironmentId, type ThreadId, type TurnItemId, WS_METHODS } from "@t3tools/contracts";
++import {
++  type EnvironmentId,
++  type HoneFeedbackRating,
++  type ThreadId,
++  type TurnItemId,
++  WS_METHODS,
++} from "@t3tools/contracts";
+ import { Atom } from "effect/reactivity";
+ 
+ import { connectionAtomRuntime } from "../connection/runtime";
+@@ -21,8 +27,27 @@ export const honeEnvironment = {
+     label: "environment-data:hone:feedback",
+     tag: WS_METHODS.honeFeedback,
+   }),
++  threadFeedback: createEnvironmentRpcQueryAtomFamily(connectionAtomRuntime, {
++    label: "environment-data:hone:thread-feedback",
++    tag: WS_METHODS.honeThreadFeedback,
++    staleTimeMs: 0,
++    refreshIntervalMs: 15_000,
++  }),
++  demoReset: createEnvironmentRpcCommand(connectionAtomRuntime, {
++    label: "environment-data:hone:demo-reset",
++    tag: WS_METHODS.honeDemoReset,
++  }),
+ };
+ 
++/** The rating of the newest rated line in Hone's feedback for a session. */
++export function honeFeedbackRating(feedback: string | null): HoneFeedbackRating | null {
++  const rated = (feedback ?? "")
++    .split("\n")
++    .map((line) => line.trim())
++    .findLast((line) => line.startsWith("👍") || line.startsWith("👎"));
++  return rated === undefined ? null : rated.startsWith("👍") ? "up" : "down";
++}
++
+ /** A Pi reply Hone can take feedback on, and whether it is the thread's newest reply. */
+ export type HoneReply = "latest" | "earlier" | null;
+ 
+diff --git a/packages/contracts/src/hone.ts b/packages/contracts/src/hone.ts
+index 31553a69..101b1254 100644
+--- a/packages/contracts/src/hone.ts
++++ b/packages/contracts/src/hone.ts
+@@ -1,5 +1,5 @@
+ import * as Schema from "effect/Schema";
+-import { NonNegativeInt, ThreadId, TrimmedString } from "./baseSchemas.ts";
++import { NonNegativeInt, ProjectId, ThreadId, TrimmedString } from "./baseSchemas.ts";
+ 
+ /** What the Hone service reports about the AGENTS.md the agent runs and the next optimization. */
+ export const HoneStatus = Schema.Struct({
+@@ -13,6 +13,8 @@ export const HoneStatus = Schema.Struct({
+   pendingCount: NonNegativeInt,
+   batchSize: NonNegativeInt,
+   run: Schema.NullOr(Schema.Struct({ id: Schema.String, status: Schema.String })),
++  /** The server runs the booth demo (HONE_DEMO=1) and can reset it. */
++  demo: Schema.Boolean,
+ });
+ export type HoneStatus = typeof HoneStatus.Type;
+ 
+@@ -31,6 +33,22 @@ export const HoneFeedbackResult = Schema.Struct({
+ });
+ export type HoneFeedbackResult = typeof HoneFeedbackResult.Type;
+ 
++export const HoneThreadFeedbackInput = Schema.Struct({ threadId: ThreadId });
++export type HoneThreadFeedbackInput = typeof HoneThreadFeedbackInput.Type;
++
++/** The feedback lines Hone holds for the thread's Pi session, oldest first. */
++export const HoneThreadFeedback = Schema.Struct({
++  traceId: Schema.String,
++  feedback: Schema.NullOr(Schema.String),
++});
++export type HoneThreadFeedback = typeof HoneThreadFeedback.Type;
++
++export const HoneDemoResetResult = Schema.Struct({
++  projectId: ProjectId,
++  chatCount: NonNegativeInt,
++});
++export type HoneDemoResetResult = typeof HoneDemoResetResult.Type;
++
+ export const HoneErrorReason = Schema.Literals([
+   "unreachable",
+   "not-published",
+diff --git a/packages/contracts/src/rpc.ts b/packages/contracts/src/rpc.ts
+index 17983894..d3cc0e3c 100644
+--- a/packages/contracts/src/rpc.ts
++++ b/packages/contracts/src/rpc.ts
+@@ -165,7 +165,15 @@ import {
+   ProviderUploadFeedbackResult,
+ } from "./provider.ts";
+ import { ProviderInstanceId, ProviderInstanceMutation } from "./providerInstance.ts";
+-import { HoneError, HoneFeedbackInput, HoneFeedbackResult, HoneStatus } from "./hone.ts";
++import {
++  HoneDemoResetResult,
++  HoneError,
++  HoneFeedbackInput,
++  HoneFeedbackResult,
++  HoneStatus,
++  HoneThreadFeedback,
++  HoneThreadFeedbackInput,
++} from "./hone.ts";
+ import {
+   GuestShareCreateError,
+   GuestShareCreateInput,
+@@ -437,6 +445,8 @@ export const WS_METHODS = {
+   providerUploadFeedback: "provider.uploadFeedback",
+   honeStatus: "hone.status",
+   honeFeedback: "hone.feedback",
++  honeThreadFeedback: "hone.threadFeedback",
++  honeDemoReset: "hone.demoReset",
+   providerAuthStart: "provider.auth.start",
+   providerConsumeResetCredit: "provider.consumeResetCredit",
+   providerAuthComplete: "provider.auth.complete",
+@@ -1449,6 +1459,18 @@ const WsHoneFeedbackRpc = Rpc.make(WS_METHODS.honeFeedback, {
+   error: Schema.Union([HoneError, EnvironmentAuthorizationError]),
+ });
+ 
++const WsHoneThreadFeedbackRpc = Rpc.make(WS_METHODS.honeThreadFeedback, {
++  payload: HoneThreadFeedbackInput,
++  success: HoneThreadFeedback,
++  error: Schema.Union([HoneError, EnvironmentAuthorizationError]),
++});
++
++const WsHoneDemoResetRpc = Rpc.make(WS_METHODS.honeDemoReset, {
++  payload: Schema.Struct({}),
++  success: HoneDemoResetResult,
++  error: Schema.Union([HoneError, EnvironmentAuthorizationError]),
++});
++
+ const WsSubscribeVcsStatusRpc = Rpc.make(WS_METHODS.subscribeVcsStatus, {
+   payload: VcsStatusSubscriptionInput,
+   success: VcsStatusStreamEvent,
+@@ -2135,6 +2157,8 @@ export const WsRpcGroup = RpcGroup.make(
+   WsProviderUploadFeedbackRpc,
+   WsHoneStatusRpc,
+   WsHoneFeedbackRpc,
++  WsHoneThreadFeedbackRpc,
++  WsHoneDemoResetRpc,
+   WsSubscribeVcsStatusRpc,
+   WsSubscribeWorktreeSetupRpc,
+   WsWorktreeSetupCancelRpc,
+-- 
+2.43.0
+
