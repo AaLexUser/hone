@@ -48,6 +48,7 @@ body { font-family: var(--sans); color: var(--ink); -webkit-print-color-adjust: 
 p, h1, h2, h3, ul, figure { margin: 0; padding: 0; }
 b { font-weight: 700; }
 code { font-family: var(--mono); font-weight: 500; font-size: 0.92em; }
+b code { font-weight: 700; }
 .band { padding: 0 var(--m); }
 
 /* header */
@@ -96,11 +97,11 @@ h2 .n { width: 15mm; height: 15mm; flex: none; border-radius: 50%; border: 0.7mm
 h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; letter-spacing: 0; color: var(--muted); margin-left: 3mm; align-self: flex-end; padding-bottom: 1.2mm; }
 
 /* 1. pipeline */
-.diagram { padding: 4mm 0 3mm; }
+.diagram { padding: 6mm 0 2mm; }
 .diagram svg { width: 778mm; height: auto; margin: 0 auto; display: block; overflow: visible; }
-.stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 8mm; margin-top: 3mm; }
+.stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 6mm; margin-top: 3mm; }
 .stages p { display: flex; gap: 2mm; font-size: var(--t-small); line-height: 1.35; }
-.stages i { flex: none; width: 9.5mm; height: 9.5mm; margin-top: 0.6mm; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: var(--t-small); line-height: 1; }
+.stages i { flex: none; width: 10mm; height: 10mm; margin-top: 0.6mm; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: var(--t-small); line-height: 1; }
 .note { margin-top: 5mm; font-weight: 600; color: var(--hone-deep); }
 
 /* 2. results */
@@ -164,7 +165,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent reads at session start.</b> Real sessions happen once, with at most a free-text comment.</p>
   </div>
   <div>
-    <p class="txt">Skill optimizers learn from runs labeled with a score or pass/fail, and most re-execute tasks to check each edit. Hone needs neither. It edits <code>AGENTS.md</code> from finished sessions, with any free-text feedback or none.</p>
+    <p class="txt">Skill optimizers learn from runs labeled with a score or pass/fail, and most re-execute tasks to check each edit. Hone needs neither. It edits <code>AGENTS.md</code> from finished sessions, with or without free-text feedback.</p>
     <table class="cmp">
       <thead><tr><th></th><th>SkillOpt</th><th>SkillOpt-Lite</th><th>Trace2Skill</th><th>EvoSkill</th><th class="h">Hone</th></tr></thead>
       <tbody>
@@ -219,8 +220,8 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <text x="248" y="67" font-size="9.5" fill="#565b66" text-anchor="middle" font-style="italic">n traces</text>
 
     <!-- ===== REVIEW ===== -->
-    <rect x="394" y="0" width="268" height="110" rx="5" fill="#e2e5fb" stroke="#3540a6" stroke-width="0.8"/>
-    <text x="405" y="16" font-size="11" font-weight="700" fill="#3540a6">Review</text>
+    <rect x="394" y="4" width="268" height="106" rx="5" fill="#e2e5fb" stroke="#3540a6" stroke-width="0.8"/>
+    <text x="405" y="18" font-size="11" font-weight="700" fill="#3540a6">Review</text>
 
     <line x1="330" y1="62" x2="399" y2="62" stroke="#1a1c21" stroke-width="0.7"/>
     <path d="M399 34 V90" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
@@ -260,7 +261,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <path d="M752 84 V140 H652 V218" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
 
     <!-- ===== PROPOSE ===== -->
-    <rect x="394" y="126" width="268" height="138" rx="5" fill="#e2e5fb" stroke="#3540a6" stroke-width="0.8"/>
+    <rect x="394" y="126" width="268" height="134" rx="5" fill="#e2e5fb" stroke="#3540a6" stroke-width="0.8"/>
     <path d="M662 140 H652 V218" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
     <line x1="652" y1="162" x2="642" y2="162" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
     <line x1="652" y1="190" x2="642" y2="190" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
@@ -289,10 +290,10 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <text x="457" y="208" font-size="9.5" text-anchor="middle" fill="#565b66">cross-examines</text>
 
     <line x1="457" y1="230" x2="457" y2="235" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
-    <rect x="404" y="236" width="246" height="22" rx="3" fill="#fff" stroke="#3540a6" stroke-width="1.1"/>
-    <use href="#i-file" x="411" y="241" width="12" height="12" style="color:#3540a6"/>
-    <text x="428" y="250.8" font-size="11" font-weight="700" fill="#1f2b55">Edit set</text>
-    <text x="482" y="250.8" font-size="9.5" fill="#565b66">edits + commit message</text>
+    <rect x="404" y="236" width="246" height="20" rx="3" fill="#fff" stroke="#3540a6" stroke-width="1.1"/>
+    <use href="#i-file" x="411" y="240" width="12" height="12" style="color:#3540a6"/>
+    <text x="428" y="250" font-size="11" font-weight="700" fill="#1f2b55">Edit set</text>
+    <text x="482" y="250" font-size="9.5" fill="#565b66">edits + commit message</text>
 
     <!-- experience history -->
     <rect x="685" y="158" width="135" height="50" rx="3" fill="#ffffff" stroke="#1a1c21" stroke-width="0.6" stroke-dasharray="3 2"/>
@@ -303,7 +304,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <line x1="685" y1="190" x2="653" y2="190" stroke="#7d7a73" stroke-width="0.7" stroke-dasharray="3 2"/>
 
     <!-- ===== verify, commit, publish ===== -->
-    <path d="M404 247 H380" fill="none" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
+    <path d="M404 246 H380" fill="none" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
     <rect x="270" y="178" width="108" height="76" rx="4" fill="#f1e8d2" stroke="#806217" stroke-width="1.1"/>
     <use href="#i-shield" x="316" y="186" width="16" height="16" style="color:#806217"/>
     <text x="324" y="218" font-size="11" font-weight="700" text-anchor="middle" fill="#4f3c0c">Verifier</text>
@@ -344,7 +345,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <!-- pipeline stages -->
     <use href="#stg" x="0" y="4"/><text x="0" y="7.4" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">1</text>
     <use href="#stg" x="166" y="4"/><text x="166" y="7.4" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">2</text>
-    <use href="#stg" x="394" y="0"/><text x="394" y="3.4" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">3</text>
+    <use href="#stg" x="394" y="4"/><text x="394" y="7.4" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">3</text>
     <use href="#stg" x="394" y="126"/><text x="394" y="129.4" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">4</text>
     <use href="#stg" x="270" y="178"/><text x="270" y="181.4" font-size="9.5" font-weight="800" fill="#fff" text-anchor="middle">5</text>
   </svg>
@@ -352,9 +353,9 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
   <div class="stages">
     <p><i>1</i><span><b>Trace collection.</b> Sessions arrive as traces with optional user feedback.</span></p>
     <p><i>2</i><span><b>Batch assembly.</b> Unanalyzed traces form a batch that stays frozen for the whole run.</span></p>
-    <p><i>3</i><span><b>Review.</b> Reviewers on different LLMs analyze the batch, and a judge questions them.</span></p>
+    <p><i>3</i><span><b>Review.</b> Reviewers on different LLMs analyze the batch, and a judge cross-examines them.</span></p>
     <p><i>4</i><span><b>Propose.</b> Proposers read the review and the experience history. A second judge merges their edits.</span></p>
-    <p><i>5</i><span><b>Verify and commit.</b> Anchors must be unique and evidence in the batch. If not, only Propose reruns.</span></p>
+    <p><i>5</i><span><b>Verify and commit.</b> Each edit needs a unique anchor and batch evidence, or only Propose reruns.</span></p>
   </div>
   <p class="txt note">A finding survives only if it repeats across sessions and holds up when the judge questions it.</p>
 </section>
@@ -364,13 +365,13 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
   <div class="row r1">
     <figure class="card panel"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><b>A</b>You add feedback to the session.</figcaption></figure>
     <figure class="card panel"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><b>B</b>Traces fill a batch and you start a run.</figcaption></figure>
-    <figure class="card panel"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage. The judge asks two reviewers a follow-up, and one withdraws its claim"></div><figcaption><b>C</b>The judge asks, and one reviewer withdraws its claim.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage. The judge asks two reviewers a follow-up, and one withdraws its claim"></div><figcaption><b>C</b>Under questioning, one reviewer withdraws its claim.</figcaption></figure>
   </div>
   <div class="row r2">
     <figure class="card panel"><div class="win"><img src="assets/stills/s3b-commit.png" data-src-w="4680" data-stage-w="780" data-min-px="21" alt="The verified commit with the judge's commit message and the diff to AGENTS.md"></div><figcaption><b>D</b>Hone commits the verified edit.</figcaption></figure>
     <figure class="card panel"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3840" data-stage-w="640" data-min-px="22" alt="AGENTS.md history with the current version marked and Set as current and Branch from here on an older one"></div><figcaption><b>E</b>Every version stays in Git.</figcaption></figure>
     <div class="panel story">
-      <p class="txt"><b>Cross-examination (C).</b> When reviewers name different causes, the judge asks each to answer the other. This aims for a better grounded consensus than a <span class="nw">single-round</span> vote.</p>
+      <p class="txt"><b>Cross-examination (C).</b> When reviewers name different causes, the judge asks each to answer the other. The goal is a better-grounded consensus than a <span class="nw">single-round</span> vote.</p>
       <p class="txt"><b>Review, then propose.</b> Reviewers diagnose and proposers edit, so no fix comes before the diagnosis.</p>
     </div>
   </div>
@@ -398,8 +399,8 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
       <div class="bar "><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:49.5%"></span><span class="v" style="left:49.5%">40.7</span></span></div>
     </div>
     <div class="results-text">
-      <p class="txt">Hone scored highest on both benchmarks, <b>3.0 and 11.3 points</b> above the unoptimized Pi agent. The two differ only in <code>AGENTS.md</code>.</p>
-      <p class="txt">All systems use GPT-5.4-mini as the target model. Hone saw only traces and text feedback. It optimizes one <code>AGENTS.md</code> per domain.</p>
+      <p class="txt">Hone scored highest on both benchmarks, <b>3.0 and 11.3 points</b> above the unoptimized Pi agent. Hone changes only the Pi agent's <code>AGENTS.md</code>.</p>
+      <p class="txt">All systems used GPT-5.4-mini as the target model. Hone saw only traces and expected answers. It optimizes one <code>AGENTS.md</code> per domain.</p>
     </div>
   </div>
 </section>
