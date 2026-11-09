@@ -60,6 +60,9 @@ h2 .n { width: 15mm; height: 15mm; flex: none; border-radius: 50%; border: 0.7mm
 /* 1. pipeline */
 .diagram { padding: 5mm 0 4mm; }
 .diagram svg { width: 778mm; height: auto; margin: 0 auto; display: block; overflow: visible; }
+.stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 8mm; margin-top: 4mm; }
+.stages p { display: flex; gap: 2mm; font-size: var(--t-small); line-height: 1.35; }
+.stages i { flex: none; width: 9.5mm; height: 9.5mm; margin-top: 0.6mm; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: var(--t-small); line-height: 1; }
 .note { margin-top: 4mm; }
 
 /* 2. results */

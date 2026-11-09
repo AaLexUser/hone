@@ -26,6 +26,13 @@
 <section class="band sec" id="how">
   <h2><span class="n">1</span>How Hone works</h2>
   <div class="panel diagram">@@SVG@@</div>
+  <div class="stages">
+    <p><i>1</i><span><b>Trace collection.</b> Sessions arrive as traces with optional user feedback.</span></p>
+    <p><i>2</i><span><b>Batch assembly.</b> Unanalyzed traces form a frozen batch, fixed for the whole run.</span></p>
+    <p><i>3</i><span><b>Review.</b> Reviewers on different LLMs analyze the batch, and the judge cross-examines them.</span></p>
+    <p><i>4</i><span><b>Propose.</b> Proposers read the report and past decisions, and the judge fuses one edit set.</span></p>
+    <p><i>5</i><span><b>Verify and commit.</b> Anchors match once and cite the batch. If not, only propose re-runs.</span></p>
+  </div>
   <p class="txt note">A finding becomes an edit only if it repeats across sessions and holds up when the judge questions it.</p>
 </section>
 
