@@ -51,8 +51,8 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 
 1. Install LibreOffice with `soffice` on PATH, poppler for `pdftotext`, and python-docx for the agent's Python.
 2. Build t3code with patches 0001 to 0003 as `clients/t3code/README.md` describes, and link the Pi extension.
-3. Start Hone with `HONE_DEMO=1`. The first start builds today's prepared state in about 20 seconds.
-4. Start the t3code server with `HONE_DEMO=1`, `HONE_URL`, `HONE_TOKEN`, `HONE_DASHBOARD_URL` and `HONE_DEMO_DIR`. It seeds the chats on start.
+3. Start Hone with `HONE_DEMO=1` and its own empty `HONE_DATA_DIR`, bound to 127.0.0.1. Hone refuses a demo reset on a folder with real history. The first start builds today's prepared state in about 20 seconds.
+4. Start the t3code server with `HONE_DEMO=1`, `HONE_URL`, `HONE_TOKEN`, `HONE_DASHBOARD_URL` and `HONE_DEMO_DIR` set to a new empty folder. It seeds the chats on start.
 5. Pair the browser once, open the Offer letters project, and run one full visitor loop, then press Reset demo.
 
 ## Design
