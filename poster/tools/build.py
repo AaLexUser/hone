@@ -14,11 +14,14 @@ TABLE_I = {  # task success %, GPT-5.4-mini target model
 ORDER = [('Hone', 'hone'), ('Pi agent', 'base'), ('Codex CLI', ''), ('SkillOpt', ''), ('EvoSkill', ''), ('Trace2Skill', '')]
 
 
+M = max(max(t.values()) for t in TABLE_I.values())
+
+
 def chart(bench):
     r = TABLE_I[bench]
     bars = '\n'.join(
-        f'      <div class="bar {k}"><span class="l">{n}</span><span class="tr"><span class="b" style="width:{r[n]}%"></span>'
-        f'<span class="v" style="left:{r[n]}%">{r[n]:.1f}</span></span></div>' for n, k in ORDER)
+        f'      <div class="bar {k}"><span class="l">{n}</span><span class="tr"><span class="b" style="width:{r[n] / M * 100:.1f}%"></span>'
+        f'<span class="v" style="left:{r[n] / M * 100:.1f}%">{r[n]:.1f}</span></span></div>' for n, k in ORDER)
     return f'    <div class="panel chart">\n      <p class="bench">{bench}, task success %</p>\n{bars}\n    </div>'
 
 

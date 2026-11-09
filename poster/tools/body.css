@@ -75,7 +75,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 .stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 8mm; margin-top: 3mm; }
 .stages p { display: flex; gap: 2mm; font-size: var(--t-small); line-height: 1.35; }
 .stages i { flex: none; width: 9.5mm; height: 9.5mm; margin-top: 0.6mm; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: var(--t-small); line-height: 1; }
-.note { margin-top: 3mm; }
+.note { margin-top: 3mm; font-weight: 600; color: var(--hone-deep); }
 
 /* 2. results */
 .results { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 10mm; align-items: center; }
@@ -95,7 +95,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 /* 3. demo */
 .nw { white-space: nowrap; }
 .row { display: flex; gap: 10mm; align-items: stretch; }
-.row + .row { margin-top: 5mm; }
+.row + .row { margin-top: 8mm; }
 .card { flex: 1 1 auto; padding: 4mm 5mm 3.5mm; display: flex; flex-direction: column; }
 .card .win { background: #fff; border-radius: 2mm; overflow: hidden; box-shadow: 0 0 0 0.4mm var(--rule); height: var(--sh); align-self: center; }
 .card img { height: 100%; width: auto; display: block; }
@@ -104,7 +104,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 .r2 .card { flex: none; }
 .story { flex: 1 1 auto; padding: 5mm 7mm; display: flex; flex-direction: column; justify-content: center; }
 .story .txt + .txt { margin-top: 3mm; }
-.r1 { --sh: 162mm; }
+.r1 { --sh: 168mm; }
 .r2 { --sh: 123mm; }
 
 /* footer */

@@ -19,7 +19,7 @@
 <section class="band intro" id="intro">
   <div>
     <p class="lead">Can a coding agent learn from sessions that <em>already happened?</em></p>
-    <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at every session.</b> Real sessions happen once, with at most a short comment from the user.</p>
+    <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent reads at session start.</b> Real sessions happen once, with at most a free-text comment.</p>
   </div>
   <div>
     <p class="txt">Skill optimizers learn from runs labeled with a score or pass/fail, and most re-execute tasks to check each edit. Hone needs neither. It learns from finished sessions with any free-text comment, or none at all.</p>
@@ -34,23 +34,23 @@
 </section>
 
 <section class="band sec" id="how">
-  <h2><span class="n">1</span>How Hone works</h2>
+  <h2><span class="n">1</span>How Hone works<span class="sub">MAJICS, Multi-Agent Judgment through Interactive Cross-examination and Synthesis</span></h2>
   <div class="panel diagram">@@SVG@@</div>
   <div class="stages">
     <p><i>1</i><span><b>Trace collection.</b> Sessions arrive as traces with optional user feedback.</span></p>
-    <p><i>2</i><span><b>Batch assembly.</b> Unanalyzed traces form a frozen batch, fixed for the whole run.</span></p>
-    <p><i>3</i><span><b>Review.</b> Reviewers on different LLMs analyze the batch, and the judge cross-examines them.</span></p>
-    <p><i>4</i><span><b>Propose.</b> Proposers read the report and past decisions, and the judge fuses one edit set.</span></p>
-    <p><i>5</i><span><b>Verify and commit.</b> Anchors match once and cite the batch. If not, only propose re-runs.</span></p>
+    <p><i>2</i><span><b>Batch assembly.</b> Unanalyzed traces form a batch that stays frozen for the whole run.</span></p>
+    <p><i>3</i><span><b>Review.</b> Reviewers on different LLMs analyze the batch, and a judge questions them.</span></p>
+    <p><i>4</i><span><b>Propose.</b> Proposers read the review and the experience history. A second judge fuses one edit set.</span></p>
+    <p><i>5</i><span><b>Verify and commit.</b> Anchors match once and evidence is in the batch. If not, only Propose reruns.</span></p>
   </div>
   <p class="txt note">A finding becomes an edit only if it repeats across sessions and holds up when the judge questions it.</p>
 </section>
 
 <section class="band sec demo" id="demo">
-  <h2><span class="n">2</span>MAJICS in the demo<span class="sub">Multi-Agent Judgment through Interactive Cross-examination and Synthesis</span></h2>
+  <h2><span class="n">2</span>What the demo shows</h2>
   <div class="row r1">
-    <figure class="card panel"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><b>A</b>You comment on an agent reply.</figcaption></figure>
-    <figure class="card panel"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><b>B</b>Sessions fill a batch, you start a run.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><b>A</b>You add feedback to an agent reply.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><b>B</b>Traces fill a batch and you start a run.</figcaption></figure>
     <figure class="card panel"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage. The judge asks two reviewers a follow-up, and one withdraws its claim"></div><figcaption><b>C</b>The judge questions the reviewers.</figcaption></figure>
   </div>
   <div class="row r2">
@@ -68,8 +68,8 @@
   <div class="results">
 @@CHARTS@@
     <div class="results-text">
-      <p class="txt">Hone scored highest on both benchmarks, 3.0 and 11.3 points above the Pi agent it started from. The two differ only in <code>AGENTS.md</code>.</p>
-      <p class="txt">All systems use GPT-5.4-mini. Hone saw only traces and text feedback, and it optimizes one <code>AGENTS.md</code> for one domain at a time.</p>
+      <p class="txt">Hone scored highest on both benchmarks, <b>3.0 and 11.3 points</b> above the Pi agent it started from. The two differ only in <code>AGENTS.md</code>.</p>
+      <p class="txt">All systems run GPT-5.4-mini as the target model. Hone saw only traces and text feedback. It optimizes one <code>AGENTS.md</code> per domain.</p>
     </div>
   </div>
 </section>
@@ -78,7 +78,7 @@
   <div>
     <p><b>Code</b> github.com/AaLexUser/hone</p>
     <p>Supported by the Ministry of Economic Development of the Russian Federation (IGK 000000C313925P4C0002), Agreement № 139-15-2025-010.</p>
-    <p>Baselines. SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p>
+    <p>Baselines. Pi (Zechner, 2025), Codex CLI (OpenAI, 2025), SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p>
   </div>
   <p class="pid">Paper ID S33237</p>
 </footer>

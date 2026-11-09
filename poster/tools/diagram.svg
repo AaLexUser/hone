@@ -28,7 +28,7 @@
 
     <rect x="0" y="46" width="140" height="40" rx="3" fill="#ffffff" stroke="#8b867c" stroke-width="0.6"/>
     <use href="#i-users" x="9" y="53" width="13" height="13" style="color:#565b66"/>
-    <text x="29" y="63" font-size="11" font-weight="700">Settled agent</text>
+    <text x="29" y="63" font-size="11" font-weight="700">Finished agent</text>
     <text x="29" y="77" font-size="11" font-weight="700">sessions</text>
 
     <path d="M140 22 H151 V66 H140" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
@@ -115,11 +115,11 @@
     <text x="428" y="250.8" font-size="11" font-weight="700" fill="#1f2b55">Edit set</text>
     <text x="482" y="250.8" font-size="9" fill="#565b66">edits + commit message</text>
 
-    <!-- experience memory -->
+    <!-- experience history -->
     <rect x="685" y="158" width="135" height="50" rx="3" fill="#ffffff" stroke="#1a1c21" stroke-width="0.6" stroke-dasharray="3 2"/>
     <use href="#i-db" x="694" y="166" width="13" height="13" style="color:#565b66"/>
     <text x="712" y="176" font-size="11" font-weight="700">Experience</text>
-    <text x="694" y="190" font-size="11" font-weight="700">memory</text>
+    <text x="694" y="190" font-size="11" font-weight="700">history</text>
     <text x="694" y="202" font-size="9" fill="#565b66">past edits, outcomes</text>
     <line x1="685" y1="190" x2="653" y2="190" stroke="#7d7a73" stroke-width="0.7" stroke-dasharray="3 2"/>
 

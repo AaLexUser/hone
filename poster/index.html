@@ -100,7 +100,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 .stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 8mm; margin-top: 3mm; }
 .stages p { display: flex; gap: 2mm; font-size: var(--t-small); line-height: 1.35; }
 .stages i { flex: none; width: 9.5mm; height: 9.5mm; margin-top: 0.6mm; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: var(--t-small); line-height: 1; }
-.note { margin-top: 3mm; }
+.note { margin-top: 3mm; font-weight: 600; color: var(--hone-deep); }
 
 /* 2. results */
 .results { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 10mm; align-items: center; }
@@ -120,7 +120,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 /* 3. demo */
 .nw { white-space: nowrap; }
 .row { display: flex; gap: 10mm; align-items: stretch; }
-.row + .row { margin-top: 5mm; }
+.row + .row { margin-top: 8mm; }
 .card { flex: 1 1 auto; padding: 4mm 5mm 3.5mm; display: flex; flex-direction: column; }
 .card .win { background: #fff; border-radius: 2mm; overflow: hidden; box-shadow: 0 0 0 0.4mm var(--rule); height: var(--sh); align-self: center; }
 .card img { height: 100%; width: auto; display: block; }
@@ -129,7 +129,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 .r2 .card { flex: none; }
 .story { flex: 1 1 auto; padding: 5mm 7mm; display: flex; flex-direction: column; justify-content: center; }
 .story .txt + .txt { margin-top: 3mm; }
-.r1 { --sh: 162mm; }
+.r1 { --sh: 168mm; }
 .r2 { --sh: 123mm; }
 
 /* footer */
@@ -160,7 +160,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 <section class="band intro" id="intro">
   <div>
     <p class="lead">Can a coding agent learn from sessions that <em>already happened?</em></p>
-    <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at every session.</b> Real sessions happen once, with at most a short comment from the user.</p>
+    <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent reads at session start.</b> Real sessions happen once, with at most a free-text comment.</p>
   </div>
   <div>
     <p class="txt">Skill optimizers learn from runs labeled with a score or pass/fail, and most re-execute tasks to check each edit. Hone needs neither. It learns from finished sessions with any free-text comment, or none at all.</p>
@@ -175,7 +175,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 </section>
 
 <section class="band sec" id="how">
-  <h2><span class="n">1</span>How Hone works</h2>
+  <h2><span class="n">1</span>How Hone works<span class="sub">MAJICS, Multi-Agent Judgment through Interactive Cross-examination and Synthesis</span></h2>
   <div class="panel diagram">  <svg viewBox="0 0 820 270" font-family="Inter" aria-label="Hone architecture">
     <defs>
       <marker id="a-ink" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 6 6"><path d="M0,0 L6,3 L0,6 z" fill="#1a1c21"/></marker>
@@ -206,7 +206,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 
     <rect x="0" y="46" width="140" height="40" rx="3" fill="#ffffff" stroke="#8b867c" stroke-width="0.6"/>
     <use href="#i-users" x="9" y="53" width="13" height="13" style="color:#565b66"/>
-    <text x="29" y="63" font-size="11" font-weight="700">Settled agent</text>
+    <text x="29" y="63" font-size="11" font-weight="700">Finished agent</text>
     <text x="29" y="77" font-size="11" font-weight="700">sessions</text>
 
     <path d="M140 22 H151 V66 H140" fill="none" stroke="#1a1c21" stroke-width="0.7"/>
@@ -293,11 +293,11 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <text x="428" y="250.8" font-size="11" font-weight="700" fill="#1f2b55">Edit set</text>
     <text x="482" y="250.8" font-size="9" fill="#565b66">edits + commit message</text>
 
-    <!-- experience memory -->
+    <!-- experience history -->
     <rect x="685" y="158" width="135" height="50" rx="3" fill="#ffffff" stroke="#1a1c21" stroke-width="0.6" stroke-dasharray="3 2"/>
     <use href="#i-db" x="694" y="166" width="13" height="13" style="color:#565b66"/>
     <text x="712" y="176" font-size="11" font-weight="700">Experience</text>
-    <text x="694" y="190" font-size="11" font-weight="700">memory</text>
+    <text x="694" y="190" font-size="11" font-weight="700">history</text>
     <text x="694" y="202" font-size="9" fill="#565b66">past edits, outcomes</text>
     <line x1="685" y1="190" x2="653" y2="190" stroke="#7d7a73" stroke-width="0.7" stroke-dasharray="3 2"/>
 
@@ -350,19 +350,19 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 </div>
   <div class="stages">
     <p><i>1</i><span><b>Trace collection.</b> Sessions arrive as traces with optional user feedback.</span></p>
-    <p><i>2</i><span><b>Batch assembly.</b> Unanalyzed traces form a frozen batch, fixed for the whole run.</span></p>
-    <p><i>3</i><span><b>Review.</b> Reviewers on different LLMs analyze the batch, and the judge cross-examines them.</span></p>
-    <p><i>4</i><span><b>Propose.</b> Proposers read the report and past decisions, and the judge fuses one edit set.</span></p>
-    <p><i>5</i><span><b>Verify and commit.</b> Anchors match once and cite the batch. If not, only propose re-runs.</span></p>
+    <p><i>2</i><span><b>Batch assembly.</b> Unanalyzed traces form a batch that stays frozen for the whole run.</span></p>
+    <p><i>3</i><span><b>Review.</b> Reviewers on different LLMs analyze the batch, and a judge questions them.</span></p>
+    <p><i>4</i><span><b>Propose.</b> Proposers read the review and the experience history. A second judge fuses one edit set.</span></p>
+    <p><i>5</i><span><b>Verify and commit.</b> Anchors match once and evidence is in the batch. If not, only Propose reruns.</span></p>
   </div>
   <p class="txt note">A finding becomes an edit only if it repeats across sessions and holds up when the judge questions it.</p>
 </section>
 
 <section class="band sec demo" id="demo">
-  <h2><span class="n">2</span>MAJICS in the demo<span class="sub">Multi-Agent Judgment through Interactive Cross-examination and Synthesis</span></h2>
+  <h2><span class="n">2</span>What the demo shows</h2>
   <div class="row r1">
-    <figure class="card panel"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><b>A</b>You comment on an agent reply.</figcaption></figure>
-    <figure class="card panel"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><b>B</b>Sessions fill a batch, you start a run.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><b>A</b>You add feedback to an agent reply.</figcaption></figure>
+    <figure class="card panel"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><b>B</b>Traces fill a batch and you start a run.</figcaption></figure>
     <figure class="card panel"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage. The judge asks two reviewers a follow-up, and one withdraws its claim"></div><figcaption><b>C</b>The judge questions the reviewers.</figcaption></figure>
   </div>
   <div class="row r2">
@@ -380,25 +380,25 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
   <div class="results">
     <div class="panel chart">
       <p class="bench">OfficeQA, task success %</p>
-      <div class="bar hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:59.7%"></span><span class="v" style="left:59.7%">59.7</span></span></div>
-      <div class="bar base"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:56.7%"></span><span class="v" style="left:56.7%">56.7</span></span></div>
-      <div class="bar "><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:54.9%"></span><span class="v" style="left:54.9%">54.9</span></span></div>
-      <div class="bar "><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:50.6%"></span><span class="v" style="left:50.6%">50.6</span></span></div>
-      <div class="bar "><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:41.5%"></span><span class="v" style="left:41.5%">41.5</span></span></div>
-      <div class="bar "><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:20.9%"></span><span class="v" style="left:20.9%">20.9</span></span></div>
+      <div class="bar hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:72.5%"></span><span class="v" style="left:72.5%">59.7</span></span></div>
+      <div class="bar base"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:68.9%"></span><span class="v" style="left:68.9%">56.7</span></span></div>
+      <div class="bar "><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:66.7%"></span><span class="v" style="left:66.7%">54.9</span></span></div>
+      <div class="bar "><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:61.5%"></span><span class="v" style="left:61.5%">50.6</span></span></div>
+      <div class="bar "><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:50.4%"></span><span class="v" style="left:50.4%">41.5</span></span></div>
+      <div class="bar "><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:25.4%"></span><span class="v" style="left:25.4%">20.9</span></span></div>
     </div>
     <div class="panel chart">
       <p class="bench">SpreadsheetBench, task success %</p>
-      <div class="bar hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:82.3%"></span><span class="v" style="left:82.3%">82.3</span></span></div>
-      <div class="bar base"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:71.0%"></span><span class="v" style="left:71.0%">71.0</span></span></div>
-      <div class="bar "><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:72.3%"></span><span class="v" style="left:72.3%">72.3</span></span></div>
-      <div class="bar "><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:80.4%"></span><span class="v" style="left:80.4%">80.4</span></span></div>
-      <div class="bar "><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:65.3%"></span><span class="v" style="left:65.3%">65.3</span></span></div>
-      <div class="bar "><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:40.7%"></span><span class="v" style="left:40.7%">40.7</span></span></div>
+      <div class="bar hone"><span class="l">Hone</span><span class="tr"><span class="b" style="width:100.0%"></span><span class="v" style="left:100.0%">82.3</span></span></div>
+      <div class="bar base"><span class="l">Pi agent</span><span class="tr"><span class="b" style="width:86.3%"></span><span class="v" style="left:86.3%">71.0</span></span></div>
+      <div class="bar "><span class="l">Codex CLI</span><span class="tr"><span class="b" style="width:87.8%"></span><span class="v" style="left:87.8%">72.3</span></span></div>
+      <div class="bar "><span class="l">SkillOpt</span><span class="tr"><span class="b" style="width:97.7%"></span><span class="v" style="left:97.7%">80.4</span></span></div>
+      <div class="bar "><span class="l">EvoSkill</span><span class="tr"><span class="b" style="width:79.3%"></span><span class="v" style="left:79.3%">65.3</span></span></div>
+      <div class="bar "><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:49.5%"></span><span class="v" style="left:49.5%">40.7</span></span></div>
     </div>
     <div class="results-text">
-      <p class="txt">Hone scored highest on both benchmarks, 3.0 and 11.3 points above the Pi agent it started from. The two differ only in <code>AGENTS.md</code>.</p>
-      <p class="txt">All systems use GPT-5.4-mini. Hone saw only traces and text feedback, and it optimizes one <code>AGENTS.md</code> for one domain at a time.</p>
+      <p class="txt">Hone scored highest on both benchmarks, <b>3.0 and 11.3 points</b> above the Pi agent it started from. The two differ only in <code>AGENTS.md</code>.</p>
+      <p class="txt">All systems run GPT-5.4-mini as the target model. Hone saw only traces and text feedback. It optimizes one <code>AGENTS.md</code> per domain.</p>
     </div>
   </div>
 </section>
@@ -407,7 +407,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
   <div>
     <p><b>Code</b> github.com/AaLexUser/hone</p>
     <p>Supported by the Ministry of Economic Development of the Russian Federation (IGK 000000C313925P4C0002), Agreement № 139-15-2025-010.</p>
-    <p>Baselines. SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p>
+    <p>Baselines. Pi (Zechner, 2025), Codex CLI (OpenAI, 2025), SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p>
   </div>
   <p class="pid">Paper ID S33237</p>
 </footer>
