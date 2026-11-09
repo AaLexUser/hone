@@ -102,9 +102,6 @@ h1 .name { color: var(--hone-hi); }
 .band.alt { background: var(--paper-2); }
 .band.dark { background: var(--ink); color: #fff; }
 #demo { flex: 1 0 auto; }
-.kicker { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hone); }
-.dark .kicker { color: var(--hone-hi2); }
-.kicker .tag { display: inline-block; margin-left: 3mm; padding: 0.6mm 2.5mm; border-radius: 1.5mm; background: var(--amber-bg); color: var(--amber-ink); letter-spacing: 0.06em; }
 h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weight: 800; letter-spacing: -0.02em; }
 
 /* positioning: 2x2 */
@@ -150,8 +147,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .rl-h .ok { color: #7fe3a1; } .rl-h .no { color: #ff9a8f; }
 .grid { display: grid; grid-template-columns: auto auto auto; justify-content: space-between; column-gap: 6mm; row-gap: 1.2mm; align-items: center; }
 .dhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10mm; }
-.gc.gth { padding-bottom: 0; }
-.gth { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-2); border-bottom: 0.4mm solid #4b5060; padding-bottom: 1mm; }
 .gf { font-size: 10.5mm; font-weight: 600; color: #fff; white-space: nowrap; }
 .gc { display: flex; gap: 3mm; }
 .bt { display: flex; }
@@ -181,11 +176,10 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .ftr .refs { color: #c3c6d0; margin-top: 1mm; }
 .ftr .pid { font-family: var(--mono); font-size: 11mm; font-weight: 700; color: #fff; background: var(--ink-2); border: 0.5mm solid #6b7080; border-radius: 2mm; padding: 2mm 5mm; white-space: nowrap; }
 
-.sb-h { margin-top: 7mm; font-family: var(--mono); font-size: 9mm; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hone-hi2); }
 .story { display: grid; grid-template-columns: 1.22fr 1.1fr 0.75fr 1fr; gap: 6mm; margin-top: 7mm; }
 .sb { background: var(--ink-2); border-radius: 2.5mm; padding: 4mm 5mm 4.5mm; box-shadow: inset 0 0 0 0.5mm #3a3f4c; display: flex; flex-direction: column; gap: 1.6mm; }
 .sb.cur { box-shadow: inset 0 0 0 0.8mm var(--hone-hi); }
-.sb-k { font-family: var(--mono); font-size: 9.5mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
+.sb-k { font-size: 10mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
 .sb .q { font-size: 11.5mm; line-height: 1.18; font-style: italic; color: #ffd98a; }
 .sb .o { margin-top: auto; font-size: 11.5mm; line-height: 1.15; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 1.8mm; width: fit-content; }
 .sb .o + .o { margin-top: 1.6mm; }
@@ -218,6 +212,9 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .ptab .sig { font-size: 10.5mm; font-weight: 800; text-align: center; white-space: nowrap; }
 .ptab .sig.y { color: #8f1d14; }
 .ptab .sig.n { color: var(--hone-deep); }
+
+.scen { font-size: 11mm; font-weight: 600; color: var(--on-dark-2); white-space: nowrap; }
+.scen span { margin-left: 2mm; padding: 0.4mm 2.5mm 0.8mm; border-radius: 1.5mm; background: var(--amber-bg); color: var(--amber-ink); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -273,7 +270,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 
 
 <section class="band arch" id="arch">
-  <p class="kicker">How it works · MAJICS: Multi-Agent Judgment through Interactive Cross-examination and Synthesis</p>
   <h2>Reviewers disagree, a judge cross-examines, a verifier gates every edit.</h2>
     <svg viewBox="0 0 820 334" font-family="Inter" aria-label="Hone architecture">
     <defs>
@@ -329,7 +325,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 
     <!-- ===== REVIEW ===== -->
     <rect x="394" y="0" width="268" height="140" rx="5" fill="#e2e5fb" stroke="#3540a6" stroke-width="0.8"/>
-    <text x="405" y="17" font-size="11" font-weight="700" fill="#3540a6" letter-spacing="0.8">REVIEW</text>
+    <text x="405" y="17" font-size="11" font-weight="700" fill="#3540a6">Review</text>
     <text x="458" y="17" font-size="9" fill="#3540a6">3 reviewers, different LLMs</text>
 
     <line x1="378" y1="62" x2="399" y2="62" stroke="#1a1c21" stroke-width="0.7"/>
@@ -385,7 +381,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <line x1="652" y1="211" x2="642" y2="211" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
     <line x1="652" y1="245" x2="642" y2="245" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
     <line x1="652" y1="279" x2="642" y2="279" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
-    <text x="405" y="187" font-size="11" font-weight="700" fill="#3540a6" letter-spacing="0.8">PROPOSE</text>
+    <text x="405" y="187" font-size="11" font-weight="700" fill="#3540a6">Propose</text>
     <text x="467" y="187" font-size="9" fill="#3540a6">3 proposers, different LLMs</text>
 
     <g font-size="10">
@@ -481,7 +477,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 </section>
 
 <section class="band dark" id="demo">
-  <div class="dhead"><p class="rl-h"><span class="ok">Plain feedback became rules.</span> <span class="no">A one-off request did not.</span></p><p class="kicker">The demo <span class="tag">DEMO SCENARIO · HR OFFER LETTERS (SCRIPTED)</span></p></div>
+  <div class="dhead"><p class="rl-h"><span class="ok">Plain feedback became rules.</span> <span class="no">A one-off request did not.</span></p><p class="scen">Demo scenario: HR offer letters <span>scripted</span></p></div>
   <div class="stills">
     <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback popover under the agent's reply: There's a £0 sign-on bonus line. If there's no bonus, just leave the line out. Send to Hone"></div><figcaption><span class="n">1</span>The user comments on a reply</figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>

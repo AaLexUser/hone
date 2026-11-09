@@ -77,9 +77,6 @@ h1 .name { color: var(--hone-hi); }
 .band.alt { background: var(--paper-2); }
 .band.dark { background: var(--ink); color: #fff; }
 #demo { flex: 1 0 auto; }
-.kicker { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hone); }
-.dark .kicker { color: var(--hone-hi2); }
-.kicker .tag { display: inline-block; margin-left: 3mm; padding: 0.6mm 2.5mm; border-radius: 1.5mm; background: var(--amber-bg); color: var(--amber-ink); letter-spacing: 0.06em; }
 h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weight: 800; letter-spacing: -0.02em; }
 
 /* positioning: 2x2 */
@@ -125,8 +122,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .rl-h .ok { color: #7fe3a1; } .rl-h .no { color: #ff9a8f; }
 .grid { display: grid; grid-template-columns: auto auto auto; justify-content: space-between; column-gap: 6mm; row-gap: 1.2mm; align-items: center; }
 .dhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10mm; }
-.gc.gth { padding-bottom: 0; }
-.gth { font-family: var(--mono); font-size: 8.5mm; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-dark-2); border-bottom: 0.4mm solid #4b5060; padding-bottom: 1mm; }
 .gf { font-size: 10.5mm; font-weight: 600; color: #fff; white-space: nowrap; }
 .gc { display: flex; gap: 3mm; }
 .bt { display: flex; }
@@ -156,11 +151,10 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .ftr .refs { color: #c3c6d0; margin-top: 1mm; }
 .ftr .pid { font-family: var(--mono); font-size: 11mm; font-weight: 700; color: #fff; background: var(--ink-2); border: 0.5mm solid #6b7080; border-radius: 2mm; padding: 2mm 5mm; white-space: nowrap; }
 
-.sb-h { margin-top: 7mm; font-family: var(--mono); font-size: 9mm; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--hone-hi2); }
 .story { display: grid; grid-template-columns: 1.22fr 1.1fr 0.75fr 1fr; gap: 6mm; margin-top: 7mm; }
 .sb { background: var(--ink-2); border-radius: 2.5mm; padding: 4mm 5mm 4.5mm; box-shadow: inset 0 0 0 0.5mm #3a3f4c; display: flex; flex-direction: column; gap: 1.6mm; }
 .sb.cur { box-shadow: inset 0 0 0 0.8mm var(--hone-hi); }
-.sb-k { font-family: var(--mono); font-size: 9.5mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
+.sb-k { font-size: 10mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
 .sb .q { font-size: 11.5mm; line-height: 1.18; font-style: italic; color: #ffd98a; }
 .sb .o { margin-top: auto; font-size: 11.5mm; line-height: 1.15; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 1.8mm; width: fit-content; }
 .sb .o + .o { margin-top: 1.6mm; }
@@ -193,3 +187,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .ptab .sig { font-size: 10.5mm; font-weight: 800; text-align: center; white-space: nowrap; }
 .ptab .sig.y { color: #8f1d14; }
 .ptab .sig.n { color: var(--hone-deep); }
+
+.scen { font-size: 11mm; font-weight: 600; color: var(--on-dark-2); white-space: nowrap; }
+.scen span { margin-left: 2mm; padding: 0.4mm 2.5mm 0.8mm; border-radius: 1.5mm; background: var(--amber-bg); color: var(--amber-ink); font-weight: 700; }
