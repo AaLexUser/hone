@@ -61,7 +61,7 @@ b code { font-weight: 700; }
 .name { font-family: var(--display); font-size: var(--t-name); font-weight: 900; letter-spacing: -0.03em; line-height: 0.9; color: var(--hone-hi); }
 h1 { font-family: var(--display); font-size: var(--t-title); font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; }
 .authors { margin-top: 6mm; font-size: var(--t-body); font-weight: 600; }
-.affil sup { font-size: 8.5mm; line-height: 0; margin-right: 0.5mm; }
+.affil sup { font-size: 8.5mm; line-height: 0; margin-right: 1.2mm; }
 .affil { margin-top: 1.5mm; font-size: var(--t-small); line-height: 1.35; color: var(--on-dark); }
 .side { display: flex; flex-direction: column; align-items: flex-end; gap: 7mm; }
 .side .logo { width: 86mm; height: auto; display: block; }
@@ -310,8 +310,8 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
     <text x="324" y="218" font-size="11" font-weight="700" text-anchor="middle" fill="#4f3c0c">Verifier</text>
     <text x="324" y="234" font-size="9.5" text-anchor="middle" fill="#565b66">anchor + evidence</text>
 
-    <path d="M324 178 V118 H470 V124" fill="none" stroke="#b0302f" stroke-width="0.8" stroke-dasharray="4 2.4" marker-end="url(#a-rej)"/>
-    <text x="332" y="113" font-size="9.5" font-style="italic" fill="#b0302f">rejection</text>
+    <path d="M324 178 V114 H470 V124" fill="none" stroke="#b0302f" stroke-width="0.8" stroke-dasharray="4 2.4" marker-end="url(#a-rej)"/>
+    <text x="332" y="109" font-size="9.5" font-style="italic" fill="#b0302f">rejection</text>
 
     <line x1="270" y1="216" x2="249" y2="216" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
     <text x="259.5" y="210" font-size="9.5" font-weight="700" fill="#3540a6" text-anchor="middle">✓</text>
@@ -399,7 +399,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
       <div class="bar "><span class="l">Trace2Skill</span><span class="tr"><span class="b" style="width:49.5%"></span><span class="v" style="left:49.5%">40.7</span></span></div>
     </div>
     <div class="results-text">
-      <p class="txt">Hone scored highest on both benchmarks, <b>3.0 and 11.3 points</b> above the unoptimized Pi agent. Hone changes only the Pi agent's <code>AGENTS.md</code>.</p>
+      <p class="txt">Hone scored highest on both benchmarks, <b>3.0 and 11.3 points</b> above the unoptimized Pi agent. Hone edited only the Pi agent's <code>AGENTS.md</code>.</p>
       <p class="txt">All systems used GPT-5.4-mini as the target model. Hone saw only traces and expected answers. It optimizes one <code>AGENTS.md</code> per domain.</p>
     </div>
   </div>
