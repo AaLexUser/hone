@@ -189,3 +189,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .chain.five span.again { background: #fbe4e1; color: #7a1010; box-shadow: none; }
 .chain.five i { color: var(--muted); }
 .minepts i { background: var(--hone-deep); }
+
+.ptab .sig { font-size: 10.5mm; font-weight: 800; text-align: center; white-space: nowrap; }
+.ptab .sig.y { color: #8f1d14; }
+.ptab .sig.n { color: var(--hone-deep); }

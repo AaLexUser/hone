@@ -214,6 +214,10 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .chain.five span.again { background: #fbe4e1; color: #7a1010; box-shadow: none; }
 .chain.five i { color: var(--muted); }
 .minepts i { background: var(--hone-deep); }
+
+.ptab .sig { font-size: 10.5mm; font-weight: 800; text-align: center; white-space: nowrap; }
+.ptab .sig.y { color: #8f1d14; }
+.ptab .sig.n { color: var(--hone-deep); }
 </style>
 </head>
 <body>
@@ -264,16 +268,16 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     </div>
   </div>
   <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer. The Pi agent is Hone's starting configuration; only AGENTS.md differs.</p>
-  <p class="cap"><b>Setup.</b> Hone saw traces and text feedback (“Expected … Got …”), no task re-run; OfficeQA: 200 tasks in 5 batches of 40; final file scored once on the full benchmark.</p>
+  <p class="cap"><b>Setup.</b> Each task ran once; Hone saw its trace and feedback from the answer key (“Expected … Got …”), never a re-run. OfficeQA: 200 tasks, 5 batches of 40; final file scored once.</p>
 </section>
 
 <section class="band alt" id="pos">
   <div class="pos">
-    <h2>Five optimizers need <span class="nw">re-runs</span> and pass/fail labels. <span class="hn">Hone needs neither.</span></h2>
+    <h2>Five optimizers re-run every task to score an edit. <span class="hn">Hone never re-runs one.</span></h2>
     <div class="ptab">
-      <p class="ph"></p><p class="ph">Re-runs tasks</p><p class="ph">Needs pass/fail</p><p class="ph">Loop</p>
-      <p class="pn">SkillOpt · SkillOpt-Lite · SkillGrad · Trace2Skill · EvoSkill</p><p class="yn y">yes</p><p class="yn y">yes</p><div class="chain five"><span>run</span><i>→</i><span>score</span><i>→</i><span>edit</span><i>→</i><span class="again">run again</span></div>
-      <p class="pn hn">Hone</p><p class="yn n">no</p><p class="yn n">no</p><div class="chain hone"><span>read</span><i>→</i><span>question</span><i>→</i><span>verify</span><i>→</i><span>commit</span></div>
+      <p class="ph"></p><p class="ph">Re-runs tasks</p><p class="ph">Outcome signal</p><p class="ph">Loop</p>
+      <p class="pn">SkillOpt · SkillOpt-Lite · SkillGrad · Trace2Skill · EvoSkill</p><p class="yn y">yes</p><p class="sig y">pass/fail, every run</p><div class="chain five"><span>run</span><i>→</i><span>score</span><i>→</i><span>edit</span><i>→</i><span class="again">run again</span></div>
+      <p class="pn hn">Hone</p><p class="yn n">no</p><p class="sig n">optional free text</p><div class="chain hone"><span>read</span><i>→</i><span>question</span><i>→</i><span>verify</span><i>→</i><span>commit</span></div>
     </div>
   </div>
 </section>
