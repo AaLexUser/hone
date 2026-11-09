@@ -36,7 +36,7 @@ h1 { font-family: var(--display); font-size: var(--t-title); font-weight: 700; l
 .authors { margin-top: 6mm; font-size: var(--t-body); font-weight: 600; }
 .affil sup { font-size: 8.5mm; line-height: 0; margin-right: 0.5mm; }
 .affil { margin-top: 1.5mm; font-size: var(--t-small); line-height: 1.35; color: var(--on-dark); }
-.side { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
+.side { display: flex; flex-direction: column; align-items: flex-end; gap: 7mm; }
 .side .logo { height: 21mm; display: block; }
 .qr { text-align: center; width: 62mm; }
 .qr .tile { background: #fff; border-radius: 2.5mm; padding: 3.5mm 3.5mm 2mm; }
