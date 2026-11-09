@@ -51,12 +51,15 @@ code { font-family: var(--mono); font-weight: 500; font-size: 0.92em; }
 
 /* header */
 .hdr { background: var(--ink); color: #fff; padding: 8mm var(--m) 7mm; display: grid; grid-template-columns: 1fr auto; column-gap: 14mm; }
-.venue { font-family: var(--mono); font-size: var(--t-small); letter-spacing: 0.14em; color: var(--on-dark); }
-.titlerow { display: flex; align-items: center; gap: 12mm; margin-top: 3mm; }
+.venue { display: flex; align-items: center; gap: 6mm; }
+.venue img { height: 17mm; display: block; }
+.venue .track { border-left: 0.5mm solid #4b5060; padding-left: 5mm; font-size: var(--t-small); line-height: 1.25; color: var(--on-dark); }
+.venue .track b { color: #fff; letter-spacing: 0.04em; }
+.titlerow { display: flex; align-items: center; gap: 12mm; margin-top: 5mm; }
 .name { font-family: var(--display); font-size: var(--t-name); font-weight: 900; letter-spacing: -0.03em; line-height: 0.9; color: var(--hone-hi); }
 h1 { font-family: var(--display); font-size: var(--t-title); font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; }
 .authors { margin-top: 6mm; font-size: var(--t-body); font-weight: 600; }
-.affil sup { font-size: 1em; vertical-align: baseline; font-weight: 700; margin-right: 1mm; }
+.affil sup { font-size: 8.5mm; line-height: 0; margin-right: 0.5mm; }
 .affil { margin-top: 1.5mm; font-size: var(--t-small); line-height: 1.35; color: var(--on-dark); }
 .side { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
 .side .logo { height: 21mm; display: block; }
@@ -128,7 +131,7 @@ h2 .n { width: 15mm; height: 15mm; flex: none; border-radius: 50%; border: 0.7mm
 
 <header class="hdr" id="hdr">
   <div>
-    <p class="venue">IEEE ICDM 2026 · DEMO TRACK</p>
+    <div class="venue"><img src="assets/icdm2026-logo.png" alt="ICDM 2026 Shenyang, China"><p class="track"><b>DEMO TRACK</b><br>IEEE International Conference on Data Mining</p></div>
     <div class="titlerow">
       <p class="name">Hone</p>
       <h1>Mining Agent Trajectories to Optimize<br>AGENTS.md via Cross-Examination</h1>
