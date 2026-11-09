@@ -23,13 +23,13 @@ b { font-weight: 700; }
 .venue .track { border-left: 0.5mm solid #4b5060; padding-left: 6mm; font-size: 9mm; line-height: 1.2; color: #d9dbe3; }
 .venue .track b { color: #fff; font-size: 10mm; letter-spacing: 0.02em; }
 .logos { display: flex; gap: 5mm; }
-.logo-ph { width: 62mm; height: 20mm; border: 0.5mm dashed #8d92a3; border-radius: 3mm; display: grid; place-items: center; text-align: center; font-size: 8.5mm; line-height: 1.1; color: #c3c6d1; }
+.logos img { height: 22mm; display: block; }
 .hdr-main { display: grid; grid-template-columns: 1fr 68mm; gap: 10mm; align-items: center; margin-top: 3mm; }
 h1 { font-family: var(--display); font-size: 33mm; line-height: 1.03; font-weight: 800; letter-spacing: -0.025em; }
 h1 .name { color: var(--hone-hi); }
 .authors { margin-top: 4mm; font-size: 12.5mm; font-weight: 600; white-space: nowrap; }
 .authors sup { font-size: 8.5mm; }
-.authors .affil { margin-left: 6mm; font-size: 9mm; font-weight: 400; color: var(--on-dark-2); }
+.authors .affil { display: block; margin-top: 1.5mm; font-size: 9mm; font-weight: 400; color: var(--on-dark-2); }
 .qr { text-align: center; }
 .qr .tile { background: #fff; border-radius: 3mm; padding: 4mm; }
 .qr .tile img { width: 100%; display: block; }
@@ -121,7 +121,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 
 /* footer */
 .ftr { margin-top: auto; background: var(--ink); color: #d6d8e0; padding: 4mm var(--m) 4mm; display: grid; grid-template-columns: 1fr auto; gap: 10mm; align-items: center; font-size: 8.5mm; line-height: 1.25; border-top: 0.5mm solid #2f3440; }
-.ftr .gh { font-family: var(--mono); color: #fff; font-size: 9.5mm; font-weight: 700; }
+.ftr .ack { color: #fff; font-size: 9mm; }
 .ftr .scope { color: #fff; font-size: 9.5mm; font-weight: 600; margin-top: 1mm; }
 .ftr .refs { color: #c3c6d0; margin-top: 1mm; }
 .ftr .pid { font-family: var(--mono); font-size: 11mm; font-weight: 700; color: #fff; background: var(--ink-2); border: 0.5mm solid #6b7080; border-radius: 2mm; padding: 2mm 5mm; white-space: nowrap; }

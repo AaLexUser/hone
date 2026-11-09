@@ -7,7 +7,7 @@ The poster is 90 by 120 cm, portrait. `index.html` is self-contained, with fonts
 
 ## Fill in before printing
 
-Search `index.html` for `placeholder`. The placeholders are the affiliations, the email, the institution logos, the acknowledgment and the Paper ID in the bottom right corner.
+Search `index.html` for `placeholder`. The only one left is the Paper ID in the bottom right corner.
 
 ## Rebuilding
 
