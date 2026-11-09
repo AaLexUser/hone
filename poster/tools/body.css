@@ -83,7 +83,7 @@ h1 .name { color: var(--hone-hi); }
 h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weight: 800; letter-spacing: -0.02em; }
 
 /* positioning: 2x2 */
-.pos { display: grid; grid-template-columns: 236mm 1fr; column-gap: 20mm; align-items: center; }
+.pos { display: grid; grid-template-columns: 236mm 1fr; column-gap: 16mm; align-items: center; }
 .pos h2 { font-size: 19mm; }
 .pos h2 .hn { color: var(--hone-deep); }
 .nw { white-space: nowrap; }
@@ -108,7 +108,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 686mm; margin: 2mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 820mm; margin: 3mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
@@ -168,3 +168,24 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .sb .o.no { background: #fbe4e1; color: #5c0f0f; }
 .sb .o.hold { background: var(--amber-bg); color: var(--amber-ink); }
 .sb .o.same { background: #dfe2ea; color: #20242e; }
+
+.minepts { display: grid; grid-template-columns: 1.45fr 1fr 1.1fr 1fr; column-gap: 9mm; margin-top: 4mm; padding-top: 3mm; border-top: 0.4mm solid var(--rule); }
+.minepts p { font-size: 9.6mm; line-height: 1.25; padding-left: 15mm; position: relative; color: #2c2f36; }
+.minepts p.lead { padding-left: 0; font-weight: 700; color: var(--ink); }
+.minepts b { color: var(--ink); }
+.minepts i { position: absolute; left: 1.5mm; top: 0.6mm; width: 9.5mm; height: 9.5mm; transform: rotate(45deg); background: var(--hone); }
+.minepts i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 800; font-size: 9mm; line-height: 9.5mm; text-align: center; }
+
+.ptab { display: grid; grid-template-columns: 1fr auto auto auto; column-gap: 6mm; row-gap: 2.5mm; align-items: center; }
+.ptab .ph { font-size: 9.5mm; font-weight: 800; color: var(--muted); text-align: center; border-bottom: 0.4mm solid #b9b2a3; padding-bottom: 1.2mm; align-self: end; }
+.ptab .pn { font-size: 10mm; font-weight: 700; line-height: 1.15; }
+.ptab .pn.hn { font-family: var(--display); font-size: 17mm; font-weight: 900; color: var(--hone-deep); letter-spacing: -0.03em; line-height: 1; }
+.ptab .yn { font-size: 12mm; font-weight: 800; text-align: center; }
+.ptab .yn.y { color: #8f1d14; }
+.ptab .yn.n { color: var(--hone-deep); }
+.chain.hone span { background: var(--hone-deep); color: #fff; }
+.chain.hone i { color: var(--hone-deep); }
+.chain.five span { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 0.4mm #8b8578; }
+.chain.five span.again { background: #fbe4e1; color: #7a1010; box-shadow: none; }
+.chain.five i { color: var(--muted); }
+.minepts i { background: var(--hone-deep); }
