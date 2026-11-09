@@ -166,7 +166,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .stages p { font-size: 9mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 13mm; }
 .stages b { color: var(--ink); }
 .stages i { position: absolute; left: 0; top: -0.6mm; width: 11mm; height: 11mm; border-radius: 50%; background: var(--hone-deep); color: #fff; font-style: normal; font-weight: 800; font-size: 8.6mm; line-height: 11mm; text-align: center; }
-.mining { margin-top: 3mm; font-size: 9.6mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 12mm; }
+.mining { margin-top: 3mm; font-size: 10.5mm; line-height: 1.22; font-weight: 700; color: var(--ink); }
 .mining b { color: var(--ink); }
 .mining .dia { position: absolute; left: 1.4mm; top: 1mm; width: 6.6mm; height: 6.6mm; transform: rotate(45deg); background: var(--hone); }
 

@@ -191,7 +191,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .stages p { font-size: 9mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 13mm; }
 .stages b { color: var(--ink); }
 .stages i { position: absolute; left: 0; top: -0.6mm; width: 11mm; height: 11mm; border-radius: 50%; background: var(--hone-deep); color: #fff; font-style: normal; font-weight: 800; font-size: 8.6mm; line-height: 11mm; text-align: center; }
-.mining { margin-top: 3mm; font-size: 9.6mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 12mm; }
+.mining { margin-top: 3mm; font-size: 10.5mm; line-height: 1.22; font-weight: 700; color: var(--ink); }
 .mining b { color: var(--ink); }
 .mining .dia { position: absolute; left: 1.4mm; top: 1mm; width: 6.6mm; height: 6.6mm; transform: rotate(45deg); background: var(--hone); }
 
@@ -271,7 +271,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
       <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></g></symbol>
       <symbol id="i-git" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><line x1="1" y1="12" x2="8" y2="12"/><line x1="16" y1="12" x2="23" y2="12"/></g></symbol>
       <symbol id="i-code" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></g></symbol>
-      <g id="mine"><rect x="-5.8" y="-5.8" width="11.6" height="11.6" transform="rotate(45)" fill="#4653c9"/></g>
       <g id="stg"><circle r="7.5" fill="#3540a6" stroke="#ffffff" stroke-width="1.4"/></g>
     </defs>
 
@@ -320,8 +319,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
       <use href="#i-search" x="415" y="103.5" width="11" height="11" style="color:#3540a6"/>
       <text x="431" y="112.5" fill="#1f2b55">Reviewer R₃</text>
     </g>
-    <rect x="403" y="22" width="110" height="104" rx="15" fill="none" stroke="#3540a6" stroke-width="0.7" stroke-dasharray="3 2"/>
-    <use href="#mine" x="403" y="126"/>
 
     <g stroke="#3540a6" stroke-width="0.8" fill="none" marker-start="url(#a-rev)" marker-end="url(#a-rev)">
       <line x1="511" y1="41" x2="546" y2="58"/>
@@ -334,7 +331,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <text x="601" y="80" font-size="9" text-anchor="middle" fill="#565b66">cross-examines,</text>
     <text x="601" y="92" font-size="9" text-anchor="middle" fill="#565b66">asks follow-ups,</text>
     <text x="601" y="104" font-size="9" text-anchor="middle" fill="#565b66">writes consensus</text>
-    <use href="#mine" x="654" y="26"/>
     <text x="418" y="136" font-size="9" font-style="italic" fill="#3540a6">↔ the judge re-queries the reviewers</text>
 
     <line x1="654" y1="74" x2="683" y2="74" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
@@ -383,7 +379,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <text x="457" y="250" font-size="9" text-anchor="middle" fill="#565b66">cross-examines,</text>
     <text x="457" y="262" font-size="9" text-anchor="middle" fill="#565b66">asks follow-ups,</text>
     <text x="457" y="274" font-size="9" text-anchor="middle" fill="#565b66">fuses one edit set</text>
-    <use href="#mine" x="404" y="198"/>
 
     <line x1="457" y1="286" x2="457" y2="292" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
     <rect x="404" y="293" width="246" height="23" rx="3" fill="#fff" stroke="#3540a6" stroke-width="1.1"/>
@@ -461,7 +456,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <p><i>4</i><b>Propose.</b> Proposers read the report and past decisions, and the judge fuses one edit set.</p>
     <p><i>5</i><b>Verify and commit.</b> Anchors match once and cite the batch. If not, only propose re-runs.</p>
   </div>
-  <p class="mining"><span class="dia"></span><b>Mining happens in two places.</b> The review panel extracts recurrent behavioral patterns from the traces, and the judge synthesizes these analyses into edit decisions. A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
+  <p class="mining">A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
 </section>
 
 <section class="band dark" id="demo">
