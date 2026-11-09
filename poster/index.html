@@ -130,12 +130,12 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 778mm; margin: 7mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 778mm; margin: 5mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
 /* demo */
-.stills { --sh: 118mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
+.stills { --sh: 165mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
 .shot { margin: 0; }
 .shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
 .shot img { height: 100%; width: auto; display: block; }
@@ -184,8 +184,8 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .minepts i { position: absolute; left: 1.5mm; top: 0.6mm; width: 9.5mm; height: 9.5mm; transform: rotate(45deg); background: var(--hone-deep); }
 .minepts i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 800; font-size: 9mm; line-height: 9.5mm; text-align: center; }
 
-.stills.r2 { --sh: 156mm; margin-top: 5mm; justify-content: center; gap: 0; }
-.stills.r2 .sar { margin-inline: 24mm; }
+.stills.r2 { --sh: 123mm; margin-top: 5mm; justify-content: center; gap: 0; }
+.stills.r2 .sar { margin-inline: 30mm; }
 
 .stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 7mm; margin-top: 4mm; padding-top: 3mm; border-top: 0.4mm solid var(--rule); }
 .stages p { font-size: 9mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 13mm; }
@@ -462,16 +462,16 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 <section class="band dark" id="demo">
   <h2 class="uh">Use your agent as usual. <em>Hone edits its AGENTS.md between sessions.</em></h2>
   <div class="stills r1">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/real/1-feedback.png" data-real data-src-w="944" data-stage-w="315" data-min-px="14" alt="Agent chat: the feedback box under a reply, Send to Hone"></div><figcaption><span class="n">1</span><span>You comment on a reply in the agent's chat</span></figcaption></figure>
+    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><span class="n">1</span><span>You comment on a reply in the agent's chat</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s2"><div class="win"><img src="assets/stills/real/2-batch.png" data-real data-src-w="2352" data-stage-w="588" data-min-px="12" alt="Hone dashboard: batch size, auto-optimize, Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch, and you start a run or turn on auto-optimize</span></figcaption></figure>
+    <figure class="shot s2"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard with unanalyzed traces and their feedback, batch full, Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch, and you start a run or turn on auto-optimize</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s3"><div class="win"><img src="assets/stills/real/3-review.png" data-real data-src-w="1508" data-stage-w="377" data-min-px="11" alt="Run page: review stage, three reviewers on different models, the judge asked two of them"></div><figcaption><span class="n">3</span><span>The judge cross-examines the reviewers, then the proposers</span></figcaption></figure>
+    <figure class="shot s3"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage. The judge asks two reviewers a follow-up, and one withdraws its claim"></div><figcaption><span class="n">3</span><span>The judge cross-examines the reviewers, then the proposers</span></figcaption></figure>
   </div>
   <div class="stills r2">
-    <figure class="shot s4"><div class="win"><img src="assets/stills/real/4-commit.png" data-real data-src-w="1792" data-stage-w="448" data-min-px="12" alt="Run page: committed, with the commit message written by the judge"></div><figcaption><span class="n">4</span><span>Hone commits verified edits with the judge's message</span></figcaption></figure>
+    <figure class="shot s4"><div class="win"><img src="assets/stills/s3b-commit.png" data-src-w="4680" data-stage-w="780" data-min-px="21" alt="The verified commit with the judge's commit message and the diff to AGENTS.md"></div><figcaption><span class="n">4</span><span>Hone commits verified edits with the judge's message</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s5"><div class="win"><img src="assets/stills/real/5-history.png" data-real data-src-w="2848" data-stage-w="712" data-min-px="10.5" alt="Versions page: history of AGENTS.md commits, the current one marked"></div><figcaption><span class="n">5</span><span>Every version stays in Git, and the agent fetches the current one</span></figcaption></figure>
+    <figure class="shot s5"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3840" data-stage-w="640" data-min-px="22" alt="AGENTS.md history with the current version marked and Set as current and Branch from here on an older one"></div><figcaption><span class="n">5</span><span>Every version stays in Git, and the agent fetches the current one</span></figcaption></figure>
   </div>
 </section>
 

@@ -1,0 +1,106 @@
+.s3 {
+  /* The pipeline panel: its top edge shows, it runs off the other three sides */
+  .s3-panel {
+    position: absolute;
+    left: -40px;
+    top: 22px;
+    width: 720px;
+    height: 400px;
+    background: var(--ss-surface);
+    border-radius: 12px;
+    box-shadow: var(--ss-shadow-hero), inset 0 0 0 1px var(--h-line);
+  }
+  .s3-content { position: absolute; inset: 0; zoom: 1.2; }
+
+  .s3-group {
+    position: absolute;
+    border-radius: 12px;
+    background: oklch(0.55 0.17 277 / 0.04);
+    box-shadow: inset 0 0 0 1px oklch(0.55 0.17 277 / 0.4);
+  }
+  .s3-ghead {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 13px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .s3-stage { font-size: 19px; font-weight: 700; color: var(--h-rev); }
+  .s3-gsub { font-size: 17px; color: var(--ss-text-faint); }
+  .s3-gstate { margin-left: auto; font-size: 15px; color: var(--h-accent-2); }
+
+  .s3-wires { position: absolute; left: 0; top: 0; overflow: visible; }
+  .s3-w { fill: none; stroke: var(--h-line-2); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .s3-w--cross { stroke: oklch(0.55 0.17 277 / 0.55); stroke-width: 2; }
+  .s3-w--active { stroke: oklch(0.55 0.17 277 / 0.7); stroke-width: 2; }
+
+  .s3-node {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 9px 0 10px;
+    box-sizing: border-box;
+    border-radius: 9px;
+    background: var(--ss-surface);
+    box-shadow: inset 0 0 0 1px var(--h-line-2);
+  }
+  .s3-node[data-state='working'] { box-shadow: inset 0 0 0 1.75px var(--h-accent); }
+  .s3-ic { flex: none; display: block; }
+  .s3-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .s3-name { font-size: 19px; line-height: 22px; font-weight: 600; color: var(--ss-text-strong); letter-spacing: -0.01em; }
+  .s3-model { font-size: 17px; line-height: 19px; color: var(--ss-text); white-space: nowrap; }
+
+  .s3-tag {
+    position: absolute;
+    right: 9px;
+    top: 9px;
+    padding: 3px 9px 4px;
+    border-radius: 999px;
+    font-size: 17px;
+    line-height: 18px;
+    font-weight: 500;
+    color: #fff;
+    background: var(--h-accent);
+  }
+  /* The judge's tag rides its top edge, as Hone draws it */
+  .s3-tag[data-edge] { right: auto; translate: -100% 0; box-shadow: 0 0 0 2px var(--ss-surface); }
+
+  /* The satellite: reviewer 2's answer, over the frame's lower right corner */
+  .s3-answer {
+    position: absolute;
+    left: 280px;
+    top: 222px;
+    width: 344px;
+    padding: 12px 14px 13px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    background: var(--ss-surface);
+    box-shadow: var(--ss-shadow-satellite), inset 0 0 0 1px var(--h-line);
+  }
+  .s3-ahead { display: flex; align-items: center; gap: 6px; }
+  .s3-arrow { font-size: 20px; color: var(--ss-text-faint); }
+  .s3-who { font-size: 20px; font-weight: 600; color: var(--h-rev); }
+  .s3-chip {
+    display: inline-block;
+    padding: 2px 6px 3px;
+    border-radius: 6px;
+    font-size: 20px;
+    line-height: 22px;
+    font-weight: 500;
+  }
+  .s3-chip[data-kind='rev'] {
+    color: var(--h-rev);
+    background: oklch(0.52 0.1 205 / 0.08);
+    box-shadow: inset 0 0 0 1px oklch(0.52 0.1 205 / 0.3);
+  }
+  .s3-atext {
+    margin-top: 9px;
+    font-size: 21px;
+    line-height: 27px;
+    color: var(--ss-text-strong);
+    text-wrap: pretty;
+  }
+}

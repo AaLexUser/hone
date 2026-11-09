@@ -11,6 +11,6 @@ Search `index.html` for `placeholder`. The placeholders are the affiliations, th
 
 ## Rebuilding
 
-`tools/` holds the sources that `index.html` is built from (`body.html`, `body.css`, `diagram.svg`, `build.py`). `tools/go.sh` rebuilds `index.html` and renders `out/`. It overwrites `index.html`, so edit the files in `tools/` if you rebuild. `tools/audit.cjs` checks the smallest text size, contrast, banned words and banned punctuation. `tools/capture/` describes how the real UI screenshots were taken.
+`tools/` holds the sources that `index.html` is built from (`body.html`, `body.css`, `diagram.svg`, `build.py`). `tools/go.sh` rebuilds `index.html` and renders `out/`. It overwrites `index.html`, so edit the files in `tools/` if you rebuild. `tools/audit.cjs` checks the smallest text size, contrast, banned words and banned punctuation. `tools/stageshow/` holds the sources of the five UI stills.
 
 Rendering needs Node with Playwright and Python 3.
