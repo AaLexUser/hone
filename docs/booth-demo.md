@@ -15,6 +15,8 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
    The prepared scenario then plays exactly as designed.
 4. The presenter can also start a completely new conversation and show real work with the live agent.
    After that, a reset brings everything back to the prepared state for the next visitor.
+5. The Hone optimizer is embedded in t3code as a web view.
+   A new Hone optimization button sits next to the Settings, Usage and PR buttons and opens the Hone interface inside t3code.
 
 ## One visitor, about three minutes
 
