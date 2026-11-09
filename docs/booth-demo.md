@@ -30,13 +30,30 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 5. For visitors who stay, earlier runs show the cross examination at work.
    Hone held back an edit no feedback supported, refused to turn a one off request into a rule, and changed nothing when nothing was wrong.
 
-## Known gaps to close before the booth
+## Verified in the development container on 9 November
 
-- The visitor's live feedback should match the prepared run's commit. The approval for Amara Osei in `Inbox/` has no bonus and no equity for that reason. Check with the booth model that a live letter for her prints the zero value rows.
-- A full real optimization run has not been seen end to end in the development container, because Docker builds fail behind its proxy.
+- After a reset, t3code lists the 13 prepared chats under Offer letters, each with its tool calls, replies and documents.
+- A new message in a prepared chat resumes the same Pi session, and the live agent answered from the letter.
+- A new chat with `Inbox/Hiring approval Amara Osei.pdf` and `Inbox/Offer letter template.docx` dragged into the composer produced `Offer_Osei_Amara.docx` and `.pdf`.
+  The live letter printed `Sign-on Bonus £0` and `Equity Grant 0 shares`, so the visitor's complaint matches the prepared run.
+- Thumbs down reached Hone and filled the batch to 4 of 4. Play prepared run on the Hone page inside t3code finished in 67 seconds with the visitor's session in its batch and made a new current version.
+- Reset demo restored both apps to the prepared state, removed the visitor's chat and files, and cleared an unsent draft.
+
+## Still open before the booth
+
+- A full real optimization run has not been seen end to end, because Docker builds fail behind the container's proxy.
   The chip's optimizing state and its AGENTS.md updated toast are unverified. Run one real optimization on the laptop before the trip.
-- If the conference Wi-Fi fails, the live agent cannot reach its model. Keep a prepared chat with feedback already given and a screen recording of the whole loop.
+- PDF preview inside t3code could not be checked under headless Chromium here. DOCX preview works. Check a PDF in the laptop's Chrome.
+- If the conference Wi-Fi fails, the live agent cannot reach its model. Show the prepared chats and the prepared run, and keep the recorded loop as a backup.
 - Rotate the OpenCode key after the conference.
+
+## Laptop checklist
+
+1. Install LibreOffice with `soffice` on PATH, poppler for `pdftotext`, and python-docx for the agent's Python.
+2. Build t3code with patches 0001 to 0003 as `clients/t3code/README.md` describes, and link the Pi extension.
+3. Start Hone with `HONE_DEMO=1`. The first start builds today's prepared state in about 20 seconds.
+4. Start the t3code server with `HONE_DEMO=1`, `HONE_URL`, `HONE_TOKEN`, `HONE_DASHBOARD_URL` and `HONE_DEMO_DIR`. It seeds the chats on start.
+5. Pair the browser once, open the Offer letters project, and run one full visitor loop, then press Reset demo.
 
 ## Design
 
