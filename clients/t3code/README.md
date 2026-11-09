@@ -24,7 +24,9 @@ folder at session start and publishes the session trace after each reply.
 | `0002` | The header chip and the reply rating control (`apps/web/src/components/chat/HoneControls.tsx`) |
 | `0003` | The booth demo seeder, the `hone.demoReset` and `hone.threadFeedback` RPCs, and the Hone page and Reset demo button in the sidebar (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/HonePage.tsx`) |
 
-The t3code server calls Hone, so the browser never holds the Hone token and Hone needs no CORS.
+The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
+Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
+when Hone exposes it, so keep Hone bound to 127.0.0.1 on a shared network.
 Feedback finds the thread's Pi session file from t3code's stored thread record, so it works after
 the Pi process exits.
 
@@ -76,11 +78,12 @@ so it does not write `AGENTS.md` into the t3code server's folder.
 ## Booth demo
 
 Start the t3code server with `HONE_DEMO=1` next to a Hone service that also runs with
-`HONE_DEMO=1`. Nothing changes when it is off.
+`HONE_DEMO=1` on a data folder of its own (`HONE_DATA_DIR`). Hone refuses a demo reset on a data
+folder that holds a real history. Nothing changes when demo mode is off.
 
 ```sh
 export HONE_DEMO=1
-export HONE_DEMO_DIR="$HOME/Documents/Offer letters"   # the demo project folder
+export HONE_DEMO_DIR="$HOME/Hone demo/Offer letters"   # a new, empty folder for the demo project
 ```
 
 - On every start, and on the Reset demo button in the sidebar, the server calls Hone's
@@ -89,7 +92,7 @@ export HONE_DEMO_DIR="$HOME/Documents/Offer letters"   # the demo project folder
   replies and documents. Open browsers update at once and stay signed in. If Hone is not up yet,
   the start retries for five minutes.
 - `HONE_DEMO_DIR` defaults to `hone-demo` in the t3code data folder. Everything in it is replaced
-  on each reset.
+  on each reset, so the server only takes over an empty folder or the one its last reset created.
 - Each prepared chat is bound to its own copy of the Pi session file, so a new message continues
   the same Pi session. The rating control on its replies shows the feedback Hone already holds.
 - Demo chats open with the Files panel. Drag files from `Inbox/` into the composer to start a

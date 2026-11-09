@@ -1,4 +1,4 @@
-From 605c9e7f585ab4ea020f6772a1fbf0c5aaf47f08 Mon Sep 17 00:00:00 2001
+From 9c0d830fb574f03d5fbff5e5aa84687045ea0c55 Mon Sep 17 00:00:00 2001
 From: Alexey Lapin <a.lapin03@gmail.com>
 Date: Mon, 9 Nov 2026 19:14:59 +0000
 Subject: [PATCH] feat: seed the Hone booth demo and embed the Hone dashboard
@@ -18,7 +18,7 @@ files can be dragged into the composer.
 ---
  apps/server/src/auth/RpcAuthorization.ts      |   2 +
  apps/server/src/hone/Hone.ts                  | 205 ++++----
- apps/server/src/hone/HoneDemo.ts              | 230 +++++++++
+ apps/server/src/hone/HoneDemo.ts              | 252 ++++++++++
  apps/server/src/hone/piSessionHistory.test.ts | 148 ++++++
  apps/server/src/hone/piSessionHistory.ts      | 458 ++++++++++++++++++
  .../src/observability/RpcInstrumentation.ts   |   2 +
@@ -38,7 +38,7 @@ files can be dragged into the composer.
  apps/web/src/state/hone.ts                    |  27 +-
  packages/contracts/src/hone.ts                |  20 +-
  packages/contracts/src/rpc.ts                 |  26 +-
- 22 files changed, 1291 insertions(+), 97 deletions(-)
+ 22 files changed, 1313 insertions(+), 97 deletions(-)
  create mode 100644 apps/server/src/hone/HoneDemo.ts
  create mode 100644 apps/server/src/hone/piSessionHistory.test.ts
  create mode 100644 apps/server/src/hone/piSessionHistory.ts
@@ -326,10 +326,10 @@ index c59df5d1..eb5e5118 100644
 +}, asHoneError);
 diff --git a/apps/server/src/hone/HoneDemo.ts b/apps/server/src/hone/HoneDemo.ts
 new file mode 100644
-index 00000000..7910332c
+index 00000000..5d97ea4b
 --- /dev/null
 +++ b/apps/server/src/hone/HoneDemo.ts
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,252 @@
 +import {
 +  CommandId,
 +  HoneError,
@@ -375,6 +375,7 @@ index 00000000..7910332c
 +type DemoManifest = typeof DemoManifest.Type;
 +
 +const WORKSPACE_PLACEHOLDER = "{{WORKSPACE}}";
++const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 +const PI_INSTANCE = ProviderInstanceId.make("pi");
 +const PI_MODEL: ModelSelection = { instanceId: PI_INSTANCE, model: "default" };
 +
@@ -415,6 +416,8 @@ index 00000000..7910332c
 +  const hostEnvironment = yield* HostProcess.Environment;
 +  const homeDirectory = yield* HostProcess.HomeDirectory;
 +  const lock = yield* Semaphore.make(1);
++  // Names the folder a reset created. Kept outside it so the Files panel stays clean.
++  const ownerMarker = path.join(serverConfig.baseDir, "hone-demo-folder");
 +
 +  /** Hone writes the real folder into its own copy of the sessions, so its trace pages match t3code. */
 +  const fetchManifest = Effect.fn("HoneDemo.fetchManifest")(function* (workspace: string) {
@@ -451,6 +454,7 @@ index 00000000..7910332c
 +  ) {
 +    yield* fileSystem.remove(folder, { recursive: true, force: true });
 +    yield* fileSystem.makeDirectory(folder, { recursive: true });
++    yield* fileSystem.writeFileString(ownerMarker, folder);
 +    for (const file of manifest.files) {
 +      if (!isSafeRelativePath(file.path)) {
 +        return yield* demoError(`The demo file path ${file.path} leaves the project folder.`);
@@ -468,18 +472,32 @@ index 00000000..7910332c
 +      Option.getOrElse(config.demoDir, () => path.join(serverConfig.baseDir, "hone-demo")),
 +    );
 +    yield* fileSystem.makeDirectory(folder, { recursive: true });
-+    return yield* fileSystem.realPath(folder);
++    const resolved = yield* fileSystem.realPath(folder);
++    // Every reset deletes this folder, so only take over an empty one or one a reset created.
++    const entries = yield* fileSystem.readDirectory(resolved);
++    const owned = yield* fileSystem
++      .readFileString(ownerMarker)
++      .pipe(Effect.orElseSucceed(() => ""));
++    if (entries.length > 0 && owned !== resolved) {
++      return yield* demoError(
++        `Refusing to replace ${resolved}. It is not a Hone demo folder. Point HONE_DEMO_DIR at an empty folder.`,
++      );
++    }
++    return resolved;
++  });
++
++  /** Deleting the old chats first stops their Pi sessions before Hone forgets their traces. */
++  const deletePrevious = Effect.fn("HoneDemo.deletePrevious")(function* (folder: string) {
++    const previous = yield* projects.getByWorkspaceRoot(folder);
++    if (Option.isNone(previous)) return;
++    yield* projects.delete({
++      commandId: CommandId.make(`hone-demo:delete:${yield* crypto.randomUUIDv4()}`),
++      projectId: previous.value.id,
++      force: true,
++    });
 +  });
 +
 +  const seed = Effect.fn("HoneDemo.seed")(function* (folder: string, manifest: DemoManifest) {
-+    const previous = yield* projects.getByWorkspaceRoot(folder);
-+    if (Option.isSome(previous)) {
-+      yield* projects.delete({
-+        commandId: CommandId.make(`hone-demo:delete:${yield* crypto.randomUUIDv4()}`),
-+        projectId: previous.value.id,
-+        force: true,
-+      });
-+    }
 +    yield* writeProjectFolder(folder, manifest);
 +
 +    const projectId = ProjectId.make(yield* crypto.randomUUIDv4());
@@ -508,6 +526,9 @@ index 00000000..7910332c
 +    const stamp = DateTime.formatIso(yield* DateTime.now).replace(/[:.]/g, "-");
 +    let chatCount = 0;
 +    for (const chat of manifest.chats) {
++      if (!SESSION_ID.test(chat.sessionId)) {
++        return yield* demoError(`The demo session id ${chat.sessionId} is not a UUID.`);
++      }
 +      const sessionFile = path.join(sessionsDir, `${stamp}_${chat.sessionId}.jsonl`);
 +      const jsonl = chat.jsonl.replaceAll(WORKSPACE_PLACEHOLDER, workspaceInJson);
 +      yield* fileSystem.writeFileString(sessionFile, jsonl);
@@ -532,6 +553,7 @@ index 00000000..7910332c
 +
 +  const reset = Effect.gen(function* () {
 +    const folder = yield* projectFolder;
++    yield* deletePrevious(folder);
 +    return yield* seed(folder, yield* fetchManifest(folder));
 +  }).pipe(
 +    Effect.mapError((error) =>
