@@ -105,7 +105,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 778mm; margin: 4mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 778mm; margin: 8mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
@@ -161,3 +161,11 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 
 .stills.r2 { --sh: 123mm; margin-top: 5mm; justify-content: center; gap: 0; }
 .stills.r2 .sar { margin-inline: 30mm; }
+
+.stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 7mm; margin-top: 4mm; padding-top: 3mm; border-top: 0.4mm solid var(--rule); }
+.stages p { font-size: 9mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 13mm; }
+.stages b { color: var(--ink); }
+.stages i { position: absolute; left: 0; top: -0.6mm; width: 11mm; height: 11mm; border-radius: 50%; background: var(--hone-deep); color: #fff; font-style: normal; font-weight: 800; font-size: 8.6mm; line-height: 11mm; text-align: center; }
+.mining { margin-top: 3mm; font-size: 9.6mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 12mm; }
+.mining b { color: var(--ink); }
+.mining .dia { position: absolute; left: 1.4mm; top: 1mm; width: 6.6mm; height: 6.6mm; transform: rotate(45deg); background: var(--hone); }

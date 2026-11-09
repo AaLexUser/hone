@@ -24,27 +24,29 @@
 <section class="band arch" id="arch">
   <h2>Reviewers disagree, a judge cross-examines, a verifier gates every edit.</h2>
   @@SVG@@
-  <div class="minepts">
-    <p class="lead">Mining happens at three points. A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
-    <p><i><span>1</span></i><b>Process-level signals:</b> a deterministic compiler extracts them from tool-call sequences.</p>
-    <p><i><span>2</span></i><b>Recurrent behavioral patterns:</b> the review panel extracts them from the traces.</p>
-    <p><i><span>3</span></i><b>Decisions:</b> the judge synthesizes these analyses into edit decisions.</p>
+  <div class="stages">
+    <p><i>1</i><b>Trace collection.</b> Sessions arrive as traces with optional feedback; the agent syncs AGENTS.md first.</p>
+    <p><i>2</i><b>Batch assembly.</b> Unanalyzed traces form a frozen batch, fixed for the whole run.</p>
+    <p><i>3</i><b>Review.</b> Reviewers on different models analyze the batch; the judge cross-examines them.</p>
+    <p><i>4</i><b>Propose.</b> Proposers read the report and past decisions; the judge fuses one edit set.</p>
+    <p><i>5</i><b>Verify and commit.</b> Anchor matches once, evidence is in the batch; if not, only propose re-runs.</p>
   </div>
+  <p class="mining"><span class="dia"></span><b>Mining happens at three points:</b> the trace-evidence compiler extracts process-level signals from tool calls, the review panel extracts recurrent behavioral patterns, and the judge synthesizes these analyses into edit decisions. A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
 </section>
 
 <section class="band dark" id="demo">
   <h2 class="uh">Use your agent as usual. <em>Hone edits its AGENTS.md between sessions.</em></h2>
   <div class="stills r1">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><span class="n">1</span><span>You use the agent and comment when something is off</span></figcaption></figure>
+    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><span class="n">1</span><span>You comment when something is off</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
     <figure class="shot s2"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard: unanalyzed traces with their feedback fill the batch; Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch; you start optimization or turn on auto</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
     <figure class="shot s3"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage: the judge asks two reviewers a follow-up; one withdraws its claim"></div><figcaption><span class="n">3</span><span>Review, then propose: each panel is cross-examined by its judge</span></figcaption></figure>
   </div>
   <div class="stills r2">
-    <figure class="shot s4"><div class="win"><img src="assets/stills/s3b-commit.png" data-src-w="4680" data-stage-w="780" data-min-px="21" alt="The verified commit: the judge's commit message and the diff to AGENTS.md"></div><figcaption><span class="n">4</span><span>The verifier checks every edit; the judge writes the commit message</span></figcaption></figure>
+    <figure class="shot s4"><div class="win"><img src="assets/stills/s3b-commit.png" data-src-w="4680" data-stage-w="780" data-min-px="21" alt="The verified commit: the judge's commit message and the diff to AGENTS.md"></div><figcaption><span class="n">4</span><span>Verified edit; the judge writes the commit message</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s5"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3600" data-stage-w="600" data-min-px="19" alt="AGENTS.md versions: the current one, Set as current and New branch on an older one"></div><figcaption><span class="n">5</span><span>The agent fetches it before its next session; any version can be set as current or branched</span></figcaption></figure>
+    <figure class="shot s5"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3600" data-stage-w="600" data-min-px="19" alt="AGENTS.md versions: the current one, Set as current and New branch on an older one"></div><figcaption><span class="n">5</span><span>The agent fetches it; any version can become current</span></figcaption></figure>
   </div>
 </section>
 
