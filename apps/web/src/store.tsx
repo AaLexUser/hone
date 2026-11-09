@@ -28,6 +28,8 @@ export interface State {
   run: Run | null
   branches: BranchInfo[]
   model: string
+  /** Booth demo mode (HONE_DEMO=1) and whether its prepared run can play now. */
+  demo: { enabled: boolean; replayReady: boolean }
 }
 
 const emptyState: State = {
@@ -42,6 +44,7 @@ const emptyState: State = {
   run: null,
   branches: [],
   model: '',
+  demo: { enabled: false, replayReady: false },
 }
 
 /* ------------------------------------------------------------------- api */
@@ -78,8 +81,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const arrived = useRef<Set<string>>(new Set())
 
   const refresh = useCallback(() => {
-    api<any>('/api/state')
-      .then((s) => {
+    Promise.all([api<any>('/api/state'), api<State['demo']>('/api/demo').catch(() => emptyState.demo)])
+      .then(([s, demo]) => {
         setState({
           traces: s.traces,
           arrivedIds: s.traces.filter((t: Trace) => arrived.current.has(t.id)).map((t: Trace) => t.id),
@@ -92,6 +95,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           run: s.run ? { ...s.run, nodeId: s.run.resultVersionId ?? '' } : null,
           branches: s.branches ?? [],
           model: s.model ?? '',
+          demo,
         })
         setReady(true)
       })
@@ -115,6 +119,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try {
         const msg = JSON.parse(e.data)
         if (msg.type === 'hello') return
+        if (msg.type === 'demo_reset') {
+          // Everything was rewound, the open page may show a run that is gone.
+          window.location.replace('/')
+          return
+        }
         if (msg.type === 'trace_arrived') {
           const t = msg.trace as Trace
           if (msg.arrived) arrived.current.add(t.id)
@@ -197,6 +206,7 @@ export const actions = {
       headers: { 'content-type': 'application/json' },
       body: '{}',
     }),
+  playPreparedRun: () => api<{ id: string }>('/api/demo/replay', { method: 'POST' }),
   setCurrent: (id: string) => api(`/api/versions/${id}/current`, { method: 'POST' }),
   createBranch: (name: string, fromNode?: string) =>
     api<{ name: string; tip: string }>('/api/branches', {

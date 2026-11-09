@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
-import { Minus, Plus, MessageSquare, ArrowRight } from 'lucide-react'
+import { Minus, Plus, MessageSquare, ArrowRight, Play } from 'lucide-react'
 import { useStore, relTime, actions } from '../store'
 import type { Trace, RunRecord } from '../data'
 import { Badge, CountUp, Sparkline, StatCard } from '../components/ui'
@@ -42,10 +42,10 @@ export function Dashboard() {
     return true
   })
 
-  const startRun = async () => {
+  const launch = (start: () => Promise<{ id: string }>) => async () => {
     setStartError(null)
     try {
-      const { id } = await actions.startRun()
+      const { id } = await start()
       navigate(`/runs/${id}`)
     } catch (err) {
       setStartError(err instanceof Error ? err.message.replace(/^\d+\s*/, '') : 'could not start the run')
@@ -138,14 +138,26 @@ export function Dashboard() {
             </Link>
           ) : (
             <div className="w-full md:w-auto">
-              <motion.button
-                onClick={startRun}
-                whileTap={{ scale: 0.985 }}
-                className="btn-primary flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium text-white md:w-auto"
-              >
-                Start optimization
-                <ArrowRight size={14} />
-              </motion.button>
+              <div className="flex flex-col gap-2 md:flex-row">
+                {state.demo.replayReady && (
+                  <motion.button
+                    onClick={launch(actions.playPreparedRun)}
+                    whileTap={{ scale: 0.985 }}
+                    className="btn-ghost flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium text-accent-2 md:w-auto"
+                  >
+                    <Play size={13} />
+                    Play prepared run
+                  </motion.button>
+                )}
+                <motion.button
+                  onClick={launch(actions.startRun)}
+                  whileTap={{ scale: 0.985 }}
+                  className="btn-primary flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium text-white md:w-auto"
+                >
+                  Start optimization
+                  <ArrowRight size={14} />
+                </motion.button>
+              </div>
               <AnimatePresence>
                 {startError && (
                   <motion.div
