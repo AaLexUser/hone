@@ -8,7 +8,7 @@
   .s5-id { font-size: 22px; font-weight: 600; color: var(--ss-text-strong); }
   .s5-sub { font-size: 20px; color: var(--ss-text); }
   .s5-list { padding: 4px 0; }
-  .s5-row { position: relative; display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 14px 0 50px; }
+  .s5-row { position: relative; display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 14px 0 50px; }
   .s5-row[data-hover] { background: var(--ss-accent-soft); }
   .s5-node { position: absolute; left: 24px; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--h-line-2); }
   .s5-node[data-top] { top: 50%; }

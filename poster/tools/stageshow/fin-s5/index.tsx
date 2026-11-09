@@ -9,19 +9,19 @@ import './s5.css'
 
 type V = { title: string; meta?: string; inUse?: boolean; hover?: boolean; first?: boolean }
 const VERSIONS: V[] = [
-  { title: 'fix: drop £0 lines', meta: '1 edit · verified', inUse: true },
-  { title: 'fix: keep bold', meta: '2 edits · verified', hover: true },
+  { title: 'fix: drop £0 lines', inUse: true },
+  { title: 'fix: keep bold', hover: true },
   { title: 'feat: first four rules', first: true },
 ]
 
 export default function FinS5() {
   return (
-    <Stage width={520} height={230} className="hone s5">
+    <Stage width={600} height={230} className="hone s5">
       {() => (
         <div className="s5-card">
           <div className="s5-head">
             <span className="s5-id mono">AGENTS.md</span>
-            <span className="s5-sub">version history</span>
+            <span className="s5-sub">versions</span>
           </div>
           <div className="s5-list">
             {VERSIONS.map((v, i) => (
@@ -31,11 +31,11 @@ export default function FinS5() {
                   {v.first ? <Bar w={260} h={11} r={5.5} tone={2} /> : <span className="s5-title mono">{v.title}</span>}
                   {v.meta && <span className="s5-meta">{v.meta}</span>}
                 </div>
-                {v.inUse && <span className="s5-tag">in use</span>}
+                {v.inUse && <span className="s5-tag">current</span>}
                 {v.hover && (
                   <div className="s5-actions">
-                    <Button size="large">Compare</Button>
-                    <Button size="large">Roll back</Button>
+                    <Button size="large">Set as current</Button>
+                    <Button size="large">New branch</Button>
                   </div>
                 )}
               </div>

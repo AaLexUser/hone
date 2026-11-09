@@ -20,8 +20,8 @@ export default function FinD1() {
       {() => (
         <div className="d1-card">
           <div className="d1-head">
-            <span className="d1-h">Sessions</span>
-            <span className="d1-new">3 new</span>
+            <span className="d1-h">Unanalyzed traces</span>
+            <span className="d1-new">3</span>
           </div>
           <div className="d1-list">
             {SESSIONS.map((s, i) => (
@@ -39,7 +39,7 @@ export default function FinD1() {
               <span className="d1-meter"><i /><i /><i /></span>
               <span className="d1-bn">3 / 3</span>
             </div>
-            <Button variant="primary" size="large">Optimize now</Button>
+            <Button variant="primary" size="large">Start optimization</Button>
           </div>
         </div>
       )}
