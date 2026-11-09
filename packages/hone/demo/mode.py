@@ -23,6 +23,8 @@ from .scripted import Clock, Director
 from .stories import STORIES
 
 CACHE_DIR = "demo-cache"
+STAGING_IN = ".demo-incoming"
+STAGING_OUT = ".demo-outgoing"
 # Script time runs this many times faster than the run it stands for, so the
 # prepared run (about 13 minutes of script time) plays in about a minute.
 REPLAY_SPEED = 13.0
@@ -78,23 +80,41 @@ class DemoMode:
         async with self._lock:
             prepared = await self._prepared()
 
+            if not self._owns_data_dir():
+                raise DemoError(f"refusing to reset {self.data_dir}: it holds a real Hone history. "
+                                "Run the demo on its own HONE_DATA_DIR.")
+
             def rewrite() -> None:
-                for child in self.data_dir.iterdir():
-                    if child.name == CACHE_DIR:
-                        continue
-                    if child.is_dir():
-                        shutil.rmtree(child)
-                    else:
-                        child.unlink()
-                shutil.copytree(prepared / "data", self.data_dir, dirs_exist_ok=True)
+                incoming = self.data_dir / STAGING_IN
+                outgoing = self.data_dir / STAGING_OUT
+                for stale in (incoming, outgoing):
+                    shutil.rmtree(stale, ignore_errors=True)
+                shutil.copytree(prepared / "data", incoming)
                 if workspace:
-                    for trace in (self.data_dir / "traces").glob("*.jsonl"):
-                        trace.write_text(trace.read_text(encoding="utf-8").replace(WORKSPACE, workspace),
+                    escaped = json.dumps(workspace)[1:-1]
+                    for trace in (incoming / "traces").glob("*.jsonl"):
+                        trace.write_text(trace.read_text(encoding="utf-8").replace(WORKSPACE, escaped),
                                          encoding="utf-8")
+                # Until the swap below, a failure leaves the old state whole.
+                outgoing.mkdir()
+                for child in list(self.data_dir.iterdir()):
+                    if child.name not in (CACHE_DIR, STAGING_IN, STAGING_OUT):
+                        child.rename(outgoing / child.name)
+                for child in list(incoming.iterdir()):
+                    child.rename(self.data_dir / child.name)
+                incoming.rmdir()
+                shutil.rmtree(outgoing, ignore_errors=True)
 
             await self.hone.reopen(rewrite)
         self.hone.bus.publish({"type": "demo_reset"})
         return (prepared / "manifest.json").read_bytes()
+
+    def _owns_data_dir(self) -> bool:
+        """A data dir is the demo's to replace once a reset has written its
+        marker, or while it holds no traces and no runs."""
+        if (self.data_dir / META_FILE).exists():
+            return True
+        return not self.hone.db.traces() and not self.hone.db.query("SELECT id FROM runs LIMIT 1")
 
     # -------------------------------------------------------------- replay
 

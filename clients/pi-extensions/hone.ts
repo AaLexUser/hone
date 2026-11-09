@@ -218,7 +218,7 @@ export default async function (pi: ExtensionAPI) {
         body,
       });
       // An RPC host such as t3code shows its own Hone status, so the notice would only add noise there.
-      if (res.ok && ctx.ui?.notify && !process.argv.includes("rpc")) {
+      if (res.ok && ctx.ui?.notify && !process.argv.some((arg) => arg === "rpc" || arg === "--mode=rpc")) {
         const data = (await res.json().catch(() => null)) as { trace?: { id?: string } } | null;
         ctx.ui.notify(`hone: trace published${data?.trace?.id ? ` (${data.trace.id})` : ""}`, "info");
       }

@@ -95,8 +95,10 @@ class Hone:
             task.cancel()
             await asyncio.wait({task})
         self.close()
-        rewrite()
-        self._open()
+        try:
+            rewrite()
+        finally:
+            self._open()
 
     # ------------------------------------------------------------------ boot
 
