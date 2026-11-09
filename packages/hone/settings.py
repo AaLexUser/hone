@@ -21,6 +21,7 @@ _ENV_PATHS: dict[str, tuple[str, str]] = {
     "HONE_ANNOUNCE_HOST": ("service", "announce_host"),
     "HONE_UI_DIR": ("service", "ui_dir"),
     "HONE_EXPOSE_WRITE_TOKEN": ("service", "expose_write_token"),
+    "HONE_DEMO": ("service", "demo"),
     "MODEL_NAME": ("target", "model"),
     "HONE_MAX_ATTEMPTS": ("optimization", "max_attempts"),
     "HONE_MAJICS_TIMEOUT": ("optimization", "stage_timeout_s"),

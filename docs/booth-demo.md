@@ -32,8 +32,7 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 
 ## Known gaps to close before the booth
 
-- The prepared replay requires exactly its own unanalyzed sessions. A live visitor session in the same Hone breaks it, so the replay must freeze only its own sessions.
-- The visitor's live feedback should match the prepared run's commit, so the scenario files need a case that produces the same complaint.
+- The visitor's live feedback should match the prepared run's commit. The approval for Amara Osei in `Inbox/` has no bonus and no equity for that reason. Check with the booth model that a live letter for her prints the zero value rows.
 - A full real optimization run has not been seen end to end in the development container, because Docker builds fail behind its proxy.
   The chip's optimizing state and its AGENTS.md updated toast are unverified. Run one real optimization on the laptop before the trip.
 - If the conference Wi-Fi fails, the live agent cannot reach its model. Keep a prepared chat with feedback already given and a screen recording of the whole loop.
@@ -65,6 +64,8 @@ Enabled with `HONE_DEMO=1`. Nothing changes when it is off.
   Only that run uses the scripted executor. Start optimization keeps the real MAJICS pipeline.
   The prepared run freezes the whole unanalyzed batch, so a visitor's live session joins it.
 - `GET /api/demo` returns `{enabled, replayReady}`. The dashboard shows a Play prepared run button while `replayReady` is true.
+- Building the prepared state runs `pdftotext` and LibreOffice (`soffice`), so the laptop needs poppler and LibreOffice, which the live agent needs anyway.
+  `uv run python -m hone.demo build --out <dir>` writes the same state into a folder for inspection.
 
 Manifest returned by reset:
 ```json
@@ -75,6 +76,7 @@ Manifest returned by reset:
 }
 ```
 Paths inside `jsonl` use the placeholder `{{WORKSPACE}}` for the project folder.
+Reset takes an optional JSON body `{"workspace": "<absolute project folder>"}`. Hone then puts that folder in place of the placeholder in its own copy of the sessions, so its trace pages show the real paths.
 `chats` is in chronological order. A chat with two user turns is one session.
 
 ### Demo mode in t3code (patch 0003)

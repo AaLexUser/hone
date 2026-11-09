@@ -450,6 +450,8 @@ class ServiceConfig(FrozenConfigModel):
     announce_host: str = "host.docker.internal"
     ui_dir: Path = Path("apps/web/dist")
     expose_write_token: bool = True
+    # Booth demo mode: the reset and replay endpoints and their dashboard button.
+    demo: bool = False
 
 
 class TargetConfig(FrozenConfigModel):

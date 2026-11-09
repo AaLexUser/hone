@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, StreamingResponse
@@ -21,9 +23,35 @@ from .gitstore import GitError
 from .service import Hone
 from .settings import load_settings
 
+if TYPE_CHECKING:
+    from .demo.mode import DemoMode
+
 settings: HoneConfig = load_settings()
 hone = Hone(settings)
-app = FastAPI(title="Hone", version="0.1.0")
+demo: DemoMode | None = None
+if settings.service.demo:
+    from .demo.mode import DemoMode
+
+    demo = DemoMode(hone)
+
+
+async def _warm_demo(mode: DemoMode) -> None:
+    try:
+        await mode.prepared()
+    except Exception:  # the reset retries the build and reports the error
+        logging.getLogger("hone.demo").exception("building the demo scenario failed")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Build today's prepared state at startup, so the first reset is quick.
+    warm = asyncio.create_task(_warm_demo(demo)) if demo is not None else None
+    yield
+    if warm is not None:
+        warm.cancel()
+
+
+app = FastAPI(title="Hone", version="0.1.0", lifespan=lifespan)
 
 
 # ------------------------------------------------------------------- auth
@@ -288,6 +316,53 @@ async def post_branch_merge(name: str) -> dict[str, Any]:
 async def pipeline_event(run_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     await hone.record_pipeline_event(run_id, payload)
     return {"ok": True}
+
+
+# ------------------------------------------------------------------- demo
+
+@app.get("/api/demo")
+def demo_status() -> dict[str, Any]:
+    return demo.status() if demo is not None else {"enabled": False, "replayReady": False}
+
+
+def _demo() -> DemoMode:
+    if demo is None:
+        raise HTTPException(status_code=404, detail="demo mode is off (start Hone with HONE_DEMO=1)")
+    return demo
+
+
+@app.post("/api/demo/reset", dependencies=[Depends(require_write)])
+async def demo_reset(request: Request) -> Response:
+    """Restore the prepared scenario. Returns the manifest with the project
+    folder's files (base64) and the prepared chats as Pi session JSONL, oldest first.
+    An optional JSON body {"workspace": "/abs/folder"} puts the real folder
+    into Hone's copy of the sessions."""
+    from .demo.mode import DemoError
+
+    mode = _demo()
+    raw = await request.body()
+    try:
+        body = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail="the body must be JSON") from exc
+    workspace = body.get("workspace") if isinstance(body, dict) else None
+    try:
+        manifest = await mode.reset(workspace if isinstance(workspace, str) and workspace else None)
+    except DemoError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return Response(manifest, media_type="application/json")
+
+
+@app.post("/api/demo/replay", dependencies=[Depends(require_write)])
+async def demo_replay() -> dict[str, Any]:
+    """Play the prepared run, about a minute long, through Hone's run loop."""
+    from .demo.mode import DemoError
+
+    mode = _demo()
+    try:
+        return mode.replay()
+    except (DemoError, RuntimeError) as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 # -------------------------------------------------------------------- SSE
