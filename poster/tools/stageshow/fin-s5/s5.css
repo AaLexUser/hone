@@ -1,6 +1,6 @@
 .s5 {
   .s5-card {
-    position: absolute; top: 14px; left: 14px; right: 14px; bottom: 14px;
+    position: absolute; top: 14px; left: 14px; right: 14px; bottom: -60px;
     border-radius: 14px; background: var(--ss-surface); overflow: hidden;
     box-shadow: var(--ss-shadow-hero), inset 0 0 0 1px var(--h-line);
   }
@@ -8,14 +8,13 @@
   .s5-hicon { color: var(--ss-text-faint); }
   .s5-h { font-size: 22px; font-weight: 650; color: var(--ss-text-strong); }
   .s5-id { margin-left: auto; font-size: 22px; color: var(--ss-text); }
-  .s5-list { padding: 4px 0 8px; }
+  .s5-list { padding: 4px 0 0; }
   .s5-row { position: relative; display: flex; align-items: center; gap: 14px; height: 76px; padding: 0 18px 0 52px; }
   .s5-row[data-selected] { background: var(--ss-accent-soft); }
-  .s5-node { position: absolute; left: 25px; top: 0; bottom: 0; width: 0; border-left: 2.5px solid var(--h-accent); }
+  .s5-node { position: absolute; left: 28px; top: 0; bottom: 0; width: 2.5px; transform: translateX(-50%); background: var(--h-accent); }
   .s5-node[data-top] { top: 50%; }
-  .s5-node[data-last] { bottom: 50%; }
-  .s5-node::after { content: ''; position: absolute; left: -7.5px; top: calc(50% - 6px); width: 12px; height: 12px; border-radius: 50%; background: var(--h-accent); }
-  .s5-node[data-current]::after { left: -10.5px; top: calc(50% - 9px); width: 14px; height: 14px; background: var(--h-green); box-shadow: 0 0 0 3px var(--ss-surface), 0 0 0 5px var(--h-green); }
+  .s5-node::after { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--h-accent); }
+  .s5-node[data-current]::after { top: 0; width: 14px; height: 14px; background: var(--h-green); box-shadow: 0 0 0 3px var(--ss-surface), 0 0 0 5px var(--h-green); }
   .s5-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
   .s5-title { font-size: 22px; line-height: 27px; color: var(--ss-text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .s5-meta { display: flex; align-items: center; gap: 10px; font-size: 22px; line-height: 24px; color: var(--ss-text); }
