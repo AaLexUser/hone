@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import random
+from pathlib import Path
 from typing import Any
 
 from .office import (
@@ -50,12 +51,8 @@ SYSTEM_SECTIONS = {
             "extensions, themes, skills, or TUI):\n- Main documentation: "
             "/opt/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/README.md\n</docs>",
 }
-TOOLS_ADDED = [
-    {"name": "read", "description": "Read the contents of a file. Supports text files and images."},
-    {"name": "bash", "description": "Execute a bash command in the current working directory."},
-    {"name": "edit", "description": "Edit a file using exact text replacement."},
-    {"name": "write", "description": "Write content to a file. Creates the file if it doesn't exist."},
-]
+# Pi refuses to resume a session whose tools lack their parameter schemas.
+TOOLS_ADDED = json.loads((Path(__file__).parent / "assets" / "pi-tools.json").read_text(encoding="utf-8"))
 
 
 def iso(ms: int) -> str:
