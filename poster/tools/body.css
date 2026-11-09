@@ -110,7 +110,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
 /* demo */
-.stills { --sh: 165mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
+.stills { --sh: 118mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
 .shot { margin: 0; }
 .shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
 .shot img { height: 100%; width: auto; display: block; }
@@ -159,8 +159,8 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .minepts i { position: absolute; left: 1.5mm; top: 0.6mm; width: 9.5mm; height: 9.5mm; transform: rotate(45deg); background: var(--hone-deep); }
 .minepts i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 800; font-size: 9mm; line-height: 9.5mm; text-align: center; }
 
-.stills.r2 { --sh: 123mm; margin-top: 5mm; justify-content: center; gap: 0; }
-.stills.r2 .sar { margin-inline: 30mm; }
+.stills.r2 { --sh: 156mm; margin-top: 5mm; justify-content: center; gap: 0; }
+.stills.r2 .sar { margin-inline: 24mm; }
 
 .stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 7mm; margin-top: 4mm; padding-top: 3mm; border-top: 0.4mm solid var(--rule); }
 .stages p { font-size: 9mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 13mm; }
@@ -169,3 +169,5 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .mining { margin-top: 3mm; font-size: 9.6mm; line-height: 1.22; color: #2c2f36; position: relative; padding-left: 12mm; }
 .mining b { color: var(--ink); }
 .mining .dia { position: absolute; left: 1.4mm; top: 1mm; width: 6.6mm; height: 6.6mm; transform: rotate(45deg); background: var(--hone); }
+
+.shot .win img[data-real] { image-rendering: auto; }

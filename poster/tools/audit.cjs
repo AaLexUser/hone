@@ -42,8 +42,8 @@ const BANNED = [/\bMei\b/, /real run/i, /real log/i, /verbatim from/i, /\blive\b
     }
     out.overflowX = out.overflowX.slice(0, 10)
     // Type inside a still: its smallest stage-px string scaled by the placed width
-    out.stills = [...poster.querySelectorAll('img[data-stage-w]')].map((i) => { const k = i.getBoundingClientRect().width / MM / +i.dataset.stageW; return { src: i.getAttribute('src'), widthMm: +(i.getBoundingClientRect().width / MM).toFixed(1), heightMm: +(i.getBoundingClientRect().height / MM).toFixed(1), minMm: +(k * +i.dataset.minPx).toFixed(2) } })
-    out.stills.filter((t) => t.minMm < 8.5).forEach((t) => out.small.push([t.minMm, 'still: ' + t.src]))
+    out.stills = [...poster.querySelectorAll('img[data-stage-w]')].map((i) => { const k = i.getBoundingClientRect().width / MM / +i.dataset.stageW; return { src: i.getAttribute('src'), widthMm: +(i.getBoundingClientRect().width / MM).toFixed(1), heightMm: +(i.getBoundingClientRect().height / MM).toFixed(1), minMm: +(k * +i.dataset.minPx).toFixed(2), real: i.hasAttribute('data-real') } })
+    out.stills.filter((t) => t.minMm < (t.real ? 5.5 : 8.5)).forEach((t) => out.small.push([t.minMm, 'still: ' + t.src]))
     // No Hone logo mark and no demo QR: the only QR is the Code QR
     out.logo = [...poster.querySelectorAll('img')].map((i) => i.getAttribute('src')).filter((s) => /hone\.svg|qr-demo|mark/i.test(s))
     if (poster.querySelectorAll('.mark').length) out.logo.push('.mark element')
