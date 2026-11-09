@@ -22,8 +22,9 @@ execution, artifact collection, and host-side verification.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from .. import patch
 from ..config import HoneConfig
@@ -37,11 +38,21 @@ class PipelineFailure(RuntimeError):
     """The pipeline failed; the message feeds the next attempt or the note."""
 
 
+class StageExecutor(Protocol):
+    """Runs one materialized MAJICS task and returns its Harbor job dir."""
+
+    async def run(self, stage: str, task_dir: Path, attempt: int) -> Path: ...
+
+
+ExecutorFactory = Callable[[HoneConfig, DataDirs, str, Callable[..., Any]], StageExecutor]
+
+
 class MajicsPipeline:
     """Host-side driver of the two Harbor jobs; the report is cached across
     propose retries."""
 
-    def __init__(self, settings: HoneConfig, dirs: DataDirs, run: dict[str, Any], hone) -> None:
+    def __init__(self, settings: HoneConfig, dirs: DataDirs, run: dict[str, Any], hone,
+                 executor_factory: ExecutorFactory | None = None) -> None:
         self.s = settings
         self.dirs = dirs
         self.run_row = run
@@ -51,7 +62,7 @@ class MajicsPipeline:
         self.review: dict[str, Any] | None = None
         self.review_json: str | None = None
         self.task_builder = MajicsTaskBuilder(settings, dirs, run, hone)
-        self.executor = HarborMajicsExecutor(settings, dirs, self.run_id, self._emit)
+        self.executor = (executor_factory or HarborMajicsExecutor)(settings, dirs, self.run_id, self._emit)
 
     # ------------------------------------------------------------- plumbing
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from . import ids, logedits, patch
 from .config import HoneConfig
@@ -30,6 +30,9 @@ from .gitstore import (
     valid_branch_name,
 )
 from .store import SEED_AGENTS_MD, SEED_COMMIT_BODY, SEED_COMMIT_TITLE, DataDirs
+
+if TYPE_CHECKING:
+    from .majics.pipeline import ExecutorFactory
 
 # Branch colors from the brand book: trunk first, brand set for the next five,
 # then a deterministic golden-angle walk for any branch beyond that — every new
@@ -415,10 +418,20 @@ class Hone:
 
     # ---------------------------------------------------------------- runs
 
-    def start_run(self, trigger: str = "manual", set_current: bool = True) -> dict[str, Any]:
+    def start_run(
+        self,
+        trigger: str = "manual",
+        set_current: bool = True,
+        *,
+        batch_size: int | None = None,
+        executor_factory: ExecutorFactory | None = None,
+    ) -> dict[str, Any]:
+        """Freeze the oldest unanalyzed traces and optimize them. `batch_size`
+        overrides the configured one, `executor_factory` replaces the Harbor
+        executor for this run only."""
         if self.active_run():
             raise RuntimeError("one optimizer run at a time")
-        batch_size: int = self.db.get_config("batch_size")
+        batch_size = batch_size or self.db.get_config("batch_size")
         fresh = [t for t in self.db.traces() if t["status"] == "new"]
         batch = list(reversed(fresh))[:batch_size]  # oldest first
         if not batch:
@@ -458,7 +471,7 @@ class Hone:
             "commit": None,
         }
         self._run_task = asyncio.get_running_loop().create_task(
-            self._drive_run(run_id, trigger, set_current)
+            self._drive_run(run_id, trigger, set_current, executor_factory)
         )
         return {"id": run_id, "status": "running"}
 
@@ -631,7 +644,9 @@ class Hone:
 
     # ------------------------------------------------------------- the loop
 
-    async def _drive_run(self, run_id: str, trigger: str, set_current: bool) -> None:
+    async def _drive_run(
+        self, run_id: str, trigger: str, set_current: bool, executor_factory: ExecutorFactory | None
+    ) -> None:
         from .majics import MajicsPipeline, PipelineFailure  # heavy deps, only when optimizing
 
         run = self.db.run(run_id)
@@ -639,7 +654,7 @@ class Hone:
         attempts_limit = self.s.optimization.max_attempts
         rejection: str | None = None
         success: dict[str, Any] | None = None
-        pipeline = MajicsPipeline(self.s, self.dirs, run, self)
+        pipeline = MajicsPipeline(self.s, self.dirs, run, self, executor_factory)
         try:
             for attempt in range(1, attempts_limit + 1):
                 if attempt > 1:
