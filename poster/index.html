@@ -98,7 +98,7 @@ h1 .name { color: var(--hone-hi); }
 .sw.hone { background: #fff; }
 
 /* bands */
-.band { padding: 10mm var(--m) 9mm; position: relative; }
+.band { padding: 6mm var(--m) 6mm; position: relative; }
 .band.alt { background: var(--paper-2); }
 .band.dark { background: var(--ink); color: #fff; }
 #demo { flex: 1 0 auto; }
@@ -130,7 +130,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 840mm; margin: 6mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 778mm; margin: 4mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
@@ -140,7 +140,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
 .shot img { height: 100%; width: auto; display: block; }
 .shot { display: flex; flex-direction: column; }
-.shot figcaption { margin-top: 4mm; width: 0; min-width: 100%; font-size: 12mm; line-height: 1.15; font-weight: 700; color: #fff; display: flex; gap: 3mm; align-items: flex-start; }
+.shot figcaption { margin-top: 3mm; width: 0; min-width: 100%; font-size: 11.5mm; line-height: 1.15; font-weight: 700; color: #fff; display: flex; gap: 3mm; align-items: flex-start; }
 .shot .n { width: 13mm; height: 13mm; flex: none; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 9.5mm; box-shadow: 0 0 0 0.9mm var(--hone-hi); }
 .sar { width: 22mm; flex: none; margin-top: calc(var(--sh) / 2 - 14mm); }
 
@@ -183,6 +183,9 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .minepts b { color: var(--ink); }
 .minepts i { position: absolute; left: 1.5mm; top: 0.6mm; width: 9.5mm; height: 9.5mm; transform: rotate(45deg); background: var(--hone-deep); }
 .minepts i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 800; font-size: 9mm; line-height: 9.5mm; text-align: center; }
+
+.stills.r2 { --sh: 123mm; margin-top: 5mm; justify-content: center; gap: 0; }
+.stills.r2 .sar { margin-inline: 30mm; }
 </style>
 </head>
 <body>
@@ -446,16 +449,17 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 
 <section class="band dark" id="demo">
   <h2 class="uh">Use your agent as usual. <em>Hone edits its AGENTS.md between sessions.</em></h2>
-  <div class="stills">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback popover under the agent's reply: There's a £0 sign-on bonus line. If there's no bonus, just leave the line out. Send to Hone"></div><figcaption><span class="n">1</span><span>You work with the agent and comment when something is off</span></figcaption></figure>
+  <div class="stills r1">
+    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback box under the agent's reply"></div><figcaption><span class="n">1</span><span>You use the agent and comment when something is off</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s2"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review panel: the judge asks reviewers 1 and 2 a follow-up; reviewer 2 answers: Both ask for the line to be dropped outright. I withdraw it."></div><figcaption><span class="n">2</span><span>Hone reviews finished sessions; the judge questions reviewers that disagree</span></figcaption></figure>
+    <figure class="shot s2"><div class="win"><img src="assets/stills/s1b-batch.png" data-src-w="3000" data-stage-w="500" data-min-px="21" alt="Hone dashboard: three new sessions with feedback fill the batch; Optimize now"></div><figcaption><span class="n">2</span><span>Finished sessions fill a batch; you start a run</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s3"><div class="win"><img src="assets/stills/s3-commit.png" data-src-w="3360" data-stage-w="560" data-min-px="22" alt="AGENTS.md, verified: the rule about blocks that do not apply is widened to drop rows whose amount is 0"></div><figcaption><span class="n">3</span><span>You get a verified edit with its diff and reason</span></figcaption></figure>
+    <figure class="shot s3"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review stage: the judge asks two reviewers a follow-up; one withdraws its claim"></div><figcaption><span class="n">3</span><span>Reviewers and a judge cross-examine</span></figcaption></figure>
   </div>
-  <div class="step4">
-    <figure class="shot s4"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3120" data-stage-w="520" data-min-px="19" alt="AGENTS.md version history: each verified version on a commit line, the one in use tagged, with Compare and Roll back on a past version"></div></figure>
-    <p class="s4t"><span class="n">4</span><span>The next session starts from the new AGENTS.md. Every version stays in Git: compare any two, or roll back.</span></p>
+  <div class="stills r2">
+    <figure class="shot s4"><div class="win"><img src="assets/stills/s3b-commit.png" data-src-w="4680" data-stage-w="780" data-min-px="21" alt="The verified commit: the judge's commit message and the diff to AGENTS.md"></div><figcaption><span class="n">4</span><span>A verified edit with the judge’s commit message</span></figcaption></figure>
+    <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
+    <figure class="shot s5"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3120" data-stage-w="520" data-min-px="19" alt="AGENTS.md version history with Compare and Roll back"></div><figcaption><span class="n">5</span><span>The next session uses the new file; any version can be compared or rolled back</span></figcaption></figure>
   </div>
 </section>
 

@@ -73,7 +73,7 @@ h1 .name { color: var(--hone-hi); }
 .sw.hone { background: #fff; }
 
 /* bands */
-.band { padding: 10mm var(--m) 9mm; position: relative; }
+.band { padding: 6mm var(--m) 6mm; position: relative; }
 .band.alt { background: var(--paper-2); }
 .band.dark { background: var(--ink); color: #fff; }
 #demo { flex: 1 0 auto; }
@@ -105,7 +105,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .quad .xv { border-left: 0.5mm solid #b9b2a3; justify-self: center; width: 0; }
 
 /* architecture */
-.arch svg { width: 840mm; margin: 6mm auto 0; height: auto; display: block; overflow: visible; }
+.arch svg { width: 778mm; margin: 4mm auto 0; height: auto; display: block; overflow: visible; }
 .arch .rule { width: fit-content; margin: 3mm auto 0; font-size: 12mm; line-height: 1.2; font-weight: 600; padding: 2.5mm 6mm; background: #fff; border-left: 2mm solid var(--hone-deep); }
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
@@ -115,7 +115,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
 .shot img { height: 100%; width: auto; display: block; }
 .shot { display: flex; flex-direction: column; }
-.shot figcaption { margin-top: 4mm; width: 0; min-width: 100%; font-size: 12mm; line-height: 1.15; font-weight: 700; color: #fff; display: flex; gap: 3mm; align-items: flex-start; }
+.shot figcaption { margin-top: 3mm; width: 0; min-width: 100%; font-size: 11.5mm; line-height: 1.15; font-weight: 700; color: #fff; display: flex; gap: 3mm; align-items: flex-start; }
 .shot .n { width: 13mm; height: 13mm; flex: none; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 9.5mm; box-shadow: 0 0 0 0.9mm var(--hone-hi); }
 .sar { width: 22mm; flex: none; margin-top: calc(var(--sh) / 2 - 14mm); }
 
@@ -158,3 +158,6 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .minepts b { color: var(--ink); }
 .minepts i { position: absolute; left: 1.5mm; top: 0.6mm; width: 9.5mm; height: 9.5mm; transform: rotate(45deg); background: var(--hone-deep); }
 .minepts i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 800; font-size: 9mm; line-height: 9.5mm; text-align: center; }
+
+.stills.r2 { --sh: 123mm; margin-top: 5mm; justify-content: center; gap: 0; }
+.stills.r2 .sar { margin-inline: 30mm; }
