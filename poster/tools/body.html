@@ -22,12 +22,12 @@
     <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at every session.</b> Real sessions happen once, with at most a short comment from the user.</p>
   </div>
   <div>
-    <p class="txt">Skill optimizers improve this file by re-executing tasks after each edit and scoring every run pass or fail. Hone needs neither. It learns from finished sessions and optional comments.</p>
+    <p class="txt">Skill optimizers improve this file by re-executing tasks after each edit and scoring every run with a verifier. Hone needs neither. It learns from finished sessions with any free-text comment, or none at all.</p>
     <table class="cmp">
       <thead><tr><th></th><th>SkillOpt</th><th>SkillOpt-Lite</th><th>Trace2Skill</th><th>EvoSkill</th><th class="h">Hone</th></tr></thead>
       <tbody>
         <tr><th>Re-executes tasks</th><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="h">no</td></tr>
-        <tr><th>Needs pass or fail</th><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="h">no</td></tr>
+        <tr><th>Feedback it needs</th><td>score per run</td><td>score per run</td><td>score per run</td><td>score per run</td><td class="h">none</td></tr>
       </tbody>
     </table>
   </div>
