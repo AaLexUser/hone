@@ -4,8 +4,9 @@
      --t-lead 26   intro question
      --t-title 30  paper title
      --t-h2 17     section headings
-     --t-body 11.5 all running text, captions, box titles in the diagram
-     --t-small 9   labels, diagram notes, footer
+     --t-body 11.5 all running text, captions
+     --t-small 9   labels, footer
+   Diagram (778 mm wide, viewBox 820): titles 11 units = 10.4 mm, labels 9.5 units = 9.0 mm.
    Families: Inter Display for headings, Inter for text, JetBrains Mono for code and labels. */
 @page { size: 900mm 1200mm; margin: 0; }
 :root {
@@ -75,7 +76,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 .stages { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 8mm; margin-top: 3mm; }
 .stages p { display: flex; gap: 2mm; font-size: var(--t-small); line-height: 1.35; }
 .stages i { flex: none; width: 9.5mm; height: 9.5mm; margin-top: 0.6mm; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: var(--t-small); line-height: 1; }
-.note { margin-top: 3mm; font-weight: 600; color: var(--hone-deep); }
+.note { margin-top: 5mm; font-weight: 600; color: var(--hone-deep); }
 
 /* 2. results */
 .results { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 10mm; align-items: center; }
@@ -83,7 +84,7 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 .chart .bench { font-size: var(--t-body); font-weight: 700; margin-bottom: 2mm; }
 .bar { display: grid; grid-template-columns: 46mm 1fr; column-gap: 4mm; align-items: center; height: 11mm; font-size: var(--t-small); }
 .bar .l { text-align: right; color: var(--muted); white-space: nowrap; }
-.bar .tr { position: relative; height: 7mm; margin-right: 17mm; }
+.bar .tr { position: relative; height: 7mm; margin-right: 22mm; }
 .bar .b { position: absolute; left: 0; top: 0; bottom: 0; background: #bfc2cb; border-radius: 0.8mm; }
 .bar .v { position: absolute; top: 50%; transform: translateY(-50%); padding-left: 2mm; white-space: nowrap; color: var(--muted); }
 .bar.base .b { background: #6e7280; }
@@ -110,4 +111,4 @@ h2 .sub { font-family: var(--sans); font-size: var(--t-body); font-weight: 400; 
 /* footer */
 .ftr { margin-top: 9mm; background: var(--panel); padding: 4.5mm var(--m); display: grid; grid-template-columns: 1fr auto; column-gap: 12mm; align-items: center; font-size: var(--t-small); line-height: 1.4; color: var(--muted); }
 .ftr b { color: var(--ink); }
-.ftr .pid { font-size: var(--t-body); font-weight: 700; color: var(--ink); white-space: nowrap; }
+.ftr .pid { font-size: var(--t-h2); font-weight: 700; color: var(--ink); white-space: nowrap; }
