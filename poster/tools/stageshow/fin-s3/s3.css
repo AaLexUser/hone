@@ -27,7 +27,7 @@
     align-items: baseline;
     gap: 10px;
   }
-  .s3-stage { font-size: 17px; font-weight: 600; letter-spacing: 0.1em; color: var(--h-rev); }
+  .s3-stage { font-size: 19px; font-weight: 700; color: var(--h-rev); }
   .s3-gsub { font-size: 17px; color: var(--ss-text-faint); }
   .s3-gstate { margin-left: auto; font-size: 15px; color: var(--h-accent-2); }
 
@@ -82,7 +82,7 @@
   }
   .s3-ahead { display: flex; align-items: center; gap: 6px; }
   .s3-arrow { font-size: 20px; color: var(--ss-text-faint); }
-  .s3-amodel { margin-left: 6px; font-size: 20px; color: var(--ss-text); }
+  .s3-who { font-size: 20px; font-weight: 600; color: var(--h-rev); }
   .s3-chip {
     display: inline-block;
     padding: 2px 6px 3px;

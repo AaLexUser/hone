@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Stage } from '../../kit'
 import '../_hone/hone.css'
 import './s3.css'
@@ -60,10 +59,6 @@ function wire(x1: number, y1: number, tx: number, x2: number, y2: number, r = 6)
   return `M${x1} ${y1} H${tx - r} Q${tx} ${y1} ${tx} ${y1 + d * r} V${y2 - d * r} Q${tx} ${y2} ${tx + r} ${y2} H${x2}`
 }
 
-function Chip({ children, kind }: { children: ReactNode; kind: 'rev' }) {
-  return <span className="s3-chip mono" data-kind={kind}>{children}</span>
-}
-
 export default function FinS3() {
   const trunkIn = G.x - 10
   const trunkJ = COL_R + R_W + (COL_J - COL_R - R_W) / 2
@@ -75,7 +70,7 @@ export default function FinS3() {
         <div className="s3-content">
           <div className="s3-group" style={{ left: G.x, top: G.y, width: G.w, height: G.h }}>
             <div className="s3-ghead">
-              <span className="s3-stage">REVIEW</span>
+              <span className="s3-stage">Review</span>
               <span className="s3-gsub">3 reviewers ⇄ judge</span>
             </div>
           </div>
@@ -91,7 +86,7 @@ export default function FinS3() {
           </svg>
 
           <Node x={COL_R} y={rowY(0)} w={R_W} name="reviewer 1" model="DeepSeek V4 Flash" s="working" tag="asked" tone="live" />
-          <Node x={COL_R} y={rowY(1)} w={R_W} name="reviewer 2" model="GLM 5.2" s="working" tag="asked" tone="live" />
+          <Node x={COL_R} y={rowY(1)} w={R_W} name="reviewer 2" model="MiniMax M3" s="working" tag="asked" tone="live" />
           <Node x={COL_R} y={rowY(2)} w={R_W} name="reviewer 3" model="MiMo V2.5 Pro" s="done" />
           <Node x={COL_J} y={jY} w={J_W} name="judge" model="GPT-5.4-mini" s="working" tag="asking" tagOnEdge tone="live" />
           <span className="s3-tag" data-edge style={{ left: COL_J + J_W - 10, top: jY - 14 }}>asking</span>
@@ -99,10 +94,9 @@ export default function FinS3() {
 
           <div className="s3-answer">
             <div className="s3-ahead">
-              <Chip kind="rev">R2</Chip>
+              <span className="s3-who">reviewer 2</span>
               <span className="s3-arrow">→</span>
-              <Chip kind="rev">J</Chip>
-              <span className="s3-amodel">GLM 5.2</span>
+              <span className="s3-who">judge</span>
             </div>
             <div className="s3-atext">“Both ask for the line to be dropped outright. I withdraw it.”</div>
           </div>

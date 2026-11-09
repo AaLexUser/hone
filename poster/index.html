@@ -135,39 +135,14 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .arch .rule em { font-style: normal; color: var(--hone-deep); font-weight: 800; }
 
 /* demo */
-.stills { --sh: 182mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
+.stills { --sh: 165mm; margin-top: 4mm; display: flex; align-items: flex-start; justify-content: space-between; }
 .shot { margin: 0; }
 .shot .win { background: #fff; border-radius: 2.5mm; overflow: hidden; box-shadow: 0 0 0 0.6mm #3a3f4c; height: var(--sh); }
 .shot img { height: 100%; width: auto; display: block; }
-.shot figcaption { margin-top: 3mm; font-size: 12mm; line-height: 1.1; font-weight: 800; color: #fff; display: flex; gap: 3mm; align-items: center; white-space: nowrap; }
+.shot { display: flex; flex-direction: column; }
+.shot figcaption { margin-top: 4mm; width: 0; min-width: 100%; font-size: 12mm; line-height: 1.15; font-weight: 700; color: #fff; display: flex; gap: 3mm; align-items: flex-start; }
 .shot .n { width: 13mm; height: 13mm; flex: none; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 9.5mm; box-shadow: 0 0 0 0.9mm var(--hone-hi); }
 .sar { width: 22mm; flex: none; margin-top: calc(var(--sh) / 2 - 14mm); }
-.mine { display: grid; grid-template-columns: 1fr 214mm; column-gap: 14mm; margin-top: 6mm; align-items: stretch; }
-.rl-h { font-family: var(--display); font-size: 17mm; font-weight: 800; letter-spacing: -0.015em; line-height: 1.05; }
-.rl-h .ok { color: #7fe3a1; } .rl-h .no { color: #ff9a8f; }
-.grid { display: grid; grid-template-columns: auto auto auto; justify-content: space-between; column-gap: 6mm; row-gap: 1.2mm; align-items: center; }
-.dhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10mm; }
-.gf { font-size: 10.5mm; font-weight: 600; color: #fff; white-space: nowrap; }
-.gc { display: flex; gap: 3mm; }
-.bt { display: flex; }
-.c { display: inline-grid; place-items: center; width: 12.5mm; height: 10mm; font-style: normal; position: relative; }
-.c::before { content: ""; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: #5d6272; }
-.c.n::before { display: none; }
-.c.n { letter-spacing: -0.04em; font-family: var(--mono); font-size: 8.5mm; font-weight: 700; color: var(--on-dark-2); }
-.c.on::before { width: 6.4mm; height: 6.4mm; background: var(--hone-hi); }
-.c.ring::after { content: ""; position: absolute; inset: 0.6mm; border-radius: 50%; box-shadow: 0 0 0 0.7mm var(--amber); }
-.gn { font-family: var(--mono); font-size: 11mm; font-weight: 800; color: #fff; text-align: center; }
-.go { font-size: 10mm; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 2mm; white-space: nowrap; justify-self: start; }
-.go.ok { background: var(--ok-bg); color: var(--ok-ink); }
-.go.no { background: #fbe4e1; color: #5c0f0f; }
-.gl { margin-top: 2.5mm; font-size: 8.8mm; line-height: 1.25; color: var(--on-dark-2); }
-.gl b { color: #fff; }
-.gl .c { width: 7mm; height: 7mm; vertical-align: -1.6mm; margin: 0 0.5mm 0 2mm; }
-.gl .c.on::before { width: 5mm; height: 5mm; }
-.gl .c.ring::after { inset: 0.4mm; }
-.booth { background: #fff; color: var(--ink); border-radius: 4mm; padding: 7mm 8mm; display: flex; flex-direction: column; justify-content: center; gap: 4mm; border-top: 3mm solid var(--hone-hi); }
-.booth h3 { font-family: var(--display); font-size: 21mm; line-height: 1.02; font-weight: 900; letter-spacing: -0.02em; color: var(--hone-deep); }
-.booth p { font-size: 16mm; line-height: 1.1; font-weight: 700; }
 
 /* footer */
 .ftr { margin-top: auto; background: var(--ink); color: #d6d8e0; padding: 4mm var(--m) 4mm; display: grid; grid-template-columns: 1fr auto; gap: 10mm; align-items: center; font-size: 8.5mm; line-height: 1.25; border-top: 0.5mm solid #2f3440; }
@@ -176,24 +151,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .ftr .refs { color: #c3c6d0; margin-top: 1mm; }
 .ftr .pid { font-family: var(--mono); font-size: 11mm; font-weight: 700; color: #fff; background: var(--ink-2); border: 0.5mm solid #6b7080; border-radius: 2mm; padding: 2mm 5mm; white-space: nowrap; }
 
-.story { display: grid; grid-template-columns: 1.22fr 1.1fr 0.75fr 1fr; gap: 6mm; margin-top: 7mm; }
-.sb { background: var(--ink-2); border-radius: 2.5mm; padding: 4mm 5mm 4.5mm; box-shadow: inset 0 0 0 0.5mm #3a3f4c; display: flex; flex-direction: column; gap: 1.6mm; }
-.sb.cur { box-shadow: inset 0 0 0 0.8mm var(--hone-hi); }
-.sb-k { font-size: 10mm; font-weight: 700; color: var(--on-dark-2); margin-bottom: 1mm; }
-.sb .q { font-size: 11.5mm; line-height: 1.18; font-style: italic; color: #ffd98a; }
-.sb .o { margin-top: auto; font-size: 11.5mm; line-height: 1.15; font-weight: 800; padding: 1mm 3mm 1.4mm; border-radius: 1.8mm; width: fit-content; }
-.sb .o + .o { margin-top: 1.6mm; }
-.sb .o.ok { background: var(--ok-bg); color: var(--ok-ink); }
-.sb .o.no { background: #fbe4e1; color: #5c0f0f; }
-.sb .o.hold { background: var(--amber-bg); color: var(--amber-ink); }
-.sb .o.same { background: #dfe2ea; color: #20242e; }
 
-.minepts { display: grid; grid-template-columns: 1.45fr 1fr 1.1fr 1fr; column-gap: 9mm; margin-top: 4mm; padding-top: 3mm; border-top: 0.4mm solid var(--rule); }
-.minepts p { font-size: 9.6mm; line-height: 1.25; padding-left: 15mm; position: relative; color: #2c2f36; }
-.minepts p.lead { padding-left: 0; font-weight: 700; color: var(--ink); }
-.minepts b { color: var(--ink); }
-.minepts i { position: absolute; left: 1.5mm; top: 0.6mm; width: 9.5mm; height: 9.5mm; transform: rotate(45deg); background: var(--hone); }
-.minepts i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 800; font-size: 9mm; line-height: 9.5mm; text-align: center; }
 
 .ptab { display: grid; grid-template-columns: 1fr auto auto auto; column-gap: 6mm; row-gap: 2.5mm; align-items: center; }
 .ptab .ph { font-size: 9.5mm; font-weight: 800; color: var(--muted); text-align: center; border-bottom: 0.4mm solid #b9b2a3; padding-bottom: 1.2mm; align-self: end; }
@@ -207,14 +165,24 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 .chain.five span { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 0.4mm #8b8578; }
 .chain.five span.again { background: #fbe4e1; color: #7a1010; box-shadow: none; }
 .chain.five i { color: var(--muted); }
-.minepts i { background: var(--hone-deep); }
 
 .ptab .sig { font-size: 10.5mm; font-weight: 800; text-align: center; white-space: nowrap; }
 .ptab .sig.y { color: #8f1d14; }
 .ptab .sig.n { color: var(--hone-deep); }
 
-.scen { font-size: 11mm; font-weight: 600; color: var(--on-dark-2); white-space: nowrap; }
-.scen span { margin-left: 2mm; padding: 0.4mm 2.5mm 0.8mm; border-radius: 1.5mm; background: var(--amber-bg); color: var(--amber-ink); font-weight: 700; }
+
+.uh { font-size: 17mm; color: #fff; margin-bottom: 1mm; }
+.uh em { font-style: normal; color: var(--hone-hi); }
+.step4 { margin-top: 7mm; display: flex; gap: 14mm; align-items: center; }
+.step4 .win { height: 106mm; }
+.s4t { display: flex; gap: 3mm; align-items: flex-start; font-size: 15mm; line-height: 1.15; font-weight: 700; color: #fff; }
+.step4 .n, .shot .n { width: 13mm; height: 13mm; flex: none; border-radius: 50%; background: var(--hone-deep); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 9.5mm; box-shadow: 0 0 0 0.9mm var(--hone-hi); }
+.minepts { display: grid; grid-template-columns: 1.45fr 1fr 1.1fr 1fr; column-gap: 9mm; margin-top: 4mm; padding-top: 3mm; border-top: 0.4mm solid var(--rule); }
+.minepts p { font-size: 9.6mm; line-height: 1.25; padding-left: 15mm; position: relative; color: #2c2f36; }
+.minepts p.lead { padding-left: 0; font-weight: 700; color: var(--ink); }
+.minepts b { color: var(--ink); }
+.minepts i { position: absolute; left: 1.5mm; top: 0.6mm; width: 9.5mm; height: 9.5mm; transform: rotate(45deg); background: var(--hone-deep); }
+.minepts i span { display: block; transform: rotate(-45deg); color: #fff; font-style: normal; font-weight: 800; font-size: 9mm; line-height: 9.5mm; text-align: center; }
 </style>
 </head>
 <body>
@@ -477,19 +445,17 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
 </section>
 
 <section class="band dark" id="demo">
-  <div class="dhead"><p class="rl-h"><span class="ok">Plain feedback became rules.</span> <span class="no">A one-off request did not.</span></p><p class="scen">Demo scenario: HR offer letters <span>scripted</span></p></div>
+  <h2 class="uh">Use your agent as usual. <em>Hone edits its AGENTS.md between sessions.</em></h2>
   <div class="stills">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback popover under the agent's reply: There's a £0 sign-on bonus line. If there's no bonus, just leave the line out. Send to Hone"></div><figcaption><span class="n">1</span>The user comments on a reply</figcaption></figure>
+    <figure class="shot s1"><div class="win"><img src="assets/stills/s1-feedback.png" data-src-w="3080" data-stage-w="440" data-min-px="23" alt="Feedback popover under the agent's reply: There's a £0 sign-on bonus line. If there's no bonus, just leave the line out. Send to Hone"></div><figcaption><span class="n">1</span><span>You work with the agent and comment when something is off</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s2"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review panel: the judge asks reviewers 1 and 2 a follow-up; reviewer 2 answers: Both ask for the line to be dropped outright. I withdraw it."></div><figcaption><span class="n">2</span>The judge questions two reviewers</figcaption></figure>
+    <figure class="shot s2"><div class="win"><img src="assets/stills/s2-crossexam.png" data-src-w="3200" data-stage-w="640" data-min-px="20" alt="Review panel: the judge asks reviewers 1 and 2 a follow-up; reviewer 2 answers: Both ask for the line to be dropped outright. I withdraw it."></div><figcaption><span class="n">2</span><span>Hone reviews finished sessions; the judge questions reviewers that disagree</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s3"><div class="win"><img src="assets/stills/s3-commit.png" data-src-w="3360" data-stage-w="560" data-min-px="22" alt="AGENTS.md, verified: the rule about blocks that do not apply is widened to drop rows whose amount is 0"></div><figcaption><span class="n">3</span>Hone commits a verified edit</figcaption></figure>
+    <figure class="shot s3"><div class="win"><img src="assets/stills/s3-commit.png" data-src-w="3360" data-stage-w="560" data-min-px="22" alt="AGENTS.md, verified: the rule about blocks that do not apply is widened to drop rows whose amount is 0"></div><figcaption><span class="n">3</span><span>You get a verified edit with its diff and reason</span></figcaption></figure>
   </div>
-  <div class="story">
-    <div class="sb"><p class="sb-k">Batch 1 of 4 · AGENTS.md empty</p><p class="q">“Write dates like 1 December 2026”</p><p class="q">“Don’t make up the manager, ask me”</p><p class="o ok">+ 4 rules added</p><p class="o hold">held back: formatting (no feedback yet)</p></div>
-    <div class="sb"><p class="sb-k">Batch 2</p><p class="q">“The salary line lost its bold”</p><p class="q">“For this candidate: family name first”</p><p class="o ok">+ formatting rule, now asked for</p><p class="o no">refused: a one-off, not a rule</p></div>
-    <div class="sb"><p class="sb-k">Batch 3</p><p class="q">“Perfect, that’s exactly it”</p><p class="o same">no change needed</p></div>
-    <div class="sb cur"><p class="sb-k">Batch 4 · shown above</p><p class="q">“…a ‘£0’ sign-on bonus line…”</p><p class="q">“‘0 shares’ looks odd…”</p><p class="o ok">~ one rule widened, none added</p></div>
+  <div class="step4">
+    <figure class="shot s4"><div class="win"><img src="assets/stills/s4-versions.png" data-src-w="3120" data-stage-w="520" data-min-px="19" alt="AGENTS.md version history: each verified version on a commit line, the one in use tagged, with Compare and Roll back on a past version"></div></figure>
+    <p class="s4t"><span class="n">4</span><span>The next session starts from the new AGENTS.md. Every version stays in Git: compare any two, or roll back.</span></p>
   </div>
 </section>
 
