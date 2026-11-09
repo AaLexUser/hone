@@ -30,6 +30,7 @@ b code { font-weight: 700; }
 .hdr { background: var(--ink); color: #fff; padding: 7mm var(--m) 6mm; display: grid; grid-template-columns: 1fr auto; column-gap: 14mm; }
 .venue { display: flex; align-items: center; gap: 7mm; }
 .venue img { height: 26mm; display: block; }
+.venue .partner { height: 26mm; margin-left: auto; }
 .venue .track { border-left: 0.5mm solid #4b5060; padding-left: 6mm; font-size: var(--t-body); line-height: 1.25; color: var(--on-dark); }
 .venue .track b { color: #fff; letter-spacing: 0.04em; }
 .titlerow { display: flex; align-items: center; gap: 12mm; margin-top: 4mm; }
