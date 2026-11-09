@@ -1,16 +1,16 @@
-# Hone · ICDM 2026 demo poster
+# Hone ICDM 2026 demo poster
 
-90 × 120 cm portrait. `index.html` is self-contained (fonts and images in `assets/`); open it in Chromium and print, or use the ready files in `out/`:
+The poster is 90 by 120 cm, portrait. `index.html` is self-contained, with fonts, the ICDM logo, the code QR and the screenshots in `assets/`.
 
-- `out/hone-poster.pdf`: print file, 900 × 1200 mm, fonts embedded
-- `out/preview.png`: screen preview
+- `out/hone-poster.pdf` is the print file, 900 by 1200 mm, with embedded fonts.
+- `out/preview.png` is a screen preview.
 
 ## Fill in before printing
 
-Search `index.html` for `placeholder`: affiliations, email, institution logos, acknowledgment line, Paper ID (bottom right).
+Search `index.html` for `placeholder`. The placeholders are the affiliations, the email, the institution logos, the acknowledgment and the Paper ID in the bottom right corner.
 
 ## Rebuilding
 
-`tools/` holds the sources `index.html` is generated from (`body.html`, `body.css`, `diagram.svg`, `build.py`). `tools/go.sh` rebuilds `index.html` and renders `out/`; it overwrites `index.html`, so make edits in `tools/` if you rebuild. `tools/audit.cjs` checks minimum text size, contrast and banned words. `tools/stageshow/` holds the sources of the three UI stills.
+`tools/` holds the sources that `index.html` is built from (`body.html`, `body.css`, `diagram.svg`, `build.py`). `tools/go.sh` rebuilds `index.html` and renders `out/`. It overwrites `index.html`, so edit the files in `tools/` if you rebuild. `tools/audit.cjs` checks the smallest text size, contrast, banned words and banned punctuation. `tools/capture/` describes how the real UI screenshots were taken.
 
 Rendering needs Node with Playwright and Python 3.

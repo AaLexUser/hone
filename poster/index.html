@@ -211,16 +211,16 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
   </div>
   <div class="hdr-main">
     <div>
-      <h1><span class="name">Hone</span>: Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
+      <h1><span class="name">Hone</span> · Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
       <p class="authors">Alexey Lapin<sup>1</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup><span class="affil"><sup>1</sup>&lt;placeholder affiliation&gt; &nbsp;<sup>2</sup>&lt;placeholder affiliation&gt; &nbsp;·&nbsp; &lt;placeholder email&gt;</span></p>
     </div>
     <div class="qr"><div class="tile"><img src="assets/qr-code.svg" alt="QR code to github.com/AaLexUser/hone"></div><p class="lbl">Code</p><p class="url">github.com/<br>AaLexUser/hone</p></div>
   </div>
-  <div class="thesis"><p>Hone improves AGENTS.md from sessions that <em>already happened</em>.</p><div class="t2"><p>No task is re-run.</p><p class="def"><code>AGENTS.md</code>: the instruction file a coding agent loads into its system prompt at every session.</p></div></div>
+  <div class="thesis"><p>Hone improves AGENTS.md from sessions that <em>already happened</em>.</p><div class="t2"><p>It never re-runs a task.</p><p class="def"><code>AGENTS.md</code> is the instruction file a coding agent loads into its system prompt at every session.</p></div></div>
 </header>
 
 <section class="hero">
-  <p class="top">Highest task success of six systems on both benchmarks. <span>Gain over the same Pi agent without Hone:</span></p>
+  <p class="top">Highest task success of six systems on both benchmarks. <span>Gain over the same Pi agent without Hone</span></p>
   <div class="halves">
     <div class="half">
       <div class="hl"><p class="lab">OfficeQA</p><div class="v">+3.0<small>pts</small></div></div>
@@ -245,8 +245,8 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
       </div>
     </div>
   </div>
-  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer (re-runs tasks with a verifier). The Pi agent is Hone's starting configuration; only AGENTS.md differs.</p>
-  <p class="cap"><b>Setup.</b> Hone saw only traces and per-task feedback (“Expected … Got …”); no task re-run to score an edit. OfficeQA: 200 tasks, 5 batches of 40; final file scored once.</p>
+  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer (re-runs tasks with a verifier). The Pi agent is Hone's starting configuration, and only AGENTS.md differs.</p>
+  <p class="cap"><b>Setup.</b> Hone saw only traces and per-task feedback ("Expected ... Got ...") and re-ran no task to score an edit. OfficeQA used 200 tasks in 5 batches of 40, and each final file ran once.</p>
 </section>
 
 
@@ -404,9 +404,9 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <use href="#i-db" x="694" y="214" width="13" height="13" style="color:#565b66"/>
     <text x="712" y="224" font-size="11" font-weight="700">Experience</text>
     <text x="694" y="238" font-size="11" font-weight="700">memory</text>
-    <text x="694" y="253" font-size="9" fill="#565b66">every past decision:</text>
-    <text x="694" y="264" font-size="9" fill="#565b66">edit, commit message,</text>
-    <text x="694" y="275" font-size="9" fill="#565b66">rationale, outcome</text>
+    <text x="694" y="253" font-size="9" fill="#565b66">each past edit, its</text>
+    <text x="694" y="264" font-size="9" fill="#565b66">commit message,</text>
+    <text x="694" y="275" font-size="9" fill="#565b66">rationale and outcome</text>
     <line x1="685" y1="262" x2="653" y2="262" stroke="#7d7a73" stroke-width="0.7" stroke-dasharray="3 2"/>
 
     <!-- ===== verify, commit, publish ===== -->
@@ -415,12 +415,12 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <use href="#i-shield" x="316" y="226" width="16" height="16" style="color:#806217"/>
     <text x="324" y="257" font-size="11.5" font-weight="700" text-anchor="middle" fill="#4f3c0c">Verifier</text>
     <text x="324" y="273" font-size="9" text-anchor="middle" fill="#565b66">anchor matches</text>
-    <text x="324" y="285" font-size="9" text-anchor="middle" fill="#565b66">once in the file;</text>
+    <text x="324" y="285" font-size="9" text-anchor="middle" fill="#565b66">once in the file,</text>
     <text x="324" y="297" font-size="9" text-anchor="middle" fill="#565b66">cited evidence</text>
     <text x="324" y="309" font-size="9" text-anchor="middle" fill="#565b66">is in the batch</text>
 
     <path d="M324 220 V158 H470 V168" fill="none" stroke="#b0302f" stroke-width="0.8" stroke-dasharray="4 2.4" marker-end="url(#a-rej)"/>
-    <text x="330" y="153" font-size="9" font-style="italic" fill="#b0302f">rejected: only propose re-runs, with the rejection; review reused</text>
+    <text x="330" y="153" font-size="9" font-style="italic" fill="#b0302f">on rejection, only propose re-runs and reuses the review</text>
 
     <line x1="270" y1="268" x2="249" y2="268" stroke="#1a1c21" stroke-width="0.7" marker-end="url(#a-ink)"/>
     <text x="259.5" y="262" font-size="9" font-weight="700" fill="#3540a6" text-anchor="middle">✓</text>
@@ -436,7 +436,7 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <use href="#i-file" x="10" y="229" width="15" height="15" style="color:#4653c9"/>
     <text x="10" y="261" font-size="11" font-weight="700">Published</text>
     <text x="10" y="276" font-family="JetBrains Mono" font-size="11" font-weight="700" fill="#3540a6">AGENTS.md</text>
-    <text x="10" y="294" font-size="9" fill="#565b66">every version in Git;</text>
+    <text x="10" y="294" font-size="9" fill="#565b66">every version in Git,</text>
     <text x="10" y="306" font-size="9" fill="#565b66">branch from any one</text>
 
     <!-- loop back to the agent -->
@@ -463,36 +463,36 @@ h2 { font-family: var(--display); font-size: 18mm; line-height: 1.06; font-weigh
     <use href="#stg" x="270" y="220"/><text x="270" y="223.4" font-size="9.6" font-weight="800" fill="#fff" text-anchor="middle">5</text>
   </svg>
   <div class="stages">
-    <p><i>1</i><b>Trace collection.</b> Sessions arrive as traces with optional feedback; the agent syncs AGENTS.md first.</p>
+    <p><i>1</i><b>Trace collection.</b> Sessions arrive as traces with optional user feedback.</p>
     <p><i>2</i><b>Batch assembly.</b> Unanalyzed traces form a frozen batch, fixed for the whole run.</p>
-    <p><i>3</i><b>Review.</b> Reviewers on different models analyze the batch; the judge cross-examines them.</p>
-    <p><i>4</i><b>Propose.</b> Proposers read the report and past decisions; the judge fuses one edit set.</p>
-    <p><i>5</i><b>Verify and commit.</b> Anchor matches once, evidence is in the batch; if not, only propose re-runs.</p>
+    <p><i>3</i><b>Review.</b> Reviewers on different models analyze the batch, and the judge cross-examines them.</p>
+    <p><i>4</i><b>Propose.</b> Proposers read the report and past decisions, and the judge fuses one edit set.</p>
+    <p><i>5</i><b>Verify and commit.</b> Anchors match once and cite the batch. If not, only propose re-runs.</p>
   </div>
-  <p class="mining"><span class="dia"></span><b>Mining happens at three points:</b> the trace-evidence compiler extracts process-level signals from tool calls, the review panel extracts recurrent behavioral patterns, and the judge synthesizes these analyses into edit decisions. A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
+  <p class="mining"><span class="dia"></span><b>Mining happens at three points.</b> The trace-evidence compiler extracts process-level signals from tool calls, the review panel extracts recurrent behavioral patterns, and the judge synthesizes these analyses into edit decisions. A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
 </section>
 
 <section class="band dark" id="demo">
   <h2 class="uh">Use your agent as usual. <em>Hone edits its AGENTS.md between sessions.</em></h2>
   <div class="stills r1">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/real/1-feedback.png" data-real data-src-w="944" data-stage-w="315" data-min-px="14" alt="Agent chat: the feedback box under a reply, Send to Hone"></div><figcaption><span class="n">1</span><span>You comment on a reply in the agent’s chat</span></figcaption></figure>
+    <figure class="shot s1"><div class="win"><img src="assets/stills/real/1-feedback.png" data-real data-src-w="944" data-stage-w="315" data-min-px="14" alt="Agent chat: the feedback box under a reply, Send to Hone"></div><figcaption><span class="n">1</span><span>You comment on a reply in the agent's chat</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s2"><div class="win"><img src="assets/stills/real/2-batch.png" data-real data-src-w="2352" data-stage-w="588" data-min-px="12" alt="Hone dashboard: batch size, auto-optimize, Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch; you start optimization (or auto)</span></figcaption></figure>
+    <figure class="shot s2"><div class="win"><img src="assets/stills/real/2-batch.png" data-real data-src-w="2352" data-stage-w="588" data-min-px="12" alt="Hone dashboard: batch size, auto-optimize, Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch, and you start a run or turn on auto-optimize</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
     <figure class="shot s3"><div class="win"><img src="assets/stills/real/3-review.png" data-real data-src-w="1508" data-stage-w="377" data-min-px="11" alt="Run page: review stage, three reviewers on different models, the judge asked two of them"></div><figcaption><span class="n">3</span><span>The judge cross-examines the reviewers, then the proposers</span></figcaption></figure>
   </div>
   <div class="stills r2">
-    <figure class="shot s4"><div class="win"><img src="assets/stills/real/4-commit.png" data-real data-src-w="1792" data-stage-w="448" data-min-px="12" alt="Run page: committed, with the commit message written by the judge"></div><figcaption><span class="n">4</span><span>Verified edits are committed with the judge’s message</span></figcaption></figure>
+    <figure class="shot s4"><div class="win"><img src="assets/stills/real/4-commit.png" data-real data-src-w="1792" data-stage-w="448" data-min-px="12" alt="Run page: committed, with the commit message written by the judge"></div><figcaption><span class="n">4</span><span>Hone commits verified edits with the judge's message</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s5"><div class="win"><img src="assets/stills/real/5-history.png" data-real data-src-w="2848" data-stage-w="712" data-min-px="10.5" alt="Versions page: history of AGENTS.md commits, the current one marked"></div><figcaption><span class="n">5</span><span>Every version stays in Git; the agent fetches the current one</span></figcaption></figure>
+    <figure class="shot s5"><div class="win"><img src="assets/stills/real/5-history.png" data-real data-src-w="2848" data-stage-w="712" data-min-px="10.5" alt="Versions page: history of AGENTS.md commits, the current one marked"></div><figcaption><span class="n">5</span><span>Every version stays in Git, and the agent fetches the current one</span></figcaption></figure>
   </div>
 </section>
 
 <footer class="ftr">
-  <div><p class="gh">github.com/AaLexUser/hone &nbsp;·&nbsp; Acknowledgment: &lt;placeholder funding line&gt;</p>
-  <p class="scope">Today: one AGENTS.md, one domain at a time; two benchmarks, one target model, each file evaluated once.</p>
-  <p class="refs">Baselines: SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks: OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p></div>
-  <p class="pid">Paper ID: &lt;placeholder&gt;</p>
+  <div><p class="gh">github.com/AaLexUser/hone &nbsp;·&nbsp; Acknowledgment &lt;placeholder funding line&gt;</p>
+  <p class="scope">Scope today is one AGENTS.md for one domain at a time, evaluated on two benchmarks with one target model, each file once.</p>
+  <p class="refs">Baselines. SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p></div>
+  <p class="pid">Paper ID &lt;placeholder&gt;</p>
 </footer>
 </div>
 

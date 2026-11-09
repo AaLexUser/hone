@@ -10,12 +10,12 @@
   </div>
   <div class="hdr-main">
     <div>
-      <h1><span class="name">Hone</span>: Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
+      <h1><span class="name">Hone</span> · Mining Agent Trajectories to Optimize AGENTS.md via Cross-Examination</h1>
       <p class="authors">Alexey Lapin<sup>1</sup> &nbsp;·&nbsp; Nikolay O. Nikitin<sup>2</sup><span class="affil"><sup>1</sup>&lt;placeholder affiliation&gt; &nbsp;<sup>2</sup>&lt;placeholder affiliation&gt; &nbsp;·&nbsp; &lt;placeholder email&gt;</span></p>
     </div>
     <div class="qr"><div class="tile"><img src="assets/qr-code.svg" alt="QR code to github.com/AaLexUser/hone"></div><p class="lbl">Code</p><p class="url">github.com/<br>AaLexUser/hone</p></div>
   </div>
-  <div class="thesis"><p>Hone improves AGENTS.md from sessions that <em>already happened</em>.</p><div class="t2"><p>No task is re-run.</p><p class="def"><code>AGENTS.md</code>: the instruction file a coding agent loads into its system prompt at every session.</p></div></div>
+  <div class="thesis"><p>Hone improves AGENTS.md from sessions that <em>already happened</em>.</p><div class="t2"><p>It never re-runs a task.</p><p class="def"><code>AGENTS.md</code> is the instruction file a coding agent loads into its system prompt at every session.</p></div></div>
 </header>
 
 @@HERO@@
@@ -25,35 +25,35 @@
   <h2>Reviewers disagree, a judge cross-examines, a verifier gates every edit.</h2>
   @@SVG@@
   <div class="stages">
-    <p><i>1</i><b>Trace collection.</b> Sessions arrive as traces with optional feedback; the agent syncs AGENTS.md first.</p>
+    <p><i>1</i><b>Trace collection.</b> Sessions arrive as traces with optional user feedback.</p>
     <p><i>2</i><b>Batch assembly.</b> Unanalyzed traces form a frozen batch, fixed for the whole run.</p>
-    <p><i>3</i><b>Review.</b> Reviewers on different models analyze the batch; the judge cross-examines them.</p>
-    <p><i>4</i><b>Propose.</b> Proposers read the report and past decisions; the judge fuses one edit set.</p>
-    <p><i>5</i><b>Verify and commit.</b> Anchor matches once, evidence is in the batch; if not, only propose re-runs.</p>
+    <p><i>3</i><b>Review.</b> Reviewers on different models analyze the batch, and the judge cross-examines them.</p>
+    <p><i>4</i><b>Propose.</b> Proposers read the report and past decisions, and the judge fuses one edit set.</p>
+    <p><i>5</i><b>Verify and commit.</b> Anchors match once and cite the batch. If not, only propose re-runs.</p>
   </div>
-  <p class="mining"><span class="dia"></span><b>Mining happens at three points:</b> the trace-evidence compiler extracts process-level signals from tool calls, the review panel extracts recurrent behavioral patterns, and the judge synthesizes these analyses into edit decisions. A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
+  <p class="mining"><span class="dia"></span><b>Mining happens at three points.</b> The trace-evidence compiler extracts process-level signals from tool calls, the review panel extracts recurrent behavioral patterns, and the judge synthesizes these analyses into edit decisions. A hypothesis survives only when it is recurrent in the data and holds up under cross-examination.</p>
 </section>
 
 <section class="band dark" id="demo">
   <h2 class="uh">Use your agent as usual. <em>Hone edits its AGENTS.md between sessions.</em></h2>
   <div class="stills r1">
-    <figure class="shot s1"><div class="win"><img src="assets/stills/real/1-feedback.png" data-real data-src-w="944" data-stage-w="315" data-min-px="14" alt="Agent chat: the feedback box under a reply, Send to Hone"></div><figcaption><span class="n">1</span><span>You comment on a reply in the agent’s chat</span></figcaption></figure>
+    <figure class="shot s1"><div class="win"><img src="assets/stills/real/1-feedback.png" data-real data-src-w="944" data-stage-w="315" data-min-px="14" alt="Agent chat: the feedback box under a reply, Send to Hone"></div><figcaption><span class="n">1</span><span>You comment on a reply in the agent's chat</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s2"><div class="win"><img src="assets/stills/real/2-batch.png" data-real data-src-w="2352" data-stage-w="588" data-min-px="12" alt="Hone dashboard: batch size, auto-optimize, Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch; you start optimization (or auto)</span></figcaption></figure>
+    <figure class="shot s2"><div class="win"><img src="assets/stills/real/2-batch.png" data-real data-src-w="2352" data-stage-w="588" data-min-px="12" alt="Hone dashboard: batch size, auto-optimize, Start optimization"></div><figcaption><span class="n">2</span><span>Traces fill a batch, and you start a run or turn on auto-optimize</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
     <figure class="shot s3"><div class="win"><img src="assets/stills/real/3-review.png" data-real data-src-w="1508" data-stage-w="377" data-min-px="11" alt="Run page: review stage, three reviewers on different models, the judge asked two of them"></div><figcaption><span class="n">3</span><span>The judge cross-examines the reviewers, then the proposers</span></figcaption></figure>
   </div>
   <div class="stills r2">
-    <figure class="shot s4"><div class="win"><img src="assets/stills/real/4-commit.png" data-real data-src-w="1792" data-stage-w="448" data-min-px="12" alt="Run page: committed, with the commit message written by the judge"></div><figcaption><span class="n">4</span><span>Verified edits are committed with the judge’s message</span></figcaption></figure>
+    <figure class="shot s4"><div class="win"><img src="assets/stills/real/4-commit.png" data-real data-src-w="1792" data-stage-w="448" data-min-px="12" alt="Run page: committed, with the commit message written by the judge"></div><figcaption><span class="n">4</span><span>Hone commits verified edits with the judge's message</span></figcaption></figure>
     <svg class="sar" viewBox="0 0 30 40" fill="none" stroke="#a9b2ff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20 H25 M16 9 L26 20 L16 31"/></svg>
-    <figure class="shot s5"><div class="win"><img src="assets/stills/real/5-history.png" data-real data-src-w="2848" data-stage-w="712" data-min-px="10.5" alt="Versions page: history of AGENTS.md commits, the current one marked"></div><figcaption><span class="n">5</span><span>Every version stays in Git; the agent fetches the current one</span></figcaption></figure>
+    <figure class="shot s5"><div class="win"><img src="assets/stills/real/5-history.png" data-real data-src-w="2848" data-stage-w="712" data-min-px="10.5" alt="Versions page: history of AGENTS.md commits, the current one marked"></div><figcaption><span class="n">5</span><span>Every version stays in Git, and the agent fetches the current one</span></figcaption></figure>
   </div>
 </section>
 
 <footer class="ftr">
-  <div><p class="gh">github.com/AaLexUser/hone &nbsp;·&nbsp; Acknowledgment: &lt;placeholder funding line&gt;</p>
-  <p class="scope">Today: one AGENTS.md, one domain at a time; two benchmarks, one target model, each file evaluated once.</p>
-  <p class="refs">Baselines: SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks: OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p></div>
-  <p class="pid">Paper ID: &lt;placeholder&gt;</p>
+  <div><p class="gh">github.com/AaLexUser/hone &nbsp;·&nbsp; Acknowledgment &lt;placeholder funding line&gt;</p>
+  <p class="scope">Scope today is one AGENTS.md for one domain at a time, evaluated on two benchmarks with one target model, each file once.</p>
+  <p class="refs">Baselines. SkillOpt (Yang et al., 2026), SkillOpt-Lite (Shen et al., 2026), SkillGrad (Wang et al., 2026), Trace2Skill (Ni et al., 2026), EvoSkill (Zhang et al., 2026). Benchmarks. OfficeQA (Opsahl-Ong et al., 2026), SpreadsheetBench (Ma et al., 2024).</p></div>
+  <p class="pid">Paper ID &lt;placeholder&gt;</p>
 </footer>
 </div>

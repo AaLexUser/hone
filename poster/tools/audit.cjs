@@ -7,7 +7,7 @@ const MM = 96 / 25.4
 const src = path.resolve(process.argv[2] || 'index.html')
 const BANNED = [/\bMei\b/, /real run/i, /real log/i, /verbatim from/i, /\blive\b(?!\s+demo\s+at\s+this\s+booth)/i, /one week/i, /must agree/i, /until it agrees/i,
   /\br_[0-9a-f]{4}\b/, /\bses_/, /\b[0-9a-f]{7}\b(?![-\w])/, /1 m 06/, /batch 0\/4/, /ask_panel/, /deepseek-v4|glm-5\.2|mimo-v2|minimax-m3|gpt-5\.4-mini@/,
-  /held.out/i, /generaliz/i, /significan/i, /\benough\b/i, /unsupervised/i, /best AGENTS/i, /best baseline/i, /≈ paraphrased/, /only recurring/i, /demo link/i, /scan to open/i, /\bTry it\b/i, /\bsynced\b/i, /\brunning\b/i]
+  /held.out/i, /generaliz/i, /significan/i, /\benough\b/i, /unsupervised/i, /best AGENTS/i, /best baseline/i, /≈ paraphrased/, /only recurring/i, /demo link/i, /scan to open/i, /\bTry it\b/i, /\bsynced\b/i, /\brunning\b/i, /[\u2014\u2013;:\u201c\u201d\u2018\u2019]/]
 ;(async () => {
   const b = await chromium.launch()
   const p = await b.newPage({ viewport: { width: Math.round(900 * MM), height: Math.round(1200 * MM) } })

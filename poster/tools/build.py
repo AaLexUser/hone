@@ -32,13 +32,13 @@ def half(bench, extra=''):
 
 
 HERO = f'''<section class="hero">
-  <p class="top">Highest task success of six systems on both benchmarks. <span>Gain over the same Pi agent without Hone:</span></p>
+  <p class="top">Highest task success of six systems on both benchmarks. <span>Gain over the same Pi agent without Hone</span></p>
   <div class="halves">
 {half('OfficeQA')}
 {half('SpreadsheetBench', '<p class="s2">+1.9 over SkillOpt</p>')}
   </div>
-  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer (re-runs tasks with a verifier). The Pi agent is Hone's starting configuration; only AGENTS.md differs.</p>
-  <p class="cap"><b>Setup.</b> Hone saw only traces and per-task feedback (“Expected … Got …”); no task re-run to score an edit. OfficeQA: 200 tasks, 5 batches of 40; final file scored once.</p>
+  <p class="cap"><b>Table I.</b> Task success, %, GPT-5.4-mini target model. <i class="sw hone"></i>Hone <i class="sw agent"></i>unoptimized agent <i class="sw opt"></i>skill optimizer (re-runs tasks with a verifier). The Pi agent is Hone's starting configuration, and only AGENTS.md differs.</p>
+  <p class="cap"><b>Setup.</b> Hone saw only traces and per-task feedback ("Expected ... Got ...") and re-ran no task to score an edit. OfficeQA used 200 tasks in 5 batches of 40, and each final file ran once.</p>
 </section>'''
 
 BATCHES = [(1, 2, 3, 4), (5, 6, 7, 8), (9, 10), (11, 12, 13)]
