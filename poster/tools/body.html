@@ -17,9 +17,19 @@
 </header>
 
 <section class="band intro" id="intro">
-  <p class="lead">Can a coding agent learn from sessions that <em>already happened?</em></p>
   <div>
-    <p class="txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at the start of every session.</b> Skill optimizers improve it by re-executing tasks after each edit and scoring them pass or fail. Real sessions happen once, and feedback is at most a short comment from the user. Hone learns from these finished sessions and comments, and it never re-executes a task.</p>
+    <p class="lead">Can a coding agent learn from sessions that <em>already happened?</em></p>
+    <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at every session.</b> Real sessions happen once, with at most a short comment from the user.</p>
+  </div>
+  <div>
+    <p class="txt">Skill optimizers improve this file by re-executing tasks after each edit and scoring every run pass or fail. Hone needs neither. It learns from finished sessions and optional comments.</p>
+    <table class="cmp">
+      <thead><tr><th></th><th>SkillOpt</th><th>SkillOpt-Lite</th><th>Trace2Skill</th><th>EvoSkill</th><th class="h">Hone</th></tr></thead>
+      <tbody>
+        <tr><th>Re-executes tasks</th><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="h">no</td></tr>
+        <tr><th>Needs pass or fail</th><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="h">no</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 

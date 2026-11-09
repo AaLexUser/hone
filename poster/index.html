@@ -69,7 +69,15 @@ h1 { font-family: var(--display); font-size: var(--t-title); font-weight: 700; l
 .qr .tile p { font-size: var(--t-body); font-weight: 700; color: var(--ink); margin-top: 1mm; line-height: 1.2; }
 
 /* intro */
-.intro { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22mm; align-items: center; padding-top: 12mm; padding-bottom: 0; }
+.intro { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22mm; align-items: start; padding-top: 12mm; padding-bottom: 0; }
+.lead-txt { margin-top: 5mm; }
+.cmp { width: 100%; margin-top: 4mm; border-collapse: collapse; font-size: var(--t-small); line-height: 1.2; }
+.cmp th, .cmp td { padding: 2.2mm 2mm; text-align: center; white-space: nowrap; }
+.cmp thead th { font-weight: 700; border-bottom: 0.5mm solid var(--ink); }
+.cmp tbody th { text-align: left; font-weight: 600; padding-left: 0; }
+.cmp tbody tr + tr th, .cmp tbody tr + tr td { border-top: 0.3mm solid var(--rule); }
+.cmp td { color: var(--muted); }
+.cmp .h { background: var(--hone-soft); color: var(--hone-deep); font-weight: 800; }
 .lead { font-family: var(--display); font-size: var(--t-lead); font-weight: 800; line-height: 1.06; letter-spacing: -0.02em; }
 .lead em { font-style: normal; color: var(--hone); }
 
@@ -97,7 +105,7 @@ h2 .n { width: 15mm; height: 15mm; flex: none; border-radius: 50%; border: 0.7mm
 .results { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: 10mm; align-items: center; }
 .chart { padding: 6mm 8mm 7mm; }
 .chart .bench { font-size: var(--t-body); font-weight: 700; margin-bottom: 2mm; }
-.bar { display: grid; grid-template-columns: 46mm 1fr; column-gap: 4mm; align-items: center; height: 12.5mm; font-size: var(--t-small); }
+.bar { display: grid; grid-template-columns: 46mm 1fr; column-gap: 4mm; align-items: center; height: 11mm; font-size: var(--t-small); }
 .bar .l { text-align: right; color: var(--muted); white-space: nowrap; }
 .bar .tr { position: relative; height: 7mm; margin-right: 17mm; }
 .bar .b { position: absolute; left: 0; top: 0; bottom: 0; background: #bfc2cb; border-radius: 0.8mm; }
@@ -111,17 +119,17 @@ h2 .n { width: 15mm; height: 15mm; flex: none; border-radius: 50%; border: 0.7mm
 /* 3. demo */
 .demo { flex: 1 0 auto; }
 .row { display: flex; gap: 10mm; align-items: stretch; }
-.row + .row { margin-top: 6mm; }
-.card { flex: 1 1 auto; padding: 5mm; display: flex; flex-direction: column; }
+.row + .row { margin-top: 5mm; }
+.card { flex: 1 1 auto; padding: 4mm 5mm 3.5mm; display: flex; flex-direction: column; }
 .card .win { background: #fff; border-radius: 2mm; overflow: hidden; box-shadow: 0 0 0 0.4mm var(--rule); height: var(--sh); align-self: center; }
 .card img { height: 100%; width: auto; display: block; }
-.card figcaption { width: 0; min-width: 100%; margin-top: 3.5mm; font-size: var(--t-body); line-height: 1.3; }
+.card figcaption { width: 0; min-width: 100%; margin-top: 2.5mm; font-size: var(--t-body); line-height: 1.3; }
 .card figcaption b { color: var(--hone); margin-right: 2mm; }
 .r1 { --sh: 162mm; }
-.r2 { --sh: 126mm; }
+.r2 { --sh: 123mm; }
 
 /* footer */
-.ftr { margin-top: 10mm; background: var(--panel); padding: 6mm var(--m); display: grid; grid-template-columns: 1fr auto; column-gap: 12mm; align-items: center; font-size: var(--t-small); line-height: 1.4; color: var(--muted); }
+.ftr { margin-top: 10mm; background: var(--panel); padding: 4.5mm var(--m); display: grid; grid-template-columns: 1fr auto; column-gap: 12mm; align-items: center; font-size: var(--t-small); line-height: 1.4; color: var(--muted); }
 .ftr b { color: var(--ink); }
 .ftr .pid { font-size: var(--t-body); font-weight: 700; color: var(--ink); white-space: nowrap; }
 </style>
@@ -146,9 +154,19 @@ h2 .n { width: 15mm; height: 15mm; flex: none; border-radius: 50%; border: 0.7mm
 </header>
 
 <section class="band intro" id="intro">
-  <p class="lead">Can a coding agent learn from sessions that <em>already happened?</em></p>
   <div>
-    <p class="txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at the start of every session.</b> Skill optimizers improve it by re-executing tasks after each edit and scoring them pass or fail. Real sessions happen once, and feedback is at most a short comment from the user. Hone learns from these finished sessions and comments, and it never re-executes a task.</p>
+    <p class="lead">Can a coding agent learn from sessions that <em>already happened?</em></p>
+    <p class="txt lead-txt"><b><code>AGENTS.md</code> is the instruction file a coding agent loads at every session.</b> Real sessions happen once, with at most a short comment from the user.</p>
+  </div>
+  <div>
+    <p class="txt">Skill optimizers improve this file by re-executing tasks after each edit and scoring every run pass or fail. Hone needs neither. It learns from finished sessions and optional comments.</p>
+    <table class="cmp">
+      <thead><tr><th></th><th>SkillOpt</th><th>SkillOpt-Lite</th><th>Trace2Skill</th><th>EvoSkill</th><th class="h">Hone</th></tr></thead>
+      <tbody>
+        <tr><th>Re-executes tasks</th><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="h">no</td></tr>
+        <tr><th>Needs pass or fail</th><td>yes</td><td>yes</td><td>yes</td><td>yes</td><td class="h">no</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
