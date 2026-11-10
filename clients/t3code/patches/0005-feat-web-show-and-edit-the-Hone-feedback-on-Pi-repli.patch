@@ -1,0 +1,749 @@
+From a6fbe6125b6b1da47e62073372c462dc3cad5da6 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Tue, 10 Nov 2026 15:27:53 +0000
+Subject: [PATCH] feat(web): show and edit the Hone feedback on Pi replies
+
+The feedback under the newest Pi reply expands to every entry in full.
+Either thumb opens a popover that lists the entries Hone holds for the
+session, each editable in place or removable, above the field for a new
+entry. The pressed thumb follows the newest rated entry.
+
+The new hone.replaceFeedback RPC sends the whole edited list to Hone's
+PUT /api/traces/{id}/feedback. hone.threadFeedback now returns parsed
+entries, and a multi-line comment is folded into one line so each entry
+stays one line in Hone.
+---
+ apps/server/src/auth/RpcAuthorization.ts      |   1 +
+ apps/server/src/hone/Hone.test.ts             |  28 +-
+ apps/server/src/hone/Hone.ts                  |  66 +++-
+ .../src/observability/RpcInstrumentation.ts   |   1 +
+ apps/server/src/ws.ts                         |   1 +
+ apps/web/src/components/chat/HoneControls.tsx | 304 +++++++++++++-----
+ .../components/chat/TimelineAssistantRows.tsx |   2 +-
+ apps/web/src/state/hone.ts                    |  21 +-
+ packages/contracts/src/hone.ts                |  22 +-
+ packages/contracts/src/rpc.ts                 |   9 +
+ 10 files changed, 333 insertions(+), 122 deletions(-)
+
+diff --git a/apps/server/src/auth/RpcAuthorization.ts b/apps/server/src/auth/RpcAuthorization.ts
+index 884ad615..a5ec6790 100644
+--- a/apps/server/src/auth/RpcAuthorization.ts
++++ b/apps/server/src/auth/RpcAuthorization.ts
+@@ -164,6 +164,7 @@ export const RPC_REQUIRED_SCOPES = {
+   [WS_METHODS.providerUploadFeedback]: AuthOrchestrationOperateScope,
+   [WS_METHODS.honeStatus]: AuthOrchestrationReadScope,
+   [WS_METHODS.honeFeedback]: AuthOrchestrationOperateScope,
++  [WS_METHODS.honeReplaceFeedback]: AuthOrchestrationOperateScope,
+   [WS_METHODS.honeThreadFeedback]: AuthOrchestrationReadScope,
+   [WS_METHODS.honeDemoReset]: AuthOrchestrationOperateScope,
+   [WS_METHODS.mcpAppsCallTool]: AuthOrchestrationOperateScope,
+diff --git a/apps/server/src/hone/Hone.test.ts b/apps/server/src/hone/Hone.test.ts
+index 5584c3a9..14fac88d 100644
+--- a/apps/server/src/hone/Hone.test.ts
++++ b/apps/server/src/hone/Hone.test.ts
+@@ -1,6 +1,6 @@
+ import { describe, expect, it } from "@effect/vitest";
+ 
+-import { honeFeedbackText, honeTraceId, piSessionIdOf } from "./Hone.ts";
++import { honeFeedbackText, honeTraceId, parseHoneFeedback, piSessionIdOf } from "./Hone.ts";
+ 
+ describe("honeTraceId", () => {
+   it("matches the id Hone gives a Pi session", () => {
+@@ -33,7 +33,33 @@ describe("honeFeedbackText", () => {
+     expect(honeFeedbackText({ rating: null, comment: "Shorter" })).toBe("Shorter");
+   });
+ 
++  it("keeps a multi-line comment on one line", () => {
++    expect(honeFeedbackText({ rating: "up", comment: "Good.\n\n  Keep it short" })).toBe(
++      "👍 Good. Keep it short",
++    );
++  });
++
+   it("has nothing to send without a rating or comment", () => {
+     expect(honeFeedbackText({ rating: null, comment: "  " })).toBeNull();
+   });
+ });
++
++describe("parseHoneFeedback", () => {
++  it("reads each line as an entry with its thumb", () => {
++    expect(parseHoneFeedback("👍 Clear letter\nWrite dates in full\n\n👎\n")).toEqual([
++      { rating: "up", comment: "Clear letter" },
++      { rating: null, comment: "Write dates in full" },
++      { rating: "down", comment: "" },
++    ]);
++    expect(parseHoneFeedback(null)).toEqual([]);
++  });
++
++  it("gives back the entries honeFeedbackText wrote", () => {
++    const entries = [
++      { rating: "down", comment: "Keep the bold" },
++      { rating: null, comment: "Shorter" },
++    ] as const;
++    const text = entries.map((entry) => honeFeedbackText(entry)).join("\n");
++    expect(parseHoneFeedback(text)).toEqual(entries);
++  });
++});
+diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
+index eb5e5118..47d5faad 100644
+--- a/apps/server/src/hone/Hone.ts
++++ b/apps/server/src/hone/Hone.ts
+@@ -1,7 +1,10 @@
+ import {
+   HoneError,
++  type HoneFeedbackEntry,
+   type HoneFeedbackInput,
++  type HoneFeedbackRating,
+   type HoneFeedbackResult,
++  type HoneReplaceFeedbackInput,
+   type HoneStatus,
+   type HoneThreadFeedback,
+   type HoneThreadFeedbackInput,
+@@ -99,14 +102,34 @@ export function honeTraceId(piSessionId: string): string {
+     .toLowerCase()}`;
+ }
+ 
++const RATING_MARKS: Record<HoneFeedbackRating, string> = { up: "👍", down: "👎" };
++
+ /** The line the optimizer reads; null when there is nothing to send. */
+-export function honeFeedbackText(input: Pick<HoneFeedbackInput, "rating" | "comment">) {
+-  const comment = input.comment.trim();
+-  const mark = input.rating === "up" ? "👍" : input.rating === "down" ? "👎" : null;
+-  if (mark === null) return comment === "" ? null : comment;
++export function honeFeedbackText(entry: HoneFeedbackEntry) {
++  // Hone stores one entry per line, so a multi-line comment must not split into several entries.
++  const comment = entry.comment.replace(/\s*[\r\n]+\s*/g, " ").trim();
++  if (entry.rating === null) return comment === "" ? null : comment;
++  const mark = RATING_MARKS[entry.rating];
+   return comment === "" ? mark : `${mark} ${comment}`;
+ }
+ 
++/** Reads Hone's stored feedback back into entries, the inverse of honeFeedbackText. */
++export function parseHoneFeedback(text: string | null | undefined): HoneFeedbackEntry[] {
++  return (text ?? "")
++    .split("\n")
++    .map((line) => line.trim())
++    .filter((line) => line !== "")
++    .map((line) => {
++      const rating: HoneFeedbackRating | null = line.startsWith(RATING_MARKS.up)
++        ? "up"
++        : line.startsWith(RATING_MARKS.down)
++          ? "down"
++          : null;
++      const comment = rating === null ? line : line.slice(RATING_MARKS[rating].length).trim();
++      return { rating, comment };
++    });
++}
++
+ /** Pi names the session in its file's header line, as Hone's Pi extension reads it. */
+ export function piSessionIdOf(sessionFile: string, contents: string): string | null {
+   for (const line of contents.split("\n")) {
+@@ -158,18 +181,19 @@ const asHoneError = <A, E extends { readonly message: string }, R>(
+         }),
+   );
+ 
+-export const honeFeedback = Effect.fn("hone.feedback")(function* (input: HoneFeedbackInput) {
+-  const text = honeFeedbackText(input);
+-  if (text === null) {
+-    return yield* new HoneError({ reason: "rejected", message: "Add a rating or a comment." });
+-  }
++/** POST appends a line to the session's feedback, PUT replaces all of it. */
++const writeHoneFeedback = Effect.fn("hone.writeFeedback")(function* (
++  threadId: ThreadId,
++  method: "POST" | "PUT",
++  text: string,
++) {
+   const config = yield* readHoneConfig;
+   if (Option.isNone(config.url)) {
+     return yield* new HoneError({ reason: "unreachable", message: "HONE_URL is not set." });
+   }
+-  const traceId = yield* threadTraceId(input.threadId);
++  const traceId = yield* threadTraceId(threadId);
+   const http = yield* HttpClient.HttpClient;
+-  const request = HttpClientRequest.post(
++  const request = HttpClientRequest.make(method)(
+     `${honeBaseUrl(config.url.value)}/api/traces/${traceId}/feedback`,
+   ).pipe(
+     Option.isSome(config.token)
+@@ -196,6 +220,21 @@ export const honeFeedback = Effect.fn("hone.feedback")(function* (input: HoneFee
+     });
+   }
+   return { traceId } satisfies HoneFeedbackResult;
++});
++
++export const honeFeedback = Effect.fn("hone.feedback")(function* (input: HoneFeedbackInput) {
++  const text = honeFeedbackText(input);
++  if (text === null) {
++    return yield* new HoneError({ reason: "rejected", message: "Add a rating or a comment." });
++  }
++  return yield* writeHoneFeedback(input.threadId, "POST", text);
++}, asHoneError);
++
++export const honeReplaceFeedback = Effect.fn("hone.replaceFeedback")(function* (
++  input: HoneReplaceFeedbackInput,
++) {
++  const text = input.entries.flatMap((entry) => honeFeedbackText(entry) ?? []).join("\n");
++  return yield* writeHoneFeedback(input.threadId, "PUT", text);
+ }, asHoneError);
+ 
+ const HoneTrace = Schema.Struct({ feedback: Schema.NullishOr(Schema.String) });
+@@ -219,7 +258,7 @@ export const honeThreadFeedback = Effect.fn("hone.threadFeedback")(function* (
+       ),
+     );
+   if (response.status === 404) {
+-    return { traceId, feedback: null } satisfies HoneThreadFeedback;
++    return { traceId, entries: [] } satisfies HoneThreadFeedback;
+   }
+   const trace = yield* response.json.pipe(
+     Effect.flatMap(Schema.decodeUnknownEffect(HoneTrace)),
+@@ -227,6 +266,5 @@ export const honeThreadFeedback = Effect.fn("hone.threadFeedback")(function* (
+       () => new HoneError({ reason: "rejected", message: "Hone sent an unreadable trace." }),
+     ),
+   );
+-  const feedback = trace.feedback?.trim() ?? "";
+-  return { traceId, feedback: feedback === "" ? null : feedback } satisfies HoneThreadFeedback;
++  return { traceId, entries: parseHoneFeedback(trace.feedback) } satisfies HoneThreadFeedback;
+ }, asHoneError);
+diff --git a/apps/server/src/observability/RpcInstrumentation.ts b/apps/server/src/observability/RpcInstrumentation.ts
+index decbb357..1ba657e5 100644
+--- a/apps/server/src/observability/RpcInstrumentation.ts
++++ b/apps/server/src/observability/RpcInstrumentation.ts
+@@ -167,6 +167,7 @@ const RPC_AGGREGATES = {
+   [WS_METHODS.providerUploadFeedback]: "provider",
+   [WS_METHODS.honeStatus]: "hone",
+   [WS_METHODS.honeFeedback]: "hone",
++  [WS_METHODS.honeReplaceFeedback]: "hone",
+   [WS_METHODS.honeThreadFeedback]: "hone",
+   [WS_METHODS.honeDemoReset]: "hone",
+   [WS_METHODS.mcpAppsCallTool]: "provider",
+diff --git a/apps/server/src/ws.ts b/apps/server/src/ws.ts
+index 2a82a191..c27bec04 100644
+--- a/apps/server/src/ws.ts
++++ b/apps/server/src/ws.ts
+@@ -2485,6 +2485,7 @@ export const layerWsRpc = (
+           ),
+         [WS_METHODS.honeStatus]: (_input) => Hone.honeStatus,
+         [WS_METHODS.honeFeedback]: (input) => Hone.honeFeedback(input),
++        [WS_METHODS.honeReplaceFeedback]: (input) => Hone.honeReplaceFeedback(input),
+         [WS_METHODS.honeThreadFeedback]: (input) => Hone.honeThreadFeedback(input),
+         [WS_METHODS.honeDemoReset]: (_input) => honeDemo.reset,
+         [WS_METHODS.serverUpdateProvider]: (input) =>
+diff --git a/apps/web/src/components/chat/HoneControls.tsx b/apps/web/src/components/chat/HoneControls.tsx
+index fa0447d5..c3c5e84b 100644
+--- a/apps/web/src/components/chat/HoneControls.tsx
++++ b/apps/web/src/components/chat/HoneControls.tsx
+@@ -1,24 +1,27 @@
+ import {
++  type AtomCommandResult,
+   isAtomCommandInterrupted,
+   squashAtomCommandFailure,
+ } from "@t3tools/client-runtime/state/runtime";
+ import { scopedThreadKey } from "@t3tools/client-runtime/environment";
+ import type {
+   EnvironmentId,
++  HoneFeedbackEntry,
+   HoneFeedbackRating,
++  HoneFeedbackResult,
+   HoneStatus,
+   ScopedThreadRef,
+   ThreadId,
+ } from "@t3tools/contracts";
+ import { Link, useNavigate } from "@tanstack/react-router";
+-import { ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
++import { ChevronRightIcon, ThumbsDownIcon, ThumbsUpIcon, Trash2Icon } from "lucide-react";
+ import { useEffect, useRef, useState } from "react";
+ 
+ import { type DraftId, useComposerDraftStore } from "~/composerDraftStore";
+ import { requestConfirmDialog } from "~/confirmDialog";
+ import { cn } from "~/lib/utils";
+ import { useRightPanelStore } from "~/rightPanelStore";
+-import { honeEnvironment, honeFeedbackRating } from "~/state/hone";
++import { honeEnvironment } from "~/state/hone";
+ import { useEnvironmentQuery } from "~/state/query";
+ import { useAtomCommand } from "~/state/use-atom-command";
+ import { ConnectionStatusDot } from "../ConnectionStatusDot";
+@@ -180,6 +183,15 @@ const RATINGS = [
+   },
+ ] as const;
+ 
++function RatingIcon({ rating }: { readonly rating: HoneFeedbackRating | null }) {
++  const Icon = RATINGS.find((candidate) => candidate.rating === rating)?.Icon;
++  return Icon === undefined ? (
++    <span className="size-3 shrink-0" />
++  ) : (
++    <Icon className="size-3 shrink-0" aria-label={rating === "up" ? "Thumbs up" : "Thumbs down"} />
++  );
++}
++
+ /** Rates a Pi reply; Hone reads the rating and comment when it next rewrites AGENTS.md. */
+ export function HoneFeedbackControl({
+   environmentId,
+@@ -188,115 +200,235 @@ export function HoneFeedbackControl({
+ }: {
+   readonly environmentId: EnvironmentId;
+   readonly threadId: ThreadId;
+-  /** Shows the feedback Hone already holds for the session next to the buttons. */
++  /** Shows the feedback Hone already holds for the session under the buttons. */
+   readonly showFeedback: boolean;
+ }) {
+-  const sendFeedback = useAtomCommand(honeEnvironment.feedback, { reportFailure: false });
++  const appendFeedback = useAtomCommand(honeEnvironment.feedback, { reportFailure: false });
++  const replaceFeedback = useAtomCommand(honeEnvironment.replaceFeedback, {
++    reportFailure: false,
++  });
+   const held = useEnvironmentQuery(
+     honeEnvironment.threadFeedback({ environmentId, input: { threadId } }),
+   );
+-  const heldFeedback = held.data?.feedback ?? null;
++  const entries = held.data?.entries ?? [];
++  const latestRating = entries.findLast((entry) => entry.rating !== null)?.rating ?? null;
+   const [openRating, setOpenRating] = useState<HoneFeedbackRating | null>(null);
+-  const [ratedNow, setRatedNow] = useState<HoneFeedbackRating | null>(null);
+-  const sentRating = ratedNow ?? honeFeedbackRating(heldFeedback);
+   const [comment, setComment] = useState("");
+   const [sending, setSending] = useState(false);
++  const [expanded, setExpanded] = useState(false);
+ 
+-  const submit = async (rating: HoneFeedbackRating) => {
+-    setSending(true);
+-    const result = await sendFeedback({
+-      environmentId,
+-      input: { threadId, rating, comment: comment.trim() },
+-    });
+-    setSending(false);
++  const settle = (result: AtomCommandResult<HoneFeedbackResult, unknown>, failure: string) => {
+     if (result._tag === "Success") {
+-      setRatedNow(rating);
+-      setOpenRating(null);
+       held.refresh();
+-      toastManager.add({
+-        type: "success",
+-        title: `Feedback sent to Hone (${result.value.traceId})`,
+-      });
+-      return;
++      return true;
+     }
+-    if (isAtomCommandInterrupted(result)) return;
++    if (isAtomCommandInterrupted(result)) return false;
+     const error = squashAtomCommandFailure(result);
+     toastManager.add({
+       type: "error",
+-      title: "Could not send feedback to Hone",
++      title: failure,
+       description: error instanceof Error ? error.message : "An error occurred.",
+     });
++    return false;
++  };
++
++  const submit = async (rating: HoneFeedbackRating) => {
++    setSending(true);
++    const result = await appendFeedback({
++      environmentId,
++      input: { threadId, rating, comment: comment.trim() },
++    });
++    setSending(false);
++    if (!settle(result, "Could not send feedback to Hone")) return;
++    setComment("");
++    setOpenRating(null);
++    toastManager.add({ type: "success", title: "Feedback sent to Hone" });
+   };
+ 
++  const replace = async (next: readonly HoneFeedbackEntry[]) => {
++    setSending(true);
++    const result = await replaceFeedback({ environmentId, input: { threadId, entries: next } });
++    setSending(false);
++    if (settle(result, "Could not update the feedback in Hone")) {
++      toastManager.add({ type: "success", title: "Feedback updated in Hone" });
++    }
++  };
++
++  const newest = entries.at(-1);
++
+   return (
+-    <div className="flex items-center">
+-      {RATINGS.map(({ rating, Icon, label, prompt }) => (
+-        <Popover
+-          key={rating}
+-          open={openRating === rating}
+-          onOpenChange={(open) => {
+-            if (open) setComment("");
+-            setOpenRating(open ? rating : null);
+-          }}
+-        >
+-          <PopoverTrigger
+-            render={
+-              <Button
+-                type="button"
+-                size="icon-xs"
+-                variant={sentRating === rating ? "secondary" : "ghost"}
+-                aria-label={label}
+-                aria-pressed={sentRating === rating}
+-              />
+-            }
++    <>
++      <div className="flex items-center">
++        {RATINGS.map(({ rating, Icon, label, prompt }) => (
++          <Popover
++            key={rating}
++            open={openRating === rating}
++            onOpenChange={(open) => setOpenRating(open ? rating : null)}
+           >
+-            <Icon className={cn("size-3", sentRating === rating && "fill-current")} />
+-          </PopoverTrigger>
+-          <PopoverPopup side="top" align="start" width="md" padding="compact">
+-            <form
+-              className="flex flex-col gap-2"
+-              onSubmit={(event) => {
+-                event.preventDefault();
+-                void submit(rating);
+-              }}
++            <PopoverTrigger
++              render={
++                <Button
++                  type="button"
++                  size="icon-xs"
++                  variant={latestRating === rating ? "secondary" : "ghost"}
++                  aria-label={label}
++                  aria-pressed={latestRating === rating}
++                />
++              }
+             >
+-              <PopoverTitle>{prompt}</PopoverTitle>
+-              <Textarea
+-                autoFocus
+-                rows={3}
+-                value={comment}
+-                placeholder="Hone uses this to improve AGENTS.md"
+-                onChange={(event) => setComment(event.target.value)}
+-                onKeyDown={(event) => {
+-                  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
++              <Icon className={cn("size-3", latestRating === rating && "fill-current")} />
++            </PopoverTrigger>
++            <PopoverPopup side="top" align="start" width="lg" padding="compact">
++              <div className="flex max-h-[min(36rem,var(--available-height))] flex-col gap-3 overflow-y-auto">
++                {entries.length > 0 ? (
++                  <section className="flex flex-col gap-2">
++                    <PopoverTitle>Feedback Hone has for this session</PopoverTitle>
++                    {entries.map((entry, index) => (
++                      <HoneFeedbackEntryEditor
++                        // oxlint-disable-next-line react/no-array-index-key -- entries are lines that can repeat, and the key remounts the editor with a fresh draft when Hone's copy changes
++                        key={`${index}:${entry.rating}:${entry.comment}`}
++                        entry={entry}
++                        sending={sending}
++                        onSave={(edited) => replace(entries.with(index, edited))}
++                        onRemove={() => replace(entries.toSpliced(index, 1))}
++                      />
++                    ))}
++                  </section>
++                ) : null}
++                <form
++                  className={cn(
++                    "flex flex-col gap-2",
++                    entries.length > 0 && "border-border border-t pt-3",
++                  )}
++                  onSubmit={(event) => {
+                     event.preventDefault();
+                     void submit(rating);
+-                  }
+-                }}
+-              />
+-              <div className="flex justify-end">
+-                <Button type="submit" size="xs" disabled={sending}>
+-                  Send to Hone
+-                </Button>
++                  }}
++                >
++                  <div className="flex items-center gap-1.5">
++                    <Icon className="size-3" />
++                    <PopoverTitle>{prompt}</PopoverTitle>
++                  </div>
++                  <Textarea
++                    autoFocus
++                    rows={3}
++                    value={comment}
++                    placeholder="Hone uses this to improve AGENTS.md"
++                    onChange={(event) => setComment(event.target.value)}
++                    onKeyDown={(event) => {
++                      if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
++                        event.preventDefault();
++                        void submit(rating);
++                      }
++                    }}
++                  />
++                  <div className="flex justify-end">
++                    <Button type="submit" size="xs" disabled={sending}>
++                      Send to Hone
++                    </Button>
++                  </div>
++                </form>
+               </div>
+-            </form>
+-          </PopoverPopup>
+-        </Popover>
+-      ))}
+-      {showFeedback && heldFeedback !== null ? (
+-        <Tooltip>
+-          <TooltipTrigger
+-            render={<span className="ml-1 max-w-80 truncate text-muted-foreground text-xs" />}
+-          >
+-            {heldFeedback.split("\n").at(-1)}
+-          </TooltipTrigger>
+-          <TooltipPopup side="top" className="max-w-96 whitespace-pre-wrap">
+-            <div className="flex flex-col gap-1">
+-              <span className="font-medium">Feedback Hone has for this session</span>
+-              <span>{heldFeedback}</span>
+-            </div>
+-          </TooltipPopup>
+-        </Tooltip>
++            </PopoverPopup>
++          </Popover>
++        ))}
++      </div>
++      {showFeedback && newest !== undefined ? (
++        <button
++          type="button"
++          aria-expanded={expanded}
++          aria-label={expanded ? "Show less feedback" : "Show all feedback"}
++          onClick={() => setExpanded((value) => !value)}
++          className="order-last flex min-w-0 basis-full items-start gap-1 rounded-md px-1 py-0.5 text-left text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
++        >
++          <ChevronRightIcon
++            className={cn("mt-0.5 size-3 shrink-0 transition-transform", expanded && "rotate-90")}
++          />
++          {expanded ? (
++            <span className="flex min-w-0 flex-col gap-1">
++              {entries.map((entry, index) => (
++                // oxlint-disable-next-line react/no-array-index-key -- entries are lines that can repeat and hold no state
++                <span key={index} className="flex items-start gap-1.5">
++                  <span className="mt-0.5 flex">
++                    <RatingIcon rating={entry.rating} />
++                  </span>
++                  <span className="whitespace-pre-wrap wrap-anywhere">{entry.comment}</span>
++                </span>
++              ))}
++            </span>
++          ) : (
++            <span className="flex min-w-0 items-center gap-1.5">
++              <RatingIcon rating={newest.rating} />
++              <span className="truncate">{newest.comment}</span>
++              {entries.length > 1 ? (
++                <span className="shrink-0">+{entries.length - 1} more</span>
++              ) : null}
++            </span>
++          )}
++        </button>
++      ) : null}
++    </>
++  );
++}
++
++/** One stored feedback entry, edited in place. Its thumb stays as it was written. */
++function HoneFeedbackEntryEditor({
++  entry,
++  sending,
++  onSave,
++  onRemove,
++}: {
++  readonly entry: HoneFeedbackEntry;
++  readonly sending: boolean;
++  readonly onSave: (edited: HoneFeedbackEntry) => Promise<void>;
++  readonly onRemove: () => Promise<void>;
++}) {
++  const [draft, setDraft] = useState(entry.comment);
++  const changed = draft.trim() !== entry.comment;
++  const save = () => {
++    if (changed) void onSave({ rating: entry.rating, comment: draft.trim() });
++  };
++  return (
++    <div className="flex flex-col gap-1.5">
++      <div className="flex items-start gap-2">
++        <span className="mt-2.5 flex text-muted-foreground">
++          <RatingIcon rating={entry.rating} />
++        </span>
++        <Textarea
++          size="sm"
++          rows={1}
++          value={draft}
++          aria-label="Feedback entry"
++          className="[&_textarea]:min-h-0"
++          onChange={(event) => setDraft(event.target.value)}
++          onKeyDown={(event) => {
++            if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
++              event.preventDefault();
++              save();
++            }
++          }}
++        />
++        <Button
++          type="button"
++          size="icon-xs"
++          variant="ghost"
++          className="mt-1 shrink-0"
++          aria-label="Remove this feedback"
++          disabled={sending}
++          onClick={() => void onRemove()}
++        >
++          <Trash2Icon className="size-3" />
++        </Button>
++      </div>
++      {changed ? (
++        <div className="flex justify-end gap-1.5">
++          <Button type="button" size="xs" variant="ghost" onClick={() => setDraft(entry.comment)}>
++            Cancel
++          </Button>
++          <Button type="button" size="xs" disabled={sending} onClick={save}>
++            Save
++          </Button>
++        </div>
+       ) : null}
+     </div>
+   );
+diff --git a/apps/web/src/components/chat/TimelineAssistantRows.tsx b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+index 33aa1380..51aca07c 100644
+--- a/apps/web/src/components/chat/TimelineAssistantRows.tsx
++++ b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+@@ -178,7 +178,7 @@ function AssistantMessageMeta({
+   return (
+     <div
+       className={cn(
+-        "flex items-center gap-2 text-xs tabular-nums transition-opacity duration-200",
++        "flex flex-wrap items-center gap-2 text-xs tabular-nums transition-opacity duration-200",
+         alwaysVisible || honeReply === "latest"
+           ? "opacity-100"
+           : "opacity-0 pointer-coarse:opacity-100 focus-within:opacity-100 group-hover/assistant:opacity-100",
+diff --git a/apps/web/src/state/hone.ts b/apps/web/src/state/hone.ts
+index 04cc7024..d9731115 100644
+--- a/apps/web/src/state/hone.ts
++++ b/apps/web/src/state/hone.ts
+@@ -4,13 +4,7 @@ import {
+   createEnvironmentRpcCommand,
+   createEnvironmentRpcQueryAtomFamily,
+ } from "@t3tools/client-runtime/state/runtime";
+-import {
+-  type EnvironmentId,
+-  type HoneFeedbackRating,
+-  type ThreadId,
+-  type TurnItemId,
+-  WS_METHODS,
+-} from "@t3tools/contracts";
++import { type EnvironmentId, type ThreadId, type TurnItemId, WS_METHODS } from "@t3tools/contracts";
+ import { Atom } from "effect/reactivity";
+ 
+ import { connectionAtomRuntime } from "../connection/runtime";
+@@ -27,6 +21,10 @@ export const honeEnvironment = {
+     label: "environment-data:hone:feedback",
+     tag: WS_METHODS.honeFeedback,
+   }),
++  replaceFeedback: createEnvironmentRpcCommand(connectionAtomRuntime, {
++    label: "environment-data:hone:replace-feedback",
++    tag: WS_METHODS.honeReplaceFeedback,
++  }),
+   threadFeedback: createEnvironmentRpcQueryAtomFamily(connectionAtomRuntime, {
+     label: "environment-data:hone:thread-feedback",
+     tag: WS_METHODS.honeThreadFeedback,
+@@ -39,15 +37,6 @@ export const honeEnvironment = {
+   }),
+ };
+ 
+-/** The rating of the newest rated line in Hone's feedback for a session. */
+-export function honeFeedbackRating(feedback: string | null): HoneFeedbackRating | null {
+-  const rated = (feedback ?? "")
+-    .split("\n")
+-    .map((line) => line.trim())
+-    .findLast((line) => line.startsWith("👍") || line.startsWith("👎"));
+-  return rated === undefined ? null : rated.startsWith("👍") ? "up" : "down";
+-}
+-
+ /** A Pi reply Hone can take feedback on, and whether it is the thread's newest reply. */
+ export type HoneReply = "latest" | "earlier" | null;
+ 
+diff --git a/packages/contracts/src/hone.ts b/packages/contracts/src/hone.ts
+index 101b1254..2b84fd5c 100644
+--- a/packages/contracts/src/hone.ts
++++ b/packages/contracts/src/hone.ts
+@@ -21,13 +21,27 @@ export type HoneStatus = typeof HoneStatus.Type;
+ export const HoneFeedbackRating = Schema.Literals(["up", "down"]);
+ export type HoneFeedbackRating = typeof HoneFeedbackRating.Type;
+ 
+-export const HoneFeedbackInput = Schema.Struct({
+-  threadId: ThreadId,
++/** One line of a session's feedback. Lines written without a thumb have no rating. */
++export const HoneFeedbackEntry = Schema.Struct({
+   rating: Schema.NullOr(HoneFeedbackRating),
+   comment: TrimmedString,
+ });
++export type HoneFeedbackEntry = typeof HoneFeedbackEntry.Type;
++
++/** Appends one entry to the session's feedback. */
++export const HoneFeedbackInput = Schema.Struct({
++  threadId: ThreadId,
++  ...HoneFeedbackEntry.fields,
++});
+ export type HoneFeedbackInput = typeof HoneFeedbackInput.Type;
+ 
++/** Replaces the session's whole feedback, so entries can be edited or removed. */
++export const HoneReplaceFeedbackInput = Schema.Struct({
++  threadId: ThreadId,
++  entries: Schema.Array(HoneFeedbackEntry),
++});
++export type HoneReplaceFeedbackInput = typeof HoneReplaceFeedbackInput.Type;
++
+ export const HoneFeedbackResult = Schema.Struct({
+   traceId: Schema.String,
+ });
+@@ -36,10 +50,10 @@ export type HoneFeedbackResult = typeof HoneFeedbackResult.Type;
+ export const HoneThreadFeedbackInput = Schema.Struct({ threadId: ThreadId });
+ export type HoneThreadFeedbackInput = typeof HoneThreadFeedbackInput.Type;
+ 
+-/** The feedback lines Hone holds for the thread's Pi session, oldest first. */
++/** The feedback Hone holds for the thread's Pi session, oldest first. */
+ export const HoneThreadFeedback = Schema.Struct({
+   traceId: Schema.String,
+-  feedback: Schema.NullOr(Schema.String),
++  entries: Schema.Array(HoneFeedbackEntry),
+ });
+ export type HoneThreadFeedback = typeof HoneThreadFeedback.Type;
+ 
+diff --git a/packages/contracts/src/rpc.ts b/packages/contracts/src/rpc.ts
+index d3cc0e3c..fd82f5f4 100644
+--- a/packages/contracts/src/rpc.ts
++++ b/packages/contracts/src/rpc.ts
+@@ -170,6 +170,7 @@ import {
+   HoneError,
+   HoneFeedbackInput,
+   HoneFeedbackResult,
++  HoneReplaceFeedbackInput,
+   HoneStatus,
+   HoneThreadFeedback,
+   HoneThreadFeedbackInput,
+@@ -445,6 +446,7 @@ export const WS_METHODS = {
+   providerUploadFeedback: "provider.uploadFeedback",
+   honeStatus: "hone.status",
+   honeFeedback: "hone.feedback",
++  honeReplaceFeedback: "hone.replaceFeedback",
+   honeThreadFeedback: "hone.threadFeedback",
+   honeDemoReset: "hone.demoReset",
+   providerAuthStart: "provider.auth.start",
+@@ -1459,6 +1461,12 @@ const WsHoneFeedbackRpc = Rpc.make(WS_METHODS.honeFeedback, {
+   error: Schema.Union([HoneError, EnvironmentAuthorizationError]),
+ });
+ 
++const WsHoneReplaceFeedbackRpc = Rpc.make(WS_METHODS.honeReplaceFeedback, {
++  payload: HoneReplaceFeedbackInput,
++  success: HoneFeedbackResult,
++  error: Schema.Union([HoneError, EnvironmentAuthorizationError]),
++});
++
+ const WsHoneThreadFeedbackRpc = Rpc.make(WS_METHODS.honeThreadFeedback, {
+   payload: HoneThreadFeedbackInput,
+   success: HoneThreadFeedback,
+@@ -2157,6 +2165,7 @@ export const WsRpcGroup = RpcGroup.make(
+   WsProviderUploadFeedbackRpc,
+   WsHoneStatusRpc,
+   WsHoneFeedbackRpc,
++  WsHoneReplaceFeedbackRpc,
+   WsHoneThreadFeedbackRpc,
+   WsHoneDemoResetRpc,
+   WsSubscribeVcsStatusRpc,
+-- 
+2.43.0
+

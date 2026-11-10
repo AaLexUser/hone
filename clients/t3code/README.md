@@ -7,8 +7,11 @@ patches, a Pi agent driven from t3code shows its Hone connection and sends feedb
   version it runs, and how full the next optimization batch is. It shows `optimizing…` during
   a run and raises a toast when a session reaches Hone or `AGENTS.md` changes. Clicking it opens
   the Hone dashboard.
-- Each Pi reply gets thumbs up and thumbs down buttons. Either one opens a comment box, and the
-  rating and comment are appended to the session's Hone trace.
+- Each Pi reply gets thumbs up and thumbs down buttons. Either one opens a popover with the
+  feedback Hone already holds for the session, where each entry can be edited or removed, and a
+  comment box for a new entry. A new rating and comment are appended to the session's Hone trace.
+  The pressed thumb shows the newest rating, and the feedback under the newest reply expands to
+  its full text.
 
 Pi itself needs no patch. t3code runs `pi --mode rpc` per thread, so Pi loads the Hone extension
 (`clients/pi-extensions/hone.ts`) like any user extension: it syncs `AGENTS.md` into the project
@@ -24,6 +27,7 @@ folder at session start and publishes the session trace after each reply.
 | `0002` | The header chip and the reply rating control (`apps/web/src/components/chat/HoneControls.tsx`) |
 | `0003` | The booth demo seeder, the `hone.demoReset` and `hone.threadFeedback` RPCs, and the Hone page and Reset demo button in the sidebar (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/HonePage.tsx`) |
 | `0004` | Sign-in through an authenticating reverse proxy, with no pairing link (`apps/server/src/auth/proxyAuth.ts`) |
+| `0005` | Feedback that can be read in full, edited and removed, and the `hone.replaceFeedback` RPC that sends the edited list to Hone's `PUT /api/traces/{id}/feedback` (`apps/web/src/components/chat/HoneControls.tsx`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
