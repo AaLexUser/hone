@@ -23,6 +23,7 @@ folder at session start and publishes the session trace after each reply.
 | `0001` | `hone.status` and `hone.feedback` RPCs (`packages/contracts/src/hone.ts`, `apps/server/src/hone/Hone.ts`) |
 | `0002` | The header chip and the reply rating control (`apps/web/src/components/chat/HoneControls.tsx`) |
 | `0003` | The booth demo seeder, the `hone.demoReset` and `hone.threadFeedback` RPCs, and the Hone page and Reset demo button in the sidebar (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/HonePage.tsx`) |
+| `0004` | Sign-in through an authenticating reverse proxy, with no pairing link (`apps/server/src/auth/proxyAuth.ts`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
@@ -100,3 +101,29 @@ export HONE_DEMO_DIR="$HOME/Hone demo/Offer letters"   # a new, empty folder for
 - The Hone button next to Settings, Usage and Pull requests shows the Hone dashboard inside
   t3code. It loads `HONE_DASHBOARD_URL`, or `HONE_URL` when that is not set, so the browser must
   reach that address. The header chip opens the same page.
+
+## Sign in through a reverse proxy
+
+Patch `0004` lets a reverse proxy own sign-in, so the booth needs one shared login and no pairing
+link. Set `T3CODE_PROXY_AUTH_SECRET` to a long random value, for example from
+`openssl rand -hex 32`, and have the proxy send it in the `X-T3code-Proxy-Auth` header with every
+request, WebSocket upgrades included. A Caddy site for this looks like the following.
+
+```caddy
+booth.example.com {
+	basic_auth {
+		booth <bcrypt hash from `caddy hash-password`>
+	}
+	reverse_proxy t3code:3773 {
+		header_up X-T3code-Proxy-Auth {$T3CODE_PROXY_AUTH_SECRET}
+	}
+}
+```
+
+- A browser that comes through the proxy gets a normal 30-day session with full access on its
+  first visit. It never sees a pairing page, and the server prints no pairing URL at start.
+- The server answers 401 to every request without the right secret, so a published container port
+  does not bypass the proxy. A session cookie alone is not enough either.
+- Requests that bring their own bearer token and no cookie still pass. They come from the `t3`
+  CLI and from agents inside the container, which hold tokens the server issued them.
+- Without the variable the server behaves as before.

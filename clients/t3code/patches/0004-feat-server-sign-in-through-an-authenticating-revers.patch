@@ -1,0 +1,420 @@
+From 1207b9379e14b32115c3067112e509d402dd0145 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Tue, 10 Nov 2026 15:06:52 +0000
+Subject: [PATCH] feat(server): sign in through an authenticating reverse proxy
+
+With T3CODE_PROXY_AUTH_SECRET set, the server trusts a reverse proxy that
+has already signed the user in. The proxy sends the secret in the
+X-T3code-Proxy-Auth header with every request. The first session check
+from a browser that carries it gets a normal browser session cookie with
+full access, so the app opens without a pairing link.
+
+Requests without the secret get 401, so a published container port does
+not bypass the proxy. Requests that bring their own bearer or DPoP token
+and no cookie still pass, which keeps the CLI and agent MCP calls inside
+the container working. The server does not print a pairing URL in this
+mode. Without the variable nothing changes.
+---
+ apps/server/src/auth/http.ts            |  31 +++++
+ apps/server/src/auth/proxyAuth.test.ts  | 178 ++++++++++++++++++++++++
+ apps/server/src/auth/proxyAuth.ts       |  49 +++++++
+ apps/server/src/cli/config.ts           |   9 ++
+ apps/server/src/config.ts               |   2 +
+ apps/server/src/server.ts               |   2 +
+ apps/server/src/serverRuntimeStartup.ts |   4 +-
+ 7 files changed, 274 insertions(+), 1 deletion(-)
+ create mode 100644 apps/server/src/auth/proxyAuth.test.ts
+ create mode 100644 apps/server/src/auth/proxyAuth.ts
+
+diff --git a/apps/server/src/auth/http.ts b/apps/server/src/auth/http.ts
+index 2358e73d..a22cda7b 100644
+--- a/apps/server/src/auth/http.ts
++++ b/apps/server/src/auth/http.ts
+@@ -3,6 +3,7 @@ import {
+   AuthAccessWriteScope,
+   AuthStandardClientScopes,
+   AuthGrantScope,
++  authScopeResponse,
+   EnvironmentAuthInvalidError,
+   type EnvironmentAuthInvalidReason,
+   EnvironmentHttpApi,
+@@ -31,11 +32,13 @@ import * as HttpEffect from "effect/http/HttpEffect";
+ import { HttpServerRequest, HttpServerResponse } from "effect/http";
+ import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
+ 
++import * as ServerConfig from "../config.ts";
+ import * as EnvironmentAuth from "./EnvironmentAuth.ts";
+ import * as SessionStore from "./SessionStore.ts";
+ import { traceAuthenticatedRelayRequest, traceRelayRequest } from "../cloud/traceRelayRequest.ts";
+ import { deriveAuthClientMetadata } from "./utils.ts";
+ import { verifyRequestDpopProof } from "./dpop.ts";
++import { isProxyAuthenticated } from "./proxyAuth.ts";
+ 
+ const CREDENTIAL_RESPONSE_HEADERS = {
+   "cache-control": "no-store",
+@@ -264,6 +267,7 @@ export const layer = HttpApiBuilder.group(
+   Effect.fnUntraced(function* (handlers) {
+     const serverAuth = yield* EnvironmentAuth.EnvironmentAuth;
+     const sessions = yield* SessionStore.SessionStore;
++    const { proxyAuthSecret } = yield* ServerConfig.ServerConfig;
+ 
+     return handlers
+       .handle(
+@@ -273,6 +277,33 @@ export const layer = HttpApiBuilder.group(
+             yield* annotateEnvironmentRequest(args.endpoint.name);
+             const request = yield* HttpServerRequest.HttpServerRequest;
+             const result = yield* serverAuth.getSessionState(request);
++            if (
++              !result.authenticated &&
++              proxyAuthSecret !== undefined &&
++              isProxyAuthenticated(request, proxyAuthSecret)
++            ) {
++              const session = yield* sessions
++                .issue({
++                  method: "browser-session-cookie",
++                  subject: "proxy-auth",
++                  scopes: AuthStandardClientScopes,
++                  client: deriveAuthClientMetadata({ request }),
++                })
++                .pipe(
++                  Effect.catch((error) =>
++                    failEnvironmentInternal("browser_session_issuance_failed", error),
++                  ),
++                );
++              yield* appendSessionCookie(sessions.cookieName, session.token, session.expiresAt);
++              yield* appendCredentialResponseHeaders;
++              return {
++                authenticated: true,
++                auth: result.auth,
++                ...authScopeResponse(session.scopes),
++                sessionMethod: session.method,
++                expiresAt: DateTime.toUtc(session.expiresAt),
++              };
++            }
+             const credential = EnvironmentAuth.selectRequestCredential(
+               request,
+               sessions.cookieName,
+diff --git a/apps/server/src/auth/proxyAuth.test.ts b/apps/server/src/auth/proxyAuth.test.ts
+new file mode 100644
+index 00000000..4e46e897
+--- /dev/null
++++ b/apps/server/src/auth/proxyAuth.test.ts
+@@ -0,0 +1,178 @@
++import * as NodeServices from "@effect/platform-node/NodeServices";
++import {
++  AuthAccessTokenType,
++  AuthEnvironmentBootstrapTokenType,
++  AuthTokenExchangeGrantType,
++  EnvironmentHttpApi,
++} from "@t3tools/contracts";
++import { describe, expect, it } from "@effect/vitest";
++import * as Context from "effect/Context";
++import * as Crypto from "effect/Crypto";
++import * as Effect from "effect/Effect";
++import * as Layer from "effect/Layer";
++import * as Redacted from "effect/Redacted";
++import * as Etag from "effect/http/Etag";
++import * as HttpPlatform from "effect/http/HttpPlatform";
++import * as HttpRouter from "effect/http/HttpRouter";
++import * as HttpApi from "effect/http-api/HttpApi";
++import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
++
++import * as ServerConfig from "../config.ts";
++import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
++import * as SqlitePersistence from "../persistence/Sqlite.ts";
++import * as ManagedPolicy from "../policy/ManagedPolicy.ts";
++import * as EnvironmentAuth from "./EnvironmentAuth.ts";
++import * as AuthHttp from "./http.ts";
++import * as ProxyAuth from "./proxyAuth.ts";
++import * as ServerSecretStore from "./ServerSecretStore.ts";
++
++const SECRET = "booth-proxy-secret";
++class AuthTestApi extends HttpApi.make("environment").add(EnvironmentHttpApi.groups.auth) {}
++
++const makeHandler = (proxyAuthSecret: string | undefined) => {
++  const layerConfig = Layer.effect(
++    ServerConfig.ServerConfig,
++    Effect.gen(function* () {
++      const config = yield* ServerConfig.ServerConfig;
++      return {
++        ...config,
++        mode: "web",
++        host: "0.0.0.0",
++        ...(proxyAuthSecret === undefined
++          ? {}
++          : { proxyAuthSecret: Redacted.make(proxyAuthSecret) }),
++      } satisfies ServerConfig.ServerConfig["Service"];
++    }),
++  ).pipe(Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "t3-proxy-auth-test-" })));
++  const layerRoutes = HttpApiBuilder.layer(AuthTestApi).pipe(
++    Layer.provide(AuthHttp.layer),
++    Layer.provide(AuthHttp.layerAuthenticatedAuth),
++    Layer.provideMerge(
++      EnvironmentAuth.layer.pipe(
++        Layer.provide(ManagedPolicy.layerTest()),
++        Layer.provide(SqlitePersistence.layerMemory),
++        Layer.provide(ServerSecretStore.layer),
++        Layer.provide(ServerEnvironment.layerIdentity),
++      ),
++    ),
++    Layer.merge(ProxyAuth.layerProxyAuthGate),
++    Layer.provide(layerConfig),
++    Layer.provideMerge(
++      HttpPlatform.layer.pipe(
++        Layer.provideMerge(NodeServices.layer),
++        Layer.provideMerge(Etag.layerWeak),
++      ),
++    ),
++    Layer.provide(NodeServices.layer),
++  );
++  return HttpRouter.toWebHandler(layerRoutes, { disableLogger: true });
++};
++
++const withHandler = (
++  proxyAuthSecret: string | undefined,
++  run: (send: (path: string, init?: RequestInit) => Promise<Response>) => Promise<void>,
++) =>
++  Effect.gen(function* () {
++    const crypto = yield* Crypto.Crypto;
++    const requestContext = Context.make(Crypto.Crypto, crypto).pipe(
++      Context.add(
++        ServerSecretStore.ServerSecretStore,
++        ServerSecretStore.ServerSecretStore.of({
++          get: () => Effect.succeedNone,
++          set: () => Effect.void,
++          create: () => Effect.void,
++          getOrCreateRandom: () => Effect.die("Not used by these routes."),
++          remove: () => Effect.void,
++        }),
++      ),
++    );
++    return yield* Effect.acquireUseRelease(
++      Effect.sync(() => makeHandler(proxyAuthSecret)),
++      (environment) =>
++        Effect.promise(() =>
++          run((path, init) =>
++            environment.handler(new Request(`http://127.0.0.1${path}`, init), requestContext),
++          ),
++        ),
++      (environment) => Effect.promise(() => environment.dispose()),
++    );
++  }).pipe(Effect.provide(NodeServices.layer));
++
++const proxied = { [ProxyAuth.PROXY_AUTH_HEADER]: SECRET };
++const postJson = (body: unknown, headers: Record<string, string>): RequestInit => ({
++  method: "POST",
++  headers: { "content-type": "application/json", ...headers },
++  body: JSON.stringify(body),
++});
++
++describe("proxy auth", () => {
++  it.effect("signs in every proxied browser and refuses requests that bypass the proxy", () =>
++    withHandler(SECRET, async (send) => {
++      expect((await send("/api/auth/session")).status).toBe(401);
++      expect(
++        (await send("/api/auth/session", { headers: { [ProxyAuth.PROXY_AUTH_HEADER]: "wrong" } }))
++          .status,
++      ).toBe(401);
++
++      const signedIn = await send("/api/auth/session", { headers: proxied });
++      expect(signedIn.status).toBe(200);
++      expect(await signedIn.json()).toMatchObject({
++        authenticated: true,
++        sessionMethod: "browser-session-cookie",
++      });
++      const cookie = signedIn.headers.getSetCookie()[0]?.split(";", 1)[0] ?? "";
++      expect(cookie).toMatch(/^t3_session_\w+=.+/);
++
++      const again = await send("/api/auth/session", { headers: { ...proxied, cookie } });
++      expect(await again.json()).toMatchObject({ authenticated: true });
++      expect(again.headers.getSetCookie()).toEqual([]);
++
++      const ticket = await send("/api/auth/websocket-ticket", {
++        method: "POST",
++        headers: { ...proxied, cookie },
++      });
++      expect(ticket.status).toBe(200);
++      expect(
++        (await send("/api/auth/websocket-ticket", { method: "POST", headers: { cookie } })).status,
++      ).toBe(401);
++
++      const pairing = await send(
++        "/api/auth/pairing-token",
++        postJson({ scopes: ["orchestration:read"] }, { ...proxied, cookie }),
++      );
++      const { credential } = (await pairing.json()) as { credential: string };
++      const exchanged = await send("/oauth/token", {
++        method: "POST",
++        headers: proxied,
++        body: new URLSearchParams({
++          grant_type: AuthTokenExchangeGrantType,
++          subject_token: credential,
++          subject_token_type: AuthEnvironmentBootstrapTokenType,
++          requested_token_type: AuthAccessTokenType,
++        }),
++      });
++      const { access_token } = (await exchanged.json()) as { access_token: string };
++      const bearer = { authorization: `Bearer ${access_token}` };
++      expect(
++        (await send("/api/auth/websocket-ticket", { method: "POST", headers: bearer })).status,
++      ).toBe(200);
++      expect(
++        (
++          await send("/api/auth/websocket-ticket", {
++            method: "POST",
++            headers: { ...bearer, cookie },
++          })
++        ).status,
++      ).toBe(401);
++    }),
++  );
++
++  it.effect("leaves sign-in to pairing when no proxy secret is configured", () =>
++    withHandler(undefined, async (send) => {
++      const session = await send("/api/auth/session", { headers: proxied });
++      expect(session.status).toBe(200);
++      expect(await session.json()).toMatchObject({ authenticated: false });
++      expect(session.headers.getSetCookie()).toEqual([]);
++    }),
++  );
++});
+diff --git a/apps/server/src/auth/proxyAuth.ts b/apps/server/src/auth/proxyAuth.ts
+new file mode 100644
+index 00000000..43bd408f
+--- /dev/null
++++ b/apps/server/src/auth/proxyAuth.ts
+@@ -0,0 +1,49 @@
++// @effect-diagnostics-next-line nodeBuiltinImport:off -- Effect's Crypto has no timingSafeEqual.
++import * as NodeCrypto from "node:crypto";
++import * as Effect from "effect/Effect";
++import * as Layer from "effect/Layer";
++import * as Redacted from "effect/Redacted";
++import * as HttpRouter from "effect/http/HttpRouter";
++import * as HttpServerRequest from "effect/http/HttpServerRequest";
++import * as HttpServerResponse from "effect/http/HttpServerResponse";
++
++import * as ServerConfig from "../config.ts";
++
++export const PROXY_AUTH_HEADER = "x-t3code-proxy-auth";
++
++const sha256 = (value: string) => NodeCrypto.createHash("sha256").update(value).digest();
++
++/** True when the request carries the secret the authenticating reverse proxy adds. */
++export function isProxyAuthenticated(
++  request: HttpServerRequest.HttpServerRequest,
++  secret: Redacted.Redacted<string>,
++): boolean {
++  const presented = request.headers[PROXY_AUTH_HEADER];
++  return (
++    presented !== undefined &&
++    NodeCrypto.timingSafeEqual(sha256(presented), sha256(Redacted.value(secret)))
++  );
++}
++
++// The CLI and agent MCP calls reach the server directly with a token of their own. A cookie
++// would let a browser session ride along, so only cookieless token requests skip the proxy.
++const presentsOwnToken = (request: HttpServerRequest.HttpServerRequest) =>
++  request.headers.cookie === undefined &&
++  /^(Bearer|DPoP) /i.test(request.headers.authorization ?? "");
++
++/** With a proxy secret configured, refuses every request that bypassed the proxy. */
++export const layerProxyAuthGate = Layer.unwrap(
++  Effect.gen(function* () {
++    const { proxyAuthSecret } = yield* ServerConfig.ServerConfig;
++    if (proxyAuthSecret === undefined) return Layer.empty;
++    return HttpRouter.middleware(
++      (httpEffect) =>
++        Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
++          isProxyAuthenticated(request, proxyAuthSecret) || presentsOwnToken(request)
++            ? httpEffect
++            : Effect.succeed(HttpServerResponse.text("Unauthorized", { status: 401 })),
++        ),
++      { global: true },
++    );
++  }),
++);
+diff --git a/apps/server/src/cli/config.ts b/apps/server/src/cli/config.ts
+index f86fde0f..78f4d7f5 100644
+--- a/apps/server/src/cli/config.ts
++++ b/apps/server/src/cli/config.ts
+@@ -194,6 +194,13 @@ const DevAuthTokenConfig = Config.Redacted("T3CODE_DEV_AUTH_TOKEN").pipe(
+   Config.map(Option.getOrUndefined),
+ );
+ 
++const ProxyAuthSecretConfig = Config.Redacted("T3CODE_PROXY_AUTH_SECRET").pipe(
++  Config.option,
++  Config.map(Option.map((secret) => Redacted.make(Redacted.value(secret).trim()))),
++  Config.map(Option.filter((secret) => Redacted.value(secret).length > 0)),
++  Config.map(Option.getOrUndefined),
++);
++
+ export interface CliServerFlags {
+   readonly mode: Option.Option<ServerConfig.RuntimeMode>;
+   readonly port: Option.Option<number>;
+@@ -326,6 +333,7 @@ export const resolveServerConfig = Effect.fn("config.resolveServerConfig")(funct
+   );
+   const devAuthToken =
+     mode === "web" && devUrl !== undefined ? yield* DevAuthTokenConfig : undefined;
++  const proxyAuthSecret = yield* ProxyAuthSecretConfig;
+   const explicitBaseDir = resolveOptionPrecedence(
+     normalizedFlags.baseDir,
+     Option.fromUndefinedOr(env.t3Home),
+@@ -504,6 +512,7 @@ export const resolveServerConfig = Effect.fn("config.resolveServerConfig")(funct
+     staticDir,
+     devUrl,
+     ...(devAuthToken === undefined ? {} : { devAuthToken }),
++    ...(proxyAuthSecret === undefined ? {} : { proxyAuthSecret }),
+     devAllowedOrigins: env.devAllowedOrigins,
+     noBrowser,
+     startupPresentation,
+diff --git a/apps/server/src/config.ts b/apps/server/src/config.ts
+index 468cc89a..89ce0699 100644
+--- a/apps/server/src/config.ts
++++ b/apps/server/src/config.ts
+@@ -91,6 +91,8 @@ export class ServerConfig extends Context.Service<
+     readonly staticDir: string | undefined;
+     readonly devUrl: URL | undefined;
+     readonly devAuthToken?: Redacted.Redacted<string> | undefined;
++    /** Set when a reverse proxy authenticates users and sends this secret with each request. */
++    readonly proxyAuthSecret?: Redacted.Redacted<string> | undefined;
+     readonly devAllowedOrigins: ReadonlyArray<string>;
+     readonly noBrowser: boolean;
+     readonly startupPresentation: StartupPresentation;
+diff --git a/apps/server/src/server.ts b/apps/server/src/server.ts
+index 67418010..b339d66b 100644
+--- a/apps/server/src/server.ts
++++ b/apps/server/src/server.ts
+@@ -134,6 +134,7 @@ import * as ServerEnvironment from "./environment/ServerEnvironment.ts";
+ import * as DirectEndpoints from "./environment/DirectEndpoints.ts";
+ import * as RemoteOpenTargets from "./environment/RemoteOpenTargets.ts";
+ import * as AuthHttp from "./auth/http.ts";
++import * as ProxyAuth from "./auth/proxyAuth.ts";
+ import * as ReplayMarkers from "./auth/replayMarkers.ts";
+ import * as ServerSecretStore from "./auth/ServerSecretStore.ts";
+ import * as CodexManagedTokenBroker from "./provider/CodexManagedTokenBroker.ts";
+@@ -814,6 +815,7 @@ const layerMakeRoutes = Layer.mergeAll(
+   Layer.provide(PreviewAutomationBroker.layer),
+   Layer.provide(ServerSelfUpdate.layer.pipe(Layer.provide(layerDesktopAppUpdate))),
+   Layer.provide(layerCommandReadiness),
++  Layer.provide(ProxyAuth.layerProxyAuthGate),
+   Layer.provide(ServerHttp.layerBrowserApiCors),
+   Layer.provide(ServerHttp.layerHttpCompression),
+ );
+diff --git a/apps/server/src/serverRuntimeStartup.ts b/apps/server/src/serverRuntimeStartup.ts
+index e54ba8a8..371711cf 100644
+--- a/apps/server/src/serverRuntimeStartup.ts
++++ b/apps/server/src/serverRuntimeStartup.ts
+@@ -616,7 +616,9 @@ const make = Effect.fn("serverRuntimeStartup.make")(function* (options?: Startup
+           }),
+           Effect.ignoreCause({ log: true }),
+         );
+-        if (serverConfig.startupPresentation === "headless") {
++        if (serverConfig.proxyAuthSecret !== undefined) {
++          yield* Effect.logInfo("Sign-in is handled by the reverse proxy.");
++        } else if (serverConfig.startupPresentation === "headless") {
+           yield* Effect.logDebug("startup phase: headless access info");
+           const accessInfo = yield* issueHeadlessServeAccessInfo();
+           yield* runStartupPhase(
+-- 
+2.43.0
+
