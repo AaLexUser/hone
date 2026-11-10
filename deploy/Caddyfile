@@ -1,0 +1,21 @@
+{$SITE_ADDRESS} {
+	basic_auth {
+		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	# /hone without a slash stays with t3code, which shows Hone in a frame there.
+	# Hone's write token is added here, so it never reaches the browser.
+	handle_path /hone/* {
+		reverse_proxy hone:8080 {
+			header_up Authorization "Bearer {$HONE_TOKEN}"
+		}
+	}
+
+	# t3code signs in every request that carries the shared secret.
+	handle {
+		reverse_proxy t3code:3773 {
+			header_up -Authorization
+			header_up X-T3code-Proxy-Auth {$T3CODE_PROXY_AUTH_SECRET}
+		}
+	}
+}

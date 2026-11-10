@@ -1,0 +1,40 @@
+{
+  "providerInstances": {
+    "pi": {
+      "driver": "pi",
+      "enabled": true
+    },
+    "codex": {
+      "driver": "codex",
+      "enabled": false
+    },
+    "cursor": {
+      "driver": "cursor",
+      "enabled": false
+    },
+    "grok": {
+      "driver": "grok",
+      "enabled": false
+    },
+    "fx": {
+      "driver": "fx",
+      "enabled": false
+    },
+    "opencode": {
+      "driver": "opencode",
+      "enabled": false
+    },
+    "muse": {
+      "driver": "muse",
+      "enabled": false
+    },
+    "claudeAgent": {
+      "driver": "claudeAgent",
+      "enabled": false
+    },
+    "antigravity": {
+      "driver": "antigravity",
+      "enabled": false
+    }
+  }
+}

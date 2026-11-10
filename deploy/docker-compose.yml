@@ -1,0 +1,69 @@
+name: hone-demo
+
+services:
+  caddy:
+    image: caddy:2.11
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTPS_PORT:-443}:443/udp"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      BASIC_AUTH_USER: ${BASIC_AUTH_USER:?set BASIC_AUTH_USER in .env}
+      BASIC_AUTH_HASH: ${BASIC_AUTH_HASH:?set BASIC_AUTH_HASH in .env}
+      HONE_TOKEN: ${HONE_TOKEN:?set HONE_TOKEN in .env}
+      T3CODE_PROXY_AUTH_SECRET: ${T3CODE_PROXY_AUTH_SECRET:?set T3CODE_PROXY_AUTH_SECRET in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [backend, outbound]
+    depends_on: [t3code, hone]
+
+  t3code:
+    build:
+      context: ..
+      dockerfile: deploy/t3code.Dockerfile
+    restart: unless-stopped
+    environment:
+      T3CODE_PROXY_AUTH_SECRET: ${T3CODE_PROXY_AUTH_SECRET}
+      HONE_DEMO: "1"
+      HONE_URL: http://hone:8080
+      HONE_TOKEN: ${HONE_TOKEN}
+      HONE_DASHBOARD_URL: /hone/
+      OPENCODE_API_KEY: ${OPENCODE_API_KEY:?set OPENCODE_API_KEY in .env}
+    volumes:
+      - t3code-state:/home/node/.t3
+      - pi-sessions:/home/node/.pi/agent/sessions
+      - demo-project:/home/node/demo
+    networks: [backend, outbound]
+    depends_on: [hone]
+
+  hone:
+    build:
+      context: ..
+      dockerfile: deploy/hone.Dockerfile
+      args:
+        HONE_WEB_BASE: /hone/
+    restart: unless-stopped
+    environment:
+      HONE_DEMO: "1"
+      HONE_TOKEN: ${HONE_TOKEN}
+      HONE_EXPOSE_WRITE_TOKEN: "false"
+    volumes:
+      - hone-data:/data
+    networks: [backend]
+
+networks:
+  backend:
+    internal: true
+  outbound: {}
+
+volumes:
+  caddy-data:
+  caddy-config:
+  hone-data:
+  t3code-state:
+  pi-sessions:
+  demo-project:
