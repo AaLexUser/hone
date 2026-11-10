@@ -29,13 +29,20 @@ export interface WorkRow {
   window: [number, number | null]
 }
 
+/** One exchange in a cross-examination. Runs recorded before questions were kept have answers only. */
+export interface AskTurn {
+  seat: Seat
+  question: string | null
+  answer: WorkRow | null
+}
+
 export interface AskRow {
   type: 'ask'
   id: string
   judge: Seat
   at: number
   end: number | null
-  answers: WorkRow[]
+  turns: AskTurn[]
   timedOut: string[]
 }
 
@@ -137,15 +144,22 @@ export function activityRows(m: RunModel): Row[] {
         const row: WorkRow = { type: 'work', id, seat, span, tools: [], text: null, drafted: null, retries: 0, window }
         open.set(ev.agent, row)
         lastWork.set(ev.agent, row)
-        if (span.followUp && ask) ask.answers.push(row)
-        else rows.push(row)
+        if (span.followUp && ask) {
+          const turn = ask.turns.find((t) => t.seat.key === ev.agent && !t.answer)
+          if (turn) turn.answer = row
+          else ask.turns.push({ seat, question: null, answer: row })
+        } else rows.push(row)
         break
       }
       case 'tool': {
         if (ev.name === 'ask_panel') {
           const judge = seatOf(ev.agent)
           if (judge) {
-            ask = { type: 'ask', id, judge, at: ev.at, end: null, answers: [], timedOut: [] }
+            const turns = (ev.queries ?? []).flatMap((q) => {
+              const seat = seatOf(q.role)
+              return seat ? [{ seat, question: q.question, answer: null }] : []
+            })
+            ask = { type: 'ask', id, judge, at: ev.at, end: null, turns, timedOut: [] }
             rows.push(ask)
           }
           break

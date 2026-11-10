@@ -14,6 +14,7 @@ const { attemptStories, crossExam, laneGroups, nowLine, seatStatus, stageState, 
   path.join(here, '../src/run/derive.ts'),
 )
 const { graphLayout } = await jiti.import(path.join(here, '../src/run/graph/layout.ts'))
+const { activityRows } = await jiti.import(path.join(here, '../src/run/activity.ts'))
 
 const dirs = process.argv.slice(2)
 if (!dirs.length) {
@@ -24,6 +25,29 @@ if (!dirs.length) {
 const lines = (file) => fs.readFileSync(file, 'utf8').trim().split('\n')
 const parse = (raw) => raw.map(parseRunEvent).filter((e) => e !== null)
 const fold = (events) => reduceRun(initialModel, events)
+
+const askRows = (events) => activityRows(fold(events)).filter((r) => r.type === 'ask')
+const answerIds = (asks) => asks.flatMap((a) => a.turns.flatMap((t) => (t.answer ? [t.answer.id] : []))).sort()
+
+/** Each judge question sits right above its own seat's answer, and a run without questions nests the same answers. */
+function checkCrossExam(raw, events, terminal) {
+  const asks = askRows(events)
+  for (const a of asks) {
+    for (const t of a.turns) {
+      if (t.answer) assert.equal(t.answer.seat.key, t.seat.key, 'an answer sits under the question to its own seat')
+      if (terminal && t.question) assert.ok(t.answer, `the question to ${t.seat.key} got an answer row`)
+    }
+  }
+  const unasked = parse(raw.map((l) => {
+    const r = JSON.parse(l)
+    delete r.queries
+    return JSON.stringify(r)
+  }))
+  const old = askRows(unasked)
+  assert.ok(old.every((a) => a.turns.every((t) => t.question === null)), 'a run without queries shows no questions')
+  assert.deepEqual(answerIds(old), answerIds(asks), 'a run without queries nests the same answers')
+  return asks.reduce((n, a) => n + a.turns.filter((t) => t.question).length, 0)
+}
 
 /** Panel sizes from hone.yaml: the `- model:` entries under each stage's `panel:`. */
 function roster(dir) {
@@ -139,6 +163,8 @@ for (const dir of dirs) {
         if (!isTerminal(p.outcome)) assert.ok(nowLine(p, 3)?.text, `now-line at event ${i}`)
       }
 
+      const questions = checkCrossExam(raw, events, isTerminal(m.outcome))
+
       EXPECT[run]?.(m)
       checked++
       const ce = laneGroups(m).map((g) => g.panel.reduce((n, s) => n + (crossExam(m, g.stage)[s.key]?.answered ?? 0), 0))
@@ -149,6 +175,7 @@ for (const dir of dirs) {
         `attempts=${m.attempts.length}`,
         `verify=${verifyState(m)}`,
         `follow-up answers=${ce.join('/')}`,
+        `questions=${questions}`,
       )
     } catch (err) {
       console.error(`FAIL ${where}: ${err.message}`)

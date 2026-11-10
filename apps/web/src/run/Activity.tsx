@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Check, ChevronRight, CircleAlert, Clock3, FileText, GitCommitHorizontal, Layers, ListTree, PanelRightOpen, RotateCw, Wrench, X } from 'lucide-react'
-import type { RunModel } from './model'
+import type { RunModel, Seat } from './model'
 import { activityRows, gist, toolGist } from './activity'
 import type { AskRow, Row, WorkRow } from './activity'
 import { laneGroups, groupSeats, monogram, plainError } from './derive'
@@ -114,7 +114,7 @@ function fade(above: boolean, below: boolean): string | undefined {
 
 function involves(r: Row, key: string): boolean {
   if (r.type === 'work') return r.seat.key === key
-  if (r.type === 'ask') return r.judge.key === key || r.answers.some((a) => a.seat.key === key)
+  if (r.type === 'ask') return r.judge.key === key || r.turns.some((t) => t.seat.key === key)
   if (r.type === 'failed') return r.story.seat?.key === key
   return false
 }
@@ -313,6 +313,7 @@ function runs(items: string[]): [string, number][] {
 
 function AskView({ row, now, onOpenAgent }: { row: AskRow; now: number; onOpenAgent: (key: string) => void }) {
   const live = row.end === null
+  const asked = [...new Map(row.turns.map((t) => [t.seat.key, t.seat])).values()]
   return (
     <div className={`my-1 ${live ? 'bg-accent/5' : ''}`}>
       <div className="flex h-9 items-center gap-2.5 px-4 text-body">
@@ -324,9 +325,9 @@ function AskView({ row, now, onOpenAgent }: { row: AskRow; now: number; onOpenAg
           ?
         </span>
         <span className="flex items-center gap-1">
-          {row.answers.map((a) => (
-            <span key={a.id} className={row.timedOut.includes(a.seat.key) ? 'opacity-60' : ''}>
-              <SeatChip seat={a.seat} />
+          {asked.map((seat) => (
+            <span key={seat.key} className={row.timedOut.includes(seat.key) ? 'opacity-60' : ''}>
+              <SeatChip seat={seat} />
             </span>
           ))}
         </span>
@@ -336,12 +337,53 @@ function AskView({ row, now, onOpenAgent }: { row: AskRow; now: number; onOpenAg
           </span>
         )}
         <span className="sr-only">
-          judge asked {row.answers.map((a) => monogram(a.seat)).join(', ')}
+          judge asked {asked.map(monogram).join(', ')}
         </span>
       </div>
-      {row.answers.map((a) => (
-        <WorkView key={a.id} row={a} now={now} onOpenAgent={onOpenAgent} nested />
+      {row.turns.map((t, i) => (
+        <div key={i}>
+          {t.question && <Question seat={t.seat} text={t.question} />}
+          {t.answer && <WorkView row={t.answer} now={now} onOpenAgent={onOpenAgent} nested />}
+        </div>
       ))}
+    </div>
+  )
+}
+
+/** The judge's question to one seat, two lines until opened. */
+function Question({ seat, text }: { seat: Seat; text: string }) {
+  const [open, setOpen] = useState(false)
+  const [clipped, setClipped] = useState(false)
+  const body = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const el = body.current
+    if (!el) return
+    const measure = () => setClipped(el.scrollHeight > el.clientHeight + 1)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [text])
+  const expandable = open || clipped
+  return (
+    <div className="pl-9">
+      <button
+        onClick={() => expandable && setOpen(!open)}
+        className={`grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2.5 px-4 pt-1 pb-0.5 text-left ${expandable ? 'hover-row' : 'cursor-default'}`}
+        aria-expanded={expandable ? open : undefined}
+      >
+        <span className="mt-[3px] grid size-[18px] place-items-center rounded-full bg-accent/12 text-[11px] font-bold text-accent-2" aria-hidden>
+          ?
+        </span>
+        <span ref={body} className={`text-body break-words whitespace-pre-wrap text-ink-2 ${open ? 'block' : 'line-clamp-2'}`}>
+          <span className="sr-only">Judge asked {monogram(seat)}. </span>
+          <Inline text={text} />
+        </span>
+        <ChevronRight
+          size={14}
+          className={`mt-[3px] text-ink-3 transition-transform duration-150 ${open ? 'rotate-90' : ''} ${expandable ? '' : 'invisible'}`}
+        />
+      </button>
     </div>
   )
 }

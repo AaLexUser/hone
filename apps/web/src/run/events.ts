@@ -15,6 +15,12 @@ export interface RosterEntry {
   stage: Stage
 }
 
+/** One question the judge sent through ask_panel, to the panel seat `role`. */
+export interface AskQuery {
+  role: string
+  question: string
+}
+
 export interface DraftEdit {
   oldText: string
   newText: string
@@ -28,7 +34,7 @@ export type RunEvent =
   | { kind: 'stage'; at: number; stage: Stage; status: 'start' | 'end' }
   | { kind: 'agent_start'; at: number; agent: string }
   | { kind: 'agent_end'; at: number; agent: string; ok: boolean; durationMs?: number; error?: string }
-  | { kind: 'tool'; at: number; agent: string; name: string; detail?: string }
+  | { kind: 'tool'; at: number; agent: string; name: string; detail?: string; queries?: AskQuery[] }
   | { kind: 'tool_result'; at: number; agent: string; name: string; detail?: string }
   | { kind: 'message'; at: number; agent: string; text: string }
   | { kind: 'retry'; at: number; agent: string; reason: string }
@@ -59,6 +65,14 @@ function rosterEntry(v: unknown): RosterEntry | null {
   const role = ROLES.find((x) => x === r.role)
   if (!key || !s || !role) return null
   return { key, model: str(r.model) ?? '', role, stage: s }
+}
+
+function askQuery(v: unknown): AskQuery | null {
+  if (!v || typeof v !== 'object') return null
+  const r = v as Raw
+  const role = str(r.role)
+  const question = str(r.question)
+  return role && question ? { role, question } : null
 }
 
 function draftEdit(v: unknown): DraftEdit | null {
@@ -102,9 +116,12 @@ export function parseRunEvent(data: string): RunEvent | null {
       return agent
         ? { kind: 'agent_end', at, agent, ok: r.status !== 'error', durationMs: num(r.durationMs), error: str(r.error) }
         : null
-    case 'tool':
+    case 'tool': {
+      const queries = Array.isArray(r.queries) ? r.queries.map(askQuery).filter((q) => q !== null) : undefined
+      return agent ? { kind: 'tool', at, agent, name: str(r.name) ?? 'tool', detail: str(r.detail), queries } : null
+    }
     case 'tool_result':
-      return agent ? { kind: r.kind, at, agent, name: str(r.name) ?? 'tool', detail: str(r.detail) } : null
+      return agent ? { kind: 'tool_result', at, agent, name: str(r.name) ?? 'tool', detail: str(r.detail) } : null
     case 'message':
       return agent ? { kind: 'message', at, agent, text: str(r.text) ?? '' } : null
     case 'retry':

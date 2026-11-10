@@ -321,16 +321,16 @@ def ask_panel(judge: Seat, panel: list[Seat], asks: tuple[Ask, ...], cast: Cast,
     rng = cast.rng
     judge.t += rng.randint(25_000, 60_000)
     called = judge.t
-    judge.tl.add(called, {"kind": "tool", "name": "ask_panel", "agent": judge.key, "model": judge.model,
-                          "role": judge.role, "stage": judge.stage})
-    finished = called
-    timed_out: list[str] = []
-    seen: set[str] = set()
+    asked: dict[str, tuple[Seat, Ask]] = {}
     for ask in asks:
         worker = panel[ask.seat % len(panel)]
-        if worker.key in seen:
-            continue
-        seen.add(worker.key)
+        asked.setdefault(worker.key, (worker, ask))
+    judge.tl.add(called, {"kind": "tool", "name": "ask_panel", "agent": judge.key, "model": judge.model,
+                          "role": judge.role, "stage": judge.stage,
+                          "queries": [{"role": key, "question": cast.text(ask.question)} for key, (_, ask) in asked.items()]})
+    finished = called
+    timed_out: list[str] = []
+    for worker, ask in asked.values():
         worker.start(called + rng.randint(120, 400))
         if ask.timeout:
             worker.tool("bash", "python3 - <<'EOF'\nimport json\nfor l in open('agents.md'): print(l.rstrip())\nEOF",
@@ -347,8 +347,8 @@ def ask_panel(judge: Seat, panel: list[Seat], asks: tuple[Ask, ...], cast: Cast,
     judge.t = finished + rng.randint(20, 80)
     tl.add(judge.t, {
         "kind": "analytics", "name": "ask_panel", "stage": stage, "agent": f"{stage}-judge", "model": judge_label,
-        "role": "judge", "workersAsked": len(seen), "workersTimedOut": len(timed_out), "timedOutRoles": timed_out,
-        "queriesAsked": len(seen), "queriesTimedOut": len(timed_out), "timeoutMs": 60_000,
+        "role": "judge", "workersAsked": len(asked), "workersTimedOut": len(timed_out), "timedOutRoles": timed_out,
+        "queriesAsked": len(asked), "queriesTimedOut": len(timed_out), "timeoutMs": 60_000,
         "durationMs": judge.t - called, "text": f"ask_panel: {len(timed_out)} worker timeout(s)",
         "detail": ", ".join(timed_out) if timed_out else "none",
     })

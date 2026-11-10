@@ -221,9 +221,15 @@ function agentSink(roleKey: string, modelId: string, role: string, stage: string
 
 function attachActivityLog(session: AgentSession, emit: (e: ProgressEvent) => void): () => void {
   const open = new Map<string, { name: string; detail?: string }>();
-  const start = (key: string, name: string, detail?: string): void => {
+  const start = (key: string, name: string, args: unknown): void => {
+    const detail = summarizeArgs(args);
     open.set(key, { name, detail });
-    emit({ kind: "tool", name, detail: detail ? String(detail).slice(0, 400) : undefined });
+    emit({
+      kind: "tool",
+      name,
+      detail: detail ? String(detail).slice(0, 400) : undefined,
+      ...(name === "ask_panel" ? { queries: askedQueries(args) } : {}),
+    });
   };
   const end = (key: string): void => {
     const step = open.get(key);
@@ -233,7 +239,7 @@ function attachActivityLog(session: AgentSession, emit: (e: ProgressEvent) => vo
   };
   const unsubscribe = session.subscribe((event: any) => {
     if (event.type === "tool_execution_start") {
-      start(event.toolCallId, event.toolName, summarizeArgs(event.args));
+      start(event.toolCallId, event.toolName, event.args);
     } else if (event.type === "tool_execution_end") {
       end(event.toolCallId);
     } else if (event.type === "message_update") {
@@ -261,6 +267,16 @@ function summarizeArgs(args: unknown): string | undefined {
   if (!pick) return undefined;
   const oneLine = pick.replace(/\s+/g, " ").trim();
   return oneLine.length > 120 ? oneLine.slice(0, 119) + "…" : oneLine;
+}
+
+/** The judge's ask_panel questions as the activity feed shows them, each capped like a message. */
+function askedQueries(args: unknown): { role: string; question: string }[] {
+  const queries = (args as { queries?: unknown } | null)?.queries;
+  if (!Array.isArray(queries)) return [];
+  return queries.map((q) => ({
+    role: typeof q?.role === "string" ? q.role : "",
+    question: typeof q?.question === "string" ? q.question.slice(0, 4000) : "",
+  }));
 }
 
 async function createInnerAgentSession(
