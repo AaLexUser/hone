@@ -1,0 +1,431 @@
+{
+ "shots": [
+  {
+   "id": "1-chip",
+   "clip": "versions",
+   "from": "chat@-1.0",
+   "dur": 7.0,
+   "speed": 0.6,
+   "noCursor": true,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     1.0,
+     960,
+     540,
+     1
+    ],
+    [
+     3.0,
+     1190,
+     160,
+     1.9
+    ],
+    [
+     7.0,
+     1190,
+     160,
+     1.95
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 3.1,
+     "to": 7.0,
+     "rect": [
+      1068,
+      9,
+      260,
+      34
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.0,
+     "text": "t3code shows the *AGENTS.md* version in use."
+    }
+   ]
+  },
+  {
+   "id": "2-open",
+   "clip": "versions",
+   "from": "chat@3.2",
+   "to": "versions@0.2",
+   "dur": 6.5,
+   "captions": [
+    {
+     "at": 0.3,
+     "to": 6.5,
+     "text": "Open *Versions* on the Hone page."
+    }
+   ]
+  },
+  {
+   "id": "3-history",
+   "clip": "versions",
+   "from": "versions@0.2",
+   "dur": 7.0,
+   "speed": 0.6,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     1.0,
+     960,
+     540,
+     1
+    ],
+    [
+     2.9,
+     712,
+     300,
+     1.75
+    ],
+    [
+     7.0,
+     712,
+     300,
+     1.8
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 3.0,
+     "to": 7.0,
+     "rect": [
+      512,
+      129,
+      400,
+      259
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.0,
+     "text": "Every change to AGENTS.md is a *version* in Git."
+    }
+   ]
+  },
+  {
+   "id": "4-diff",
+   "clip": "versions",
+   "from": "diff@0",
+   "dur": 8.0,
+   "speed": 0.55,
+   "noCursor": true,
+   "camera": [
+    [
+     0,
+     712,
+     300,
+     1.8
+    ],
+    [
+     1.9,
+     1296,
+     500,
+     1.55
+    ],
+    [
+     8.0,
+     1296,
+     500,
+     1.6
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 2.0,
+     "to": 8.0,
+     "rect": [
+      1033,
+      466,
+      624,
+      68
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 2.5,
+     "to": 8.0,
+     "rect": [
+      1033,
+      592,
+      624,
+      46
+     ],
+     "tone": "red"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 8.0,
+     "text": "*Diff vs parent* shows what a run changed."
+    }
+   ]
+  },
+  {
+   "id": "5-older",
+   "clip": "versions",
+   "from": "older@-3.6",
+   "dur": 7.0,
+   "highlights": [
+    {
+     "at": 3.8,
+     "to": 7.0,
+     "rect": [
+      513,
+      275,
+      399,
+      56
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.0,
+     "text": "Pick an older *version*."
+    }
+   ]
+  },
+  {
+   "id": "6-branch",
+   "clip": "versions",
+   "from": "branch-form@-2.0",
+   "to": "branch-created@1.6",
+   "dur": 9.5,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     0.4,
+     960,
+     540,
+     1
+    ],
+    [
+     2.2,
+     1100,
+     330,
+     1.4
+    ],
+    [
+     9.5,
+     1100,
+     330,
+     1.42
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.3,
+     "to": 2.0,
+     "rect": [
+      1389,
+      223,
+      143,
+      33
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 8.0,
+     "to": 9.5,
+     "rect": [
+      675,
+      183,
+      94,
+      26
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 9.5,
+     "text": "*Branch from here* starts a new line from it."
+    }
+   ]
+  },
+  {
+   "id": "7-set",
+   "clip": "versions",
+   "from": "set-before@-1.0",
+   "to": "set-done@1.0",
+   "dur": 8.5,
+   "camera": [
+    [
+     0,
+     1100,
+     330,
+     1.42
+    ],
+    [
+     8.5,
+     1100,
+     330,
+     1.42
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.3,
+     "to": 2.0,
+     "rect": [
+      1539,
+      223,
+      105,
+      33
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 2.2,
+     "to": 4.3,
+     "rect": [
+      1474,
+      223,
+      169,
+      33
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 8.5,
+     "text": "*Set as current* serves it to the agent."
+    }
+   ]
+  },
+  {
+   "id": "8-kept",
+   "clip": "versions",
+   "from": "set-done@1.0",
+   "dur": 7.0,
+   "speed": 0.6,
+   "noCursor": true,
+   "camera": [
+    [
+     0,
+     1100,
+     330,
+     1.42
+    ],
+    [
+     7.0,
+     1100,
+     330,
+     1.45
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.3,
+     "to": 7.0,
+     "rect": [
+      1480,
+      226,
+      172,
+      30
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 2.5,
+     "to": 7.0,
+     "rect": [
+      513,
+      219,
+      399,
+      56
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.0,
+     "text": "The newer version stays in *History*."
+    }
+   ]
+  },
+  {
+   "id": "9-chat",
+   "clip": "versions",
+   "from": "chat-after@-3.0",
+   "dur": 10.0,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     3.0,
+     960,
+     540,
+     1
+    ],
+    [
+     5.0,
+     1190,
+     160,
+     1.9
+    ],
+    [
+     10.0,
+     1190,
+     160,
+     1.95
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 5.1,
+     "to": 10.0,
+     "rect": [
+      1068,
+      9,
+      260,
+      34
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 10.0,
+     "text": "The chat header now shows *cc5cedc*."
+    }
+   ]
+  }
+ ]
+}

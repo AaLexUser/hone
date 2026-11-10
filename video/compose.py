@@ -1,10 +1,10 @@
-"""Builds the Hone demo video from the captured footage and timeline.json.
+"""Builds a video from a timeline and its captured footage.
 
-python3 compose.py <footage dir> <out dir>
+python3 compose.py <timeline.json> <footage dir> <out.mp4>
 
 The footage dir holds <clip>.mkv recordings with wall clock timestamps and <clip>.json logs
-(marks and cursor events in wall clock seconds), written by capture/record.cjs.
-Writes <out dir>/hone-demo.mp4 and <out dir>/hone-demo.srt.
+(marks and cursor events in wall clock seconds), written by the capture scripts.
+A timeline of cards only needs no footage. Writes <out.mp4> and the captions next to it as .srt.
 """
 
 import json
@@ -12,6 +12,7 @@ import math
 import os
 import subprocess
 import sys
+import tempfile
 from bisect import bisect_right
 
 from PIL import Image
@@ -90,6 +91,11 @@ def camera_at(shot, t):
     return x, y, z
 
 
+def probe_duration(path):
+    out = subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path])
+    return float(out)
+
+
 def resolve(timeline, clips):
     shots, t = [], 0.0
     for s in timeline["shots"]:
@@ -106,6 +112,8 @@ def resolve(timeline, clips):
                     s["dur"] = span / s["speed"]
             if s.get("badge"):
                 s["badge"] = {k: v.replace("{speed}", f"{s['speed']:.0f}") for k, v in s["badge"].items()}
+        elif "video" in s:
+            s.setdefault("dur", probe_duration(s["video"]))
         s["t0"] = t
         s["n"] = round(s["dur"] * FPS)
         t += s["n"] / FPS
@@ -135,8 +143,8 @@ def states_for(shots, clips, caps):
             g = s["t0"] + t
             st = {}
             if "card" in s:
-                st["card"] = {"kind": s["card"], "t": round(t, 3), "dur": s["dur"]}
-            else:
+                st["card"] = {"kind": s["card"], "t": round(t, 3), "dur": s["dur"], **{k: s[k] for k in ("text", "out") if k in s}}
+            elif "clip" in s:
                 clip = clips[s["clip"]]
                 x0, y0, z = camera_at(s, t)
                 hls = []
@@ -161,22 +169,29 @@ def states_for(shots, clips, caps):
     return states
 
 
-def footage_frames(clip, shot):
-    span = shot["n"] / FPS * shot["speed"] + 1
-    ss = shot["src0"] - clip.start
-    cmd = ["ffmpeg", "-v", "error", "-ss", f"{ss:.3f}", "-i", clip.path, "-t", f"{span:.3f}",
-           "-vf", f"setpts=(PTS-STARTPTS)/{shot['speed']:.5f},fps={FPS}", "-frames:v", str(shot["n"]),
-           "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:"]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    size = SW * SH * 3
+def read_frames(cmd, w, h, n):
+    """n raw frames from an ffmpeg command, holding the last one if the source runs short."""
+    p = subprocess.Popen(cmd + ["-frames:v", str(n), "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:"], stdout=subprocess.PIPE)
     last = None
-    for _ in range(shot["n"]):
-        buf = p.stdout.read(size)
-        if len(buf) == size:
-            last = Image.frombuffer("RGB", (SW, SH), buf)
+    for _ in range(n):
+        buf = p.stdout.read(w * h * 3)
+        if len(buf) == w * h * 3:
+            last = Image.frombuffer("RGB", (w, h), buf)
         yield last
     p.stdout.close()
     p.wait()
+
+
+def footage_frames(clip, shot):
+    span = shot["n"] / FPS * shot["speed"] + 1
+    ss = shot["src0"] - clip.start
+    return read_frames(["ffmpeg", "-v", "error", "-ss", f"{ss:.3f}", "-i", clip.path, "-t", f"{span:.3f}",
+                        "-vf", f"setpts=(PTS-STARTPTS)/{shot['speed']:.5f},fps={FPS}"], SW, SH, shot["n"])
+
+
+def video_frames(shot):
+    """A rendered 1920 by 1080 video, frame for frame."""
+    return read_frames(["ffmpeg", "-v", "error", "-i", shot["video"], "-vf", f"fps={FPS}"], OW, OH, shot["n"])
 
 
 def write_srt(caps, path):
@@ -189,10 +204,7 @@ def write_srt(caps, path):
             f.write(f"{i}\n{ts(c['t0'])} --> {ts(c['t1'])}\n{text}\n\n")
 
 
-def main():
-    footage, out = sys.argv[1], sys.argv[2]
-    os.makedirs(out, exist_ok=True)
-    timeline = json.load(open(os.path.join(HERE, "timeline.json")))
+def compose(timeline, footage, out_mp4):
     clips = {name: Clip(footage, name) for name in {s["clip"] for s in timeline["shots"] if "clip" in s}}
     shots, total = resolve(timeline, clips)
     caps = captions_of(shots)
@@ -200,26 +212,33 @@ def main():
         extra = f" speed {s['speed']:.2f}x" if "clip" in s else ""
         print(f"{s['id']:<14} {s['t0']:6.2f}s  {s['dur']:5.2f}s{extra}")
     print(f"total {total:.2f}s")
-    write_srt(caps, os.path.join(out, "hone-demo.srt"))
+    write_srt(caps, os.path.splitext(out_mp4)[0] + ".srt")
 
-    ov_dir = os.path.join(out, "overlay")
-    states_file = os.path.join(out, "states.json")
-    json.dump(states_for(shots, clips, caps), open(states_file, "w"))
-    subprocess.run(["node", os.path.join(HERE, "render_overlay.cjs"), states_file, ov_dir], check=True)
-    index = json.load(open(os.path.join(ov_dir, "index.json")))
+    with tempfile.TemporaryDirectory(dir=os.path.dirname(os.path.abspath(out_mp4))) as tmp:
+        ov_dir = os.path.join(tmp, "overlay")
+        states_file = os.path.join(tmp, "states.json")
+        json.dump(states_for(shots, clips, caps), open(states_file, "w"))
+        subprocess.run(["node", os.path.join(HERE, "render_overlay.cjs"), states_file, ov_dir], check=True)
+        index = json.load(open(os.path.join(ov_dir, "index.json")))
+        encode(shots, clips, ov_dir, index, out_mp4, tuple(timeline.get("background", (0, 0, 0))))
+    print("wrote", out_mp4)
 
+
+def encode(shots, clips, ov_dir, index, out_mp4, background):
     enc = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{OW}x{OH}", "-r", str(FPS), "-i", "pipe:",
                             "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-tune", "animation", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
-                            os.path.join(out, "hone-demo.mp4")], stdin=subprocess.PIPE)
-    frame_no, base, prev_final = 0, Image.new("RGB", (OW, OH), "black"), None
+                            out_mp4], stdin=subprocess.PIPE)
+    frame_no, base, prev_final = 0, Image.new("RGB", (OW, OH), background), None
     ov_cache = (None, None)
     for s in shots:
-        frames = footage_frames(clips[s["clip"]], s) if "clip" in s else None
+        frames = footage_frames(clips[s["clip"]], s) if "clip" in s else video_frames(s) if "video" in s else None
         fade_n = round(s.get("fade", 0) * FPS)
         if frames is None and prev_final is not None:
             base = prev_final  # a card fades in over the frame before it
         for i in range(s["n"]):
-            if frames is not None:
+            if "video" in s:
+                base = next(frames)
+            elif frames is not None:
                 src = next(frames)
                 x0, y0, z = camera_at(s, i / FPS)
                 box = (x0 * SRC_SCALE, y0 * SRC_SCALE, (x0 + OW / z) * SRC_SCALE, (y0 + OH / z) * SRC_SCALE)
@@ -237,8 +256,14 @@ def main():
         prev_final = final
         print("composited", s["id"])
     enc.stdin.close()
-    enc.wait()
-    print("wrote", os.path.join(out, "hone-demo.mp4"))
+    if enc.wait() != 0:
+        sys.exit("ffmpeg failed to encode " + out_mp4)
+
+
+def main():
+    timeline_file, footage, out_mp4 = sys.argv[1:4]
+    os.makedirs(os.path.dirname(os.path.abspath(out_mp4)), exist_ok=True)
+    compose(json.load(open(timeline_file)), footage, out_mp4)
 
 
 if __name__ == "__main__":

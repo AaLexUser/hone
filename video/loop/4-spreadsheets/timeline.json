@@ -1,0 +1,728 @@
+{
+ "shots": [
+  {
+   "id": "1-request",
+   "clip": "chat-Priya-Natarajan",
+   "from": "inbox-open@-0.6",
+   "to": "typed@0.6",
+   "dur": 12.5,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     6.6,
+     960,
+     540,
+     1
+    ],
+    [
+     8.6,
+     815,
+     530,
+     1.5
+    ]
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 6.2,
+     "text": "An office team files *expense reports* with a Pi agent."
+    },
+    {
+     "at": 6.4,
+     "to": 12.5,
+     "text": "Drop in the *receipts* and the template."
+    }
+   ]
+  },
+  {
+   "id": "2-agent",
+   "clip": "chat-Priya-Natarajan",
+   "from": "sent@0.3",
+   "to": "replied@-2.0",
+   "dur": 9.0,
+   "badge": {
+    "big": "1 min 4 s",
+    "small": "agent at work, shown {speed}× faster"
+   },
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 9.0,
+     "text": "The agent fills in the *spreadsheet*."
+    }
+   ]
+  },
+  {
+   "id": "3-session",
+   "clip": "chat-Priya-Natarajan",
+   "from": "replied@-2.0",
+   "dur": 8.0,
+   "speed": 0.6,
+   "noCursor": true,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     1.2,
+     960,
+     540,
+     1
+    ],
+    [
+     3.0,
+     1420,
+     200,
+     1.6
+    ],
+    [
+     8.0,
+     1420,
+     200,
+     1.62
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 3.1,
+     "to": 8.0,
+     "rect": [
+      1070,
+      10,
+      256,
+      32
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 3.5,
+     "to": 8.0,
+     "rect": [
+      1530,
+      88,
+      362,
+      70
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 8.0,
+     "text": "The session goes to *Hone*. / The batch is full."
+    }
+   ]
+  },
+  {
+   "id": "4-sheet",
+   "clip": "chat-Priya-Natarajan",
+   "from": "sheet-max@-0.3",
+   "to": "sheet-end@0",
+   "dur": 9.0,
+   "noCursor": true,
+   "fade": 0.3,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     0.8,
+     960,
+     540,
+     1
+    ],
+    [
+     2.6,
+     720,
+     380,
+     1.7
+    ],
+    [
+     9.0,
+     720,
+     380,
+     1.72
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 3.0,
+     "to": 9.0,
+     "rect": [
+      296,
+      498,
+      860,
+      22
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 9.0,
+     "text": "Dates, amounts and a grand total. / But no subtotal per *category*."
+    }
+   ]
+  },
+  {
+   "id": "5-feedback",
+   "clip": "chat-Priya-Natarajan",
+   "from": "thumb-down@-1.3",
+   "to": "feedback-sent@2.5",
+   "dur": 11.0,
+   "fade": 0.3,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     0.6,
+     960,
+     540,
+     1
+    ],
+    [
+     2.4,
+     1000,
+     790,
+     1.6
+    ],
+    [
+     8.6,
+     1000,
+     790,
+     1.6
+    ],
+    [
+     10.4,
+     960,
+     540,
+     1
+    ]
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 11.0,
+     "text": "One thumbs down. One plain *sentence*."
+    }
+   ]
+  },
+  {
+   "id": "6-start",
+   "clip": "chat-Priya-Natarajan",
+   "from": "chip@0",
+   "to": "start-clicked@1.0",
+   "dur": 8.5,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     3.6,
+     960,
+     540,
+     1
+    ],
+    [
+     5.4,
+     1090,
+     330,
+     1.35
+    ],
+    [
+     8.5,
+     1090,
+     330,
+     1.37
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 5.5,
+     "to": 8.5,
+     "rect": [
+      538,
+      250,
+      160,
+      156
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 6.0,
+     "to": 8.5,
+     "rect": [
+      1462,
+      300,
+      180,
+      50
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 8.5,
+     "text": "Three sessions are in. / Press *Start optimization*."
+    }
+   ]
+  },
+  {
+   "id": "7-review",
+   "clip": "chat-Priya-Natarajan",
+   "from": "start-clicked@5",
+   "to": "run-started@170",
+   "speed": 15,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ]
+   ],
+   "badge": {
+    "big": "8 min 45 s",
+    "small": "real run, shown {speed}× faster"
+   },
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 11.4,
+     "text": "Three *reviewers* read every session."
+    }
+   ]
+  },
+  {
+   "id": "8-judge",
+   "clip": "chat-Priya-Natarajan",
+   "from": "run-started@170",
+   "to": "run-started@255",
+   "speed": 15,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ]
+   ],
+   "badge": {
+    "big": "8 min 45 s",
+    "small": "real run, shown {speed}× faster"
+   },
+   "highlights": [
+    {
+     "at": 0.3,
+     "to": 5.67,
+     "rect": [
+      752,
+      438,
+      172,
+      52
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.3,
+     "to": 5.67,
+     "text": "A *judge* cross-examines them."
+    }
+   ]
+  },
+  {
+   "id": "9-propose",
+   "clip": "chat-Priya-Natarajan",
+   "from": "run-started@255",
+   "to": "run-started@420",
+   "speed": 15,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ]
+   ],
+   "badge": {
+    "big": "8 min 45 s",
+    "small": "real run, shown {speed}× faster"
+   },
+   "highlights": [
+    {
+     "at": 7.6,
+     "to": 11.0,
+     "rect": [
+      1325,
+      438,
+      172,
+      52
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 11.0,
+     "text": "Three *proposers* draft edits."
+    }
+   ]
+  },
+  {
+   "id": "10-question",
+   "clip": "review",
+   "from": "question@0.4",
+   "dur": 8.0,
+   "speed": 0.6,
+   "noCursor": true,
+   "camera": [
+    [
+     0,
+     735,
+     540,
+     1.5
+    ],
+    [
+     8.0,
+     735,
+     540,
+     1.55
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.4,
+     "to": 8.0,
+     "rect": [
+      430,
+      503,
+      610,
+      88
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 8.0,
+     "text": "The judge asks where the *subtotals* belong."
+    }
+   ]
+  },
+  {
+   "id": "11-fuse",
+   "clip": "chat-Priya-Natarajan",
+   "from": "run-started@420",
+   "to": "run-ended@2",
+   "speed": 15,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ]
+   ],
+   "badge": {
+    "big": "8 min 45 s",
+    "small": "real run, shown {speed}× faster"
+   },
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 12.0,
+     "text": "It fuses the drafts into one edit. / A verifier checks it."
+    }
+   ]
+  },
+  {
+   "id": "12-commit",
+   "clip": "chat-Priya-Natarajan",
+   "from": "run-ended@2.5",
+   "dur": 5.0,
+   "noCursor": true,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ],
+    [
+     5.0,
+     1088,
+     470,
+     1.38
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.3,
+     "to": 5.0,
+     "rect": [
+      1546,
+      528,
+      92,
+      50
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 0.7,
+     "to": 5.0,
+     "rect": [
+      1666,
+      528,
+      100,
+      50
+     ],
+     "tone": "indigo"
+    }
+   ]
+  },
+  {
+   "id": "13-versions",
+   "clip": "review",
+   "from": "versions@-0.4",
+   "dur": 14.0,
+   "speed": 0.55,
+   "noCursor": true,
+   "fade": 0.3,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     0.8,
+     960,
+     540,
+     1
+    ],
+    [
+     2.6,
+     1300,
+     520,
+     1.6
+    ],
+    [
+     6.8,
+     1300,
+     520,
+     1.6
+    ],
+    [
+     8.4,
+     1300,
+     610,
+     1.5
+    ],
+    [
+     14.0,
+     1300,
+     610,
+     1.52
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 2.7,
+     "to": 6.8,
+     "rect": [
+      1035,
+      400,
+      620,
+      66
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 8.5,
+     "to": 14.0,
+     "rect": [
+      1035,
+      470,
+      620,
+      250
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 6.8,
+     "text": "The subtotal rule lands in *AGENTS.md*."
+    },
+    {
+     "at": 7.0,
+     "to": 14.0,
+     "text": "Four more come from the agent's own *mistakes*."
+    }
+   ]
+  },
+  {
+   "id": "14-again",
+   "clip": "chat2-Ben-Okafor",
+   "from": "new-thread@0.2",
+   "to": "sent@0.3",
+   "dur": 7.0,
+   "fade": 0.3,
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.0,
+     "text": "Another report, in a new *chat*."
+    }
+   ]
+  },
+  {
+   "id": "15-agent",
+   "clip": "chat2-Ben-Okafor",
+   "from": "sent@0.3",
+   "to": "replied@-2.0",
+   "dur": 7.0,
+   "badge": {
+    "big": "1 min 4 s",
+    "small": "agent at work, shown {speed}× faster"
+   },
+   "highlights": [
+    {
+     "at": 0.4,
+     "to": 7.0,
+     "rect": [
+      1070,
+      10,
+      256,
+      32
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.0,
+     "text": "It runs on the new *AGENTS.md*."
+    }
+   ]
+  },
+  {
+   "id": "16-reply",
+   "clip": "chat2-Ben-Okafor",
+   "from": "replied@1.5",
+   "dur": 7.0,
+   "speed": 0.4,
+   "noCursor": true,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     0.6,
+     960,
+     540,
+     1
+    ],
+    [
+     2.4,
+     820,
+     330,
+     1.6
+    ],
+    [
+     7.0,
+     820,
+     330,
+     1.62
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 2.6,
+     "to": 7.0,
+     "rect": [
+      440,
+      190,
+      760,
+      178
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 16.0,
+     "text": "Now each category gets a *subtotal*."
+    }
+   ]
+  },
+  {
+   "id": "17-sheet",
+   "clip": "chat2-Ben-Okafor",
+   "from": "sheet-max@-0.3",
+   "to": "sheet-end@0",
+   "dur": 9.0,
+   "noCursor": true,
+   "fade": 0.3,
+   "camera": [
+    [
+     0,
+     720,
+     420,
+     1.7
+    ],
+    [
+     9.0,
+     720,
+     420,
+     1.72
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.4,
+     "to": 9.0,
+     "rect": [
+      296,
+      480,
+      860,
+      116
+     ],
+     "tone": "indigo"
+    }
+   ]
+  }
+ ]
+}

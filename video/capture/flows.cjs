@@ -13,8 +13,10 @@ async function closeDetailsCard(page) {
   }
 }
 
-// Inbox open, both files dragged into the composer, request typed. Sends only when send is true.
-async function composeRequest(rig, { send }) {
+const OFFER_FILES = ['Inbox/Hiring approval Amara Osei.pdf', 'Inbox/Offer letter template.docx'];
+
+// Inbox open, the files dragged into the composer, the request typed. Sends only when send is true.
+async function composeRequest(rig, { send, files = OFFER_FILES, request = REQUEST }) {
   const { page } = rig;
   const inbox = item(page, 'Inbox/');
   if ((await inbox.getAttribute('aria-expanded')) !== 'true') {
@@ -23,14 +25,14 @@ async function composeRequest(rig, { send }) {
   }
   rig.mark('inbox-open');
   const editor = page.locator('[contenteditable="true"]').first();
-  await rig.drag(item(page, 'Inbox/Hiring approval Amara Osei.pdf'), editor);
-  rig.mark('dragged-approval');
-  await rig.drag(item(page, 'Inbox/Offer letter template.docx'), editor);
-  rig.mark('dragged-template');
+  for (const [i, f] of files.entries()) {
+    await rig.drag(item(page, f), editor);
+    rig.mark(`dragged-${i}`);
+  }
   await editor.evaluate((e) => { e.spellcheck = false; });
   await editor.click();
   await page.keyboard.press('End');
-  await rig.type(' ' + REQUEST);
+  await rig.type(' ' + request);
   rig.mark('typed');
   await sleep(0.8);
   if (!send) return;

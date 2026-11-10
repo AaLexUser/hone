@@ -1,0 +1,687 @@
+{
+ "shots": [
+  {
+   "id": "1-mistake",
+   "clip": "chat",
+   "from": "letter-table@0.2",
+   "dur": 7.5,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     0.8,
+     960,
+     540,
+     1
+    ],
+    [
+     2.8,
+     925,
+     625,
+     1.3
+    ],
+    [
+     7.5,
+     925,
+     625,
+     1.36
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 2.4,
+     "to": 7.5,
+     "rect": [
+      428,
+      584,
+      1008,
+      40
+     ],
+     "tone": "red"
+    },
+    {
+     "at": 2.8,
+     "to": 7.5,
+     "rect": [
+      428,
+      625,
+      1008,
+      40
+     ],
+     "tone": "red"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.3,
+     "text": "Your agent makes the same *mistake*. / Again and again."
+    }
+   ],
+   "noCursor": true,
+   "speed": 0.65
+  },
+  {
+   "id": "3-request",
+   "clip": "chat",
+   "from": "inbox-open@-1.2",
+   "to": "typed@0.4",
+   "dur": 11.0,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     7.0,
+     960,
+     540,
+     1
+    ],
+    [
+     8.9,
+     818,
+     530,
+     1.45
+    ]
+   ],
+   "captions": [
+    {
+     "at": 0.3,
+     "to": 5.4,
+     "text": "An HR coordinator works with a *Pi agent*."
+    },
+    {
+     "at": 5.6,
+     "to": 11.0,
+     "text": "Drop in the *approval* and the template."
+    }
+   ]
+  },
+  {
+   "id": "3-agent",
+   "clip": "chat",
+   "from": "sent@0.3",
+   "to": "replied@-3.0",
+   "dur": 9.0,
+   "badge": {
+    "big": "2 min 49 s",
+    "small": "agent at work, shown {speed}× faster"
+   },
+   "captions": [
+    {
+     "at": 0.3,
+     "to": 9.0,
+     "text": "The agent writes the *offer letter*."
+    }
+   ]
+  },
+  {
+   "id": "3-session",
+   "clip": "chat",
+   "from": "replied@-2.8",
+   "dur": 7.6,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     1.0,
+     960,
+     540,
+     1
+    ],
+    [
+     2.9,
+     1450,
+     210,
+     1.7
+    ],
+    [
+     7.6,
+     1450,
+     210,
+     1.72
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 3.0,
+     "to": 7.6,
+     "rect": [
+      1068,
+      11,
+      254,
+      30
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 3.4,
+     "to": 7.6,
+     "rect": [
+      1528,
+      84,
+      360,
+      88
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 7.6,
+     "text": "The session goes to *Hone*. / The batch is full."
+    }
+   ]
+  },
+  {
+   "id": "4-feedback",
+   "clip": "chat",
+   "from": "letter-closed@-0.3",
+   "to": "feedback-sent@3.0",
+   "dur": 11.5,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     0.8,
+     960,
+     540,
+     1
+    ],
+    [
+     2.6,
+     1000,
+     760,
+     1.6
+    ],
+    [
+     9.0,
+     1000,
+     760,
+     1.6
+    ],
+    [
+     10.8,
+     960,
+     540,
+     1
+    ]
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 11.5,
+     "text": "One thumbs down. One plain *sentence*."
+    }
+   ]
+  },
+  {
+   "id": "5-start",
+   "clip": "chat",
+   "from": "chip@2.0",
+   "to": "start-clicked@1.0",
+   "dur": 7.4,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     3.4,
+     960,
+     540,
+     1
+    ],
+    [
+     5.4,
+     1380,
+     330,
+     1.5
+    ]
+   ],
+   "captions": [
+    {
+     "at": 0.5,
+     "to": 7.4,
+     "text": "Press *Start optimization*."
+    }
+   ]
+  },
+  {
+   "id": "5-review",
+   "clip": "chat",
+   "from": "start-clicked@5",
+   "to": "run-started@444.4",
+   "speed": 20,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ]
+   ],
+   "badge": {
+    "big": "11 min 23 s",
+    "small": "real run, shown {speed}× faster"
+   },
+   "highlights": [
+    {
+     "at": 18.1,
+     "to": 22.37,
+     "rect": [
+      752,
+      438,
+      172,
+      52
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.5,
+     "to": 10.6,
+     "text": "Three *reviewers* read every session."
+    },
+    {
+     "at": 10.9,
+     "to": 28.8,
+     "text": "A *judge* cross-examines them."
+    }
+   ]
+  },
+  {
+   "id": "5-questions",
+   "clip": "review",
+   "from": "judge-questions@-0.2",
+   "dur": 6.5,
+   "camera": [
+    [
+     0,
+     715,
+     480,
+     1.3
+    ],
+    [
+     6.5,
+     715,
+     480,
+     1.45
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.4,
+     "to": 6.5,
+     "rect": [
+      402,
+      392,
+      628,
+      174
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "noCursor": true
+  },
+  {
+   "id": "6-propose",
+   "clip": "chat",
+   "from": "run-started@444.4",
+   "to": "run-started@644.4",
+   "speed": 20,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ]
+   ],
+   "badge": {
+    "big": "11 min 23 s",
+    "small": "real run, shown {speed}× faster"
+   },
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 15.8,
+     "text": "Three *proposers* draft edits. / A judge fuses them."
+    }
+   ],
+   "highlights": [
+    {
+     "at": 7.3,
+     "to": 10.0,
+     "rect": [
+      1325,
+      438,
+      172,
+      52
+     ],
+     "tone": "indigo"
+    }
+   ]
+  },
+  {
+   "id": "6-fuse",
+   "clip": "review",
+   "from": "propose-questions@-0.2",
+   "dur": 6.0,
+   "camera": [
+    [
+     0,
+     715,
+     470,
+     1.3
+    ],
+    [
+     6.0,
+     715,
+     470,
+     1.45
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.4,
+     "to": 6.0,
+     "rect": [
+      402,
+      386,
+      628,
+      108
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "noCursor": true
+  },
+  {
+   "id": "6-verify",
+   "clip": "chat",
+   "from": "run-started@644.4",
+   "to": "run-ended@2",
+   "speed": 20,
+   "camera": [
+    [
+     0,
+     1088,
+     450,
+     1.4
+    ],
+    [
+     2.0,
+     1088,
+     520,
+     1.25
+    ]
+   ],
+   "badge": {
+    "big": "11 min 23 s",
+    "small": "real run, shown {speed}× faster"
+   },
+   "captions": [
+    {
+     "at": 0.3,
+     "to": 7.0,
+     "text": "A *verifier* checks every edit."
+    }
+   ]
+  },
+  {
+   "id": "6-commit",
+   "clip": "chat",
+   "from": "run-ended@2.5",
+   "dur": 5.0,
+   "camera": [
+    [
+     0,
+     1088,
+     520,
+     1.25
+    ],
+    [
+     5.0,
+     1088,
+     480,
+     1.2
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.3,
+     "to": 5.0,
+     "rect": [
+      1546,
+      568,
+      92,
+      48
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 0.7,
+     "to": 5.0,
+     "rect": [
+      1666,
+      568,
+      100,
+      48
+     ],
+     "tone": "indigo"
+    }
+   ]
+  },
+  {
+   "id": "7-versions",
+   "clip": "review",
+   "from": "versions@-0.6",
+   "dur": 12.0,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     1.0,
+     960,
+     540,
+     1
+    ],
+    [
+     2.9,
+     1300,
+     700,
+     1.6
+    ],
+    [
+     6.6,
+     1300,
+     700,
+     1.6
+    ],
+    [
+     8.4,
+     900,
+     420,
+     1.35
+    ],
+    [
+     12.0,
+     900,
+     420,
+     1.37
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 3.0,
+     "to": 6.6,
+     "rect": [
+      1033,
+      699,
+      628,
+      64
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 8.5,
+     "to": 12.0,
+     "rect": [
+      514,
+      218,
+      396,
+      222
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.4,
+     "to": 6.5,
+     "text": "A new rule lands in *AGENTS.md*."
+    },
+    {
+     "at": 6.7,
+     "to": 12.0,
+     "text": "Every version is kept in *Git*."
+    }
+   ]
+  },
+  {
+   "id": "8-again",
+   "clip": "chat2",
+   "from": "new-thread@0.2",
+   "to": "replied@-3.0",
+   "dur": 8.0,
+   "fade": 0.2,
+   "badge": {
+    "big": "2 min 23 s",
+    "small": "agent at work, shown {speed}× faster"
+   },
+   "captions": [
+    {
+     "at": 0.3,
+     "to": 8.0,
+     "text": "A new chat with the same *approval*."
+    }
+   ]
+  },
+  {
+   "id": "8-reply",
+   "clip": "chat2",
+   "from": "replied@0.3",
+   "dur": 6.0,
+   "camera": [
+    [
+     0,
+     830,
+     370,
+     1.45
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 0.4,
+     "to": 6.0,
+     "rect": [
+      1068,
+      11,
+      254,
+      30
+     ],
+     "tone": "indigo"
+    },
+    {
+     "at": 0.9,
+     "to": 6.0,
+     "rect": [
+      446,
+      486,
+      734,
+      64
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "captions": [
+    {
+     "at": 0.3,
+     "to": 12.8,
+     "text": "Next time the agent gets it *right*."
+    }
+   ]
+  },
+  {
+   "id": "8-letter",
+   "clip": "chat2",
+   "from": "letter-table@0.3",
+   "dur": 7.0,
+   "camera": [
+    [
+     0,
+     960,
+     540,
+     1
+    ],
+    [
+     1.0,
+     960,
+     540,
+     1
+    ],
+    [
+     2.8,
+     925,
+     520,
+     1.3
+    ],
+    [
+     7.0,
+     925,
+     520,
+     1.33
+    ]
+   ],
+   "highlights": [
+    {
+     "at": 2.9,
+     "to": 7.0,
+     "rect": [
+      422,
+      503,
+      1008,
+      84
+     ],
+     "tone": "indigo"
+    }
+   ],
+   "noCursor": true,
+   "speed": 0.7
+  }
+ ]
+}

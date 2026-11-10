@@ -69,6 +69,11 @@
   .bar.hone .label { color: var(--accent); }
   .bar .delta { font: 800 30px/1 'Inter', sans-serif; color: var(--accent); margin-left: 16px; }
 
+  .card.chip { background: var(--bg); color: var(--ink); }
+  .card.chip .title { font: 800 112px/1.1 'Inter Display', sans-serif; letter-spacing: -0.03em; text-align: center; max-width: 1640px; }
+  .card.chip .title .k { color: var(--accent); }
+  .card.chip .sub { font: 600 44px/1.3 'Inter', sans-serif; color: var(--ink-3); margin-top: 34px; text-align: center; }
+
   .card.end { background: var(--bg); color: var(--ink); }
   .card.end .word { font: 800 200px/1 'Inter Display', sans-serif; letter-spacing: -0.04em; color: var(--accent); }
   .card.end .paper { font: 700 50px/1.25 'Inter', sans-serif; text-align: center; margin-top: 36px; max-width: 1400px; }
@@ -155,7 +160,8 @@ const BENCH = [
   { name: 'OfficeQA', base: 56.7, hone: 59.7 },
   { name: 'SpreadsheetBench', base: 71.0, hone: 82.3 },
 ];
-function resultCard(t) {
+// With out, the bars and words leave during the last 0.4 s and only the background stays.
+function resultCard(t, dur, text, out) {
   const e = el('div', 'card result');
   e.append(el('h2', '', 'Task success rate'));
   e.append(el('div', 'sub', 'Percent of tasks solved, from Table I of the paper'));
@@ -182,6 +188,22 @@ function resultCard(t) {
     e.append(box);
   });
   e.style.opacity = clamp(t / 0.25);
+  if (out) [...e.children].forEach((c) => { c.style.opacity = clamp((dur - t) / 0.4); });
+  return e;
+}
+
+// A scenario's name before its clip. Its words leave during the last 0.3 s, so the cut lands on the bare background.
+function chipCard(t, dur, text) {
+  const e = el('div', 'card chip');
+  const title = el('div', 'title', text.title.replace(/\*([^*]+)\*/g, '<span class="k">$1</span>'));
+  const parts = [title];
+  if (text.sub) parts.push(el('div', 'sub', text.sub));
+  parts.forEach((p, i) => {
+    const u = Math.min(easeOut((t - 0.1 - i * 0.2) / 0.5), clamp((dur - t) / 0.3));
+    p.style.opacity = u;
+    p.style.transform = `translateY(${(1 - u) * 26}px)`;
+  });
+  e.append(...parts);
   return e;
 }
 
@@ -202,7 +224,7 @@ function endCard(t) {
 window.render = (s) => {
   const stage = document.getElementById('stage');
   stage.replaceChildren();
-  if (s.card) stage.appendChild({ title: titleCard, result: resultCard, end: endCard }[s.card.kind](s.card.t, s.card.dur));
+  if (s.card) stage.appendChild({ title: titleCard, result: resultCard, end: endCard, chip: chipCard }[s.card.kind](s.card.t, s.card.dur, s.card.text, s.card.out));
   (s.highlights || []).forEach((h) => stage.appendChild(highlight(h)));
   if (s.badge) stage.appendChild(badge(s.badge));
   if (s.cursor) cursor(s.cursor, stage);

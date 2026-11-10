@@ -1,0 +1,55 @@
+{
+  "title": {
+    "dur": 6.0,
+    "captions": [
+      {
+        "at": 0.6,
+        "to": 5.9,
+        "text": "*Hone* fixes it from feedback you already give. / No re-runs. No test suite."
+      }
+    ]
+  },
+  "chipDur": 3.0,
+  "scenarios": [
+    {
+      "dir": "1-complaint",
+      "title": "A complaint becomes a *rule*",
+      "sub": "Offer letters with a Pi agent in t3code"
+    },
+    {
+      "dir": "2-one-off",
+      "title": "A one off stays one *off*",
+      "sub": "Offer letters with a Pi agent in t3code"
+    },
+    {
+      "dir": "3-no-change",
+      "title": "Nothing wrong, nothing *changes*",
+      "sub": "Offer letters with a Pi agent in t3code"
+    },
+    {
+      "dir": "4-spreadsheets",
+      "title": "Spreadsheets *too*",
+      "sub": "Expense reports from PDF receipts"
+    },
+    {
+      "dir": "5-minutes",
+      "title": "Meeting *minutes*",
+      "sub": "A transcript and a minutes template"
+    },
+    {
+      "dir": "6-versions",
+      "title": "Every change is a *version*",
+      "sub": "AGENTS.md history, kept in Git"
+    }
+  ],
+  "result": {
+    "dur": 7.0,
+    "captions": [
+      {
+        "at": 0.4,
+        "to": 6.3,
+        "text": "Same agent. Only *AGENTS.md* changed. / Up 3.0 and 11.3 points."
+      }
+    ]
+  }
+}
