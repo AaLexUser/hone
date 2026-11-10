@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import hashlib
 import json
 import shutil
 import sys
@@ -29,6 +30,17 @@ STAGING_OUT = ".demo-outgoing"
 # prepared run (about 13 minutes of script time) plays in about a minute.
 REPLAY_SPEED = 13.0
 REPLAY = STORIES["live"]
+
+
+def _scenario_version() -> str:
+    """Changes whenever the scenario code or assets change, so an updated
+    checkout never serves a prepared state built by older code."""
+    digest = hashlib.sha256()
+    root = Path(__file__).parent
+    for path in sorted(p for p in root.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
+        digest.update(path.relative_to(root).as_posix().encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()[:12]
 
 
 class DemoError(RuntimeError):
@@ -51,7 +63,7 @@ class DemoMode:
     async def _prepared(self) -> Path:
         """Today's prepared state, built on first use and cached for the day."""
         today = dt.datetime.now().astimezone().date()
-        target = self.cache / today.isoformat()
+        target = self.cache / f"{today.isoformat()}-{_scenario_version()}"
         if (target / "manifest.json").exists():
             return target
         staging = self.cache / f"building-{today.isoformat()}"

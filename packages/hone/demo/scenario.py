@@ -65,6 +65,12 @@ class Hire:
     flaws: frozenset[str] = frozenset()
     feedback: str | None = None
     answer: str | None = None  # the coordinator's reply when the agent asks for the manager
+    liked: bool = False
+
+    @property
+    def rated_feedback(self) -> str | None:
+        """The feedback as t3code's rating control writes it, a thumb and the comment."""
+        return f"{'👍' if self.liked else '👎'} {self.feedback}" if self.feedback else None
 
     @property
     def name(self) -> str:
@@ -97,7 +103,7 @@ HIRES = [
     Hire("t05", 6, "11:20", "Lena", "Fischer", "Data Analyst", "Analytics",
          "41 Hyde Park Road", "Leeds", "LS6 1AF", "52,000", "2,500", "500", "5,000", "Priya Shah",
          "New hire today. Please prepare Lena Fischer's offer letter from her approval in Inbox.",
-         feedback="Perfect, that's exactly it"),
+         feedback="Perfect, that's exactly it", liked=True),
     Hire("t06", 5, "10:05", "Wei", "Zhang", "Backend Engineer", "Platform",
          "19 Mill Road", "Cambridge", "CB1 2AD", "74,000", "5,000", "1,200", "9,000", "Kofi Mensah",
          "Offer letter for the new backend engineer please, the approval PDF has everything.",
@@ -115,7 +121,7 @@ HIRES = [
     Hire("t09", 2, "13:12", "Hana", "Sato", "UX Researcher", "Design",
          "30 Clarendon Road", "London", "W11 3AD", "61,000", "3,000", "700", None, "Grace Holt",
          "Offer letter for Hana please, her approval is in Inbox.",
-         feedback="Perfect, that's exactly it"),
+         feedback="Perfect, that's exactly it", liked=True),
     Hire("t10", 1, "10:48", "Marco", "Bianchi", "Solutions Engineer", "Sales",
          "2 Deansgate", "Manchester", "M3 2BW", "66,000", "4,000", "900", "3,000", None,
          "Please prepare Marco Bianchi's offer letter from the template and his hiring approval.",
@@ -133,7 +139,7 @@ HIRES = [
     Hire("t13", 0, "14:55", "Chloé", "Martin", "Marketing Lead", "Marketing",
          "22 Princess Street", "Manchester", "M1 4LG", "69,000", "4,000", "800", "5,500", "Claire Lambert",
          "Can you do the offer letter for today's new hire? The signed approval is in Inbox.",
-         feedback="Perfect, that's exactly it"),
+         feedback="Perfect, that's exactly it", liked=True),
 ]
 
 # The approval waiting in Inbox for the live chat at the booth. No bonus and
