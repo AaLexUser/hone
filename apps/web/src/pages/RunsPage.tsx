@@ -6,6 +6,7 @@ import { useStore, relTime, fmtDuration } from '../store'
 import type { RunRecord } from '../data'
 import { diffLines } from '../lib/diff'
 import { Badge, StatCard, CountUp } from '../components/ui'
+import { url } from '../lib/url'
 
 const filters = ['All', 'Succeeded', 'Failed', 'No changes'] as const
 type Filter = (typeof filters)[number]
@@ -21,7 +22,7 @@ export function RunsPage() {
   useEffect(() => {
     let cancelled = false
     const load = () =>
-      fetch('/api/runs')
+      fetch(url('/api/runs'))
         .then((r) => r.json())
         .then((runs: RunRecord[]) => !cancelled && setRows(runs))
         .catch(() => {})

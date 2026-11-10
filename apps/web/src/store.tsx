@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { BranchInfo, Trace, VersionNode } from './data'
+import { BASE, url } from './lib/url'
 
 export type RunStatus = 'running' | 'validating' | 'succeeded'
 
@@ -56,7 +57,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   if (init?.method && init.method !== 'GET' && writeToken) {
     headers.set('authorization', `Bearer ${writeToken}`)
   }
-  const res = await fetch(path, { ...init, headers })
+  const res = await fetch(url(path), { ...init, headers })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
     let message = `${res.status} ${body.slice(0, 200)}`
@@ -114,14 +115,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Live updates: trace arrivals, run state, current version — no reload.
   useEffect(() => {
     if (!ready) return
-    const es = new EventSource('/api/events')
+    const es = new EventSource(url('/api/events'))
     es.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data)
         if (msg.type === 'hello') return
         if (msg.type === 'demo_reset') {
           // Everything was rewound, the open page may show a run that is gone.
-          window.location.replace('/')
+          window.location.replace(BASE)
           return
         }
         if (msg.type === 'trace_arrived') {

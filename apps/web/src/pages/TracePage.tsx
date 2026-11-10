@@ -5,6 +5,7 @@ import { ChevronRight, Download, MessageSquare, Wrench } from 'lucide-react'
 import { useStore, relTime } from '../store'
 import type { Trace, ConversationTurn } from '../data'
 import { Badge } from '../components/ui'
+import { url } from '../lib/url'
 
 export function TracePage() {
   const { id } = useParams()
@@ -17,7 +18,7 @@ export function TracePage() {
 
   useEffect(() => {
     let cancelled = false
-    fetch(`/api/traces/${id}`)
+    fetch(url(`/api/traces/${id}`))
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => !cancelled && setDetail({ trace: d, conversation: d.conversation }))
       .catch(() => !cancelled && setDetail(null))
@@ -98,7 +99,7 @@ export function TracePage() {
             </MetaRow>
           </dl>
           <a
-            href={`/api/traces/${trace.id}/jsonl`}
+            href={url(`/api/traces/${trace.id}/jsonl`)}
             download={`${trace.id}.jsonl`}
             className="btn-ghost mt-5 flex w-full items-center justify-center gap-2 rounded-md px-3 py-1.5 text-[12px] text-ink-2"
           >

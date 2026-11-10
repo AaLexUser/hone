@@ -5,6 +5,7 @@ import { parseRunEvent } from './events'
 import type { RunEvent } from './events'
 import { initialModel, isTerminal, reduceRun } from './model'
 import type { RunModel } from './model'
+import { url } from '../lib/url'
 
 const CONFIDENCE: readonly ReviewItem['confidence'][] = ['high', 'medium', 'low']
 
@@ -51,7 +52,7 @@ export function useRun(id: string) {
 
   const loadRecord = useCallback(
     () =>
-      fetch(`/api/runs/${id}`)
+      fetch(url(`/api/runs/${id}`))
         .then((r) => (r.ok ? r.json() : null))
         .then((rec: RunRecord | null) => setRecord(rec))
         .catch(() => {}),
@@ -67,7 +68,7 @@ export function useRun(id: string) {
   }, [loadRecord])
 
   useEffect(() => {
-    const es = new EventSource(`/api/runs/${id}/events`)
+    const es = new EventSource(url(`/api/runs/${id}/events`))
     let queue: RunEvent[] = []
     let frame = 0
     let started = false
@@ -117,7 +118,7 @@ export function useRun(id: string) {
     let cancelled = false
     let timer = 0
     const load = (tries: number) =>
-      fetch(`/api/runs/${id}/review`)
+      fetch(url(`/api/runs/${id}/review`))
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)
         .then((j) => {

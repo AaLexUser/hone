@@ -6,6 +6,7 @@ import { useStore, relTime, actions } from '../store'
 import type { Trace, RunRecord } from '../data'
 import { Badge, CountUp, Sparkline, StatCard } from '../components/ui'
 import { BatchRing } from '../components/BatchRing'
+import { url } from '../lib/url'
 
 const filters = ['All', 'New', 'Analyzed', 'Feedback'] as const
 type Filter = (typeof filters)[number]
@@ -21,7 +22,7 @@ export function Dashboard() {
 
   useEffect(() => {
     let cancelled = false
-    fetch('/api/runs')
+    fetch(url('/api/runs'))
       .then((r) => r.json())
       .then((runs: RunRecord[]) => {
         if (!cancelled) setLastRun(runs[0] ?? null)

@@ -4,6 +4,7 @@ import { Inline } from './Inline'
 import { Confidence, Panel, RefChip, SessionChips, Skeleton } from './bits'
 import { reveal, sameFocus } from './links'
 import type { LinkApi } from './links'
+import { url } from '../lib/url'
 
 /** The review report, rendered natively: summary, then findings with the edits they led to. */
 export function Findings({
@@ -27,7 +28,7 @@ export function Findings({
       action={
         review && (
           <a
-            href={`/api/runs/${runId}/report`}
+            href={url(`/api/runs/${runId}/report`)}
             target="_blank"
             rel="noreferrer"
             className="btn-ghost flex items-center gap-1 rounded-md px-2 py-0.5 text-meta text-ink-2 hover:text-ink"
