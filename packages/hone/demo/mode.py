@@ -60,10 +60,16 @@ class DemoMode:
         async with self._lock:
             return await self._prepared()
 
+    def _settings_version(self) -> str:
+        """The prepared sessions and runs name the configured models, so a
+        changed config must not reuse a state built under the old one."""
+        dumped = self.hone.s.model_dump_json(exclude={"service"})
+        return hashlib.sha256(dumped.encode()).hexdigest()[:12]
+
     async def _prepared(self) -> Path:
         """Today's prepared state, built on first use and cached for the day."""
         today = dt.datetime.now().astimezone().date()
-        target = self.cache / f"{today.isoformat()}-{_scenario_version()}"
+        target = self.cache / f"{today.isoformat()}-{_scenario_version()}-{self._settings_version()}"
         if (target / "manifest.json").exists():
             return target
         staging = self.cache / f"building-{today.isoformat()}"
