@@ -49,8 +49,8 @@ function LiveBanner({ now, elapsed }: { now: NowLine; elapsed: number }) {
   return (
     <div className={`${SHELL} flex h-14 items-center gap-3 border-accent/30 bg-accent/[0.05] py-0`} aria-live="polite">
       <span className="pulse-dot size-2 rounded-full bg-accent" />
-      <span className={`rounded-[5px] px-1.5 py-px text-[12px] font-semibold tracking-[0.1em] ${STAGE_TONE[now.stage]}`}>
-        {now.stage === 'setup' ? 'BATCH' : now.stage.toUpperCase()}
+      <span className={`rounded-[5px] px-1.5 py-px text-[12px] font-semibold ${STAGE_TONE[now.stage]}`}>
+        {now.stage === 'setup' ? 'Batch' : now.stage.charAt(0).toUpperCase() + now.stage.slice(1)}
       </span>
       {/* A fresh span per line that only ever fades in, so a quick change of line can never strand one half-faded. */}
       <motion.span

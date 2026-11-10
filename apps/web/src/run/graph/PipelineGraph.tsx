@@ -151,7 +151,7 @@ function Section({ box, group, seats, attempts }: { box: Rect; group: GroupScene
         className={`${FRAME[state]} transition-[fill,stroke] duration-300`}
       />
       <text x={box.x + 14} y={y} className="text-[12.5px]">
-        <tspan className={`${stage === 'review' ? 'fill-rev' : 'fill-pro'} font-semibold tracking-[0.1em]`}>{stage.toUpperCase()}</tspan>
+        <tspan className={`${stage === 'review' ? 'fill-rev' : 'fill-pro'} font-semibold`}>{stage === 'review' ? 'Review' : 'Propose'}</tspan>
         {seats > 0 && (
           <tspan dx={10} className="fill-ink-3 text-[12px]">
             {subtitle}

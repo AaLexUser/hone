@@ -135,8 +135,8 @@ function RowView({ row, now, onOpenAgent }: { row: Row; now: number; onOpenAgent
     case 'stage':
       return (
         <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-          <span className={`text-[12px] font-semibold tracking-[0.12em] ${row.stage === 'review' ? 'text-rev' : 'text-pro'}`}>
-            {row.stage.toUpperCase()}
+          <span className={`text-body font-semibold ${row.stage === 'review' ? 'text-rev' : 'text-pro'}`}>
+            {row.stage === 'review' ? 'Review' : 'Propose'}
           </span>
           {row.attempt > 1 && (
             <span className="flex items-center gap-1 rounded-[4px] bg-amber/12 px-1.5 text-meta text-amber">
@@ -162,15 +162,19 @@ function RowView({ row, now, onOpenAgent }: { row: Row; now: number; onOpenAgent
       )
     case 'failed':
       return (
-        <Milestone icon={<CircleAlert size={14} className="text-red" />}>
-          <span className="text-red">Attempt {row.story.n}</span>
-          {row.story.seat && (
-            <span className="ml-1.5">
-              <SeatChip seat={row.story.seat} />
-            </span>
-          )}
-          <span className="ml-1.5 text-ink-2">{row.story.plain || row.story.cause}</span>
-        </Milestone>
+        // A provider error can run to several lines, so this row grows with its text instead of keeping the milestone height.
+        <div className="flex items-start gap-2.5 px-4 py-1.5 text-body text-ink-2">
+          <span className="grid h-5 w-7 shrink-0 place-items-center">
+            <CircleAlert size={14} className="text-red" />
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+            <span className="text-red">Attempt {row.story.n}</span>
+            {row.story.seat && <SeatChip seat={row.story.seat} />}
+          </span>
+          <span className="line-clamp-2 min-w-0 break-words" title={row.story.detail || row.story.plain || row.story.cause || undefined}>
+            {row.story.plain || row.story.cause}
+          </span>
+        </div>
       )
     case 'ask':
       return <AskView row={row} now={now} onOpenAgent={onOpenAgent} />
