@@ -28,6 +28,7 @@ folder at session start and publishes the session trace after each reply.
 | `0003` | The booth demo seeder, the `hone.demoReset` and `hone.threadFeedback` RPCs, and the Hone page and Reset demo button in the sidebar (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/HonePage.tsx`) |
 | `0004` | Sign-in through an authenticating reverse proxy, with no pairing link (`apps/server/src/auth/proxyAuth.ts`) |
 | `0005` | Feedback that can be read in full, edited and removed, and the `hone.replaceFeedback` RPC that sends the edited list to Hone's `PUT /api/traces/{id}/feedback` (`apps/web/src/components/chat/HoneControls.tsx`) |
+| `0006` | `HONE_DEMO_MODEL` names the Pi model the demo project and its prepared chats use, so the picker can hide Pi's `default` entry (`apps/server/src/hone/HoneDemo.ts`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
@@ -89,6 +90,7 @@ folder that holds a real history. Nothing changes when demo mode is off.
 ```sh
 export HONE_DEMO=1
 export HONE_DEMO_DIR="$HOME/Hone demo/Offer letters"   # a new, empty folder for the demo project
+export HONE_DEMO_MODEL=opencode-go/deepseek-v4.1-flash  # optional, Pi's default when unset
 ```
 
 - On every start, and on the Reset demo button in the sidebar, the server calls Hone's

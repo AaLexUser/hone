@@ -32,7 +32,7 @@ Caddy checks the booth login on every request, so nothing reaches t3code or Hone
 
 ## Pi is the only agent
 
-On its first start, t3code writes its settings from `t3code/settings.json` and `t3code/settings.py`. Pi is the only enabled provider, and Codex, Claude and the other built-in providers are off. The model picker shows Pi's default and the model in `t3code/pi-settings.json`, which are the same model. Every other model in Pi's catalog is hidden. Later changes made in Settings are kept in `t3code-state`.
+On its first start, t3code writes its settings from `t3code/settings.json` and `t3code/settings.py`. Pi is the only enabled provider, and Codex, Claude and the other built-in providers are off. The model picker shows exactly one entry, the model in `t3code/pi-settings.json`. The entrypoint passes it to t3code as `HONE_DEMO_MODEL`, so the prepared chats use it too. Every other model in Pi's catalog is hidden. Later changes made in Settings are kept in `t3code-state`.
 
 ## Data
 

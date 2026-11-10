@@ -1,0 +1,68 @@
+From e27944e9f12cc98d14900518260cf84152299793 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Tue, 10 Nov 2026 15:41:29 +0000
+Subject: [PATCH] feat(server): seed the Hone demo chats with a configured Pi
+ model
+
+---
+ apps/server/src/hone/Hone.ts     | 2 ++
+ apps/server/src/hone/HoneDemo.ts | 9 ++++++---
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
+index 47d5faad..e456c16b 100644
+--- a/apps/server/src/hone/Hone.ts
++++ b/apps/server/src/hone/Hone.ts
+@@ -25,6 +25,8 @@ const HoneConfig = Config.all({
+   dashboardUrl: Config.String("HONE_DASHBOARD_URL").pipe(Config.option),
+   demo: Config.Boolean("HONE_DEMO").pipe(Config.withDefault(false)),
+   demoDir: Config.String("HONE_DEMO_DIR").pipe(Config.option),
++  // Pi model the prepared chats and the demo project use. Pi's own default when unset.
++  demoModel: Config.String("HONE_DEMO_MODEL").pipe(Config.withDefault("default")),
+ });
+ 
+ const HoneState = Schema.Struct({
+diff --git a/apps/server/src/hone/HoneDemo.ts b/apps/server/src/hone/HoneDemo.ts
+index 5d97ea4b..8708ff2b 100644
+--- a/apps/server/src/hone/HoneDemo.ts
++++ b/apps/server/src/hone/HoneDemo.ts
+@@ -45,7 +45,6 @@ type DemoManifest = typeof DemoManifest.Type;
+ const WORKSPACE_PLACEHOLDER = "{{WORKSPACE}}";
+ const SESSION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+ const PI_INSTANCE = ProviderInstanceId.make("pi");
+-const PI_MODEL: ModelSelection = { instanceId: PI_INSTANCE, model: "default" };
+ 
+ const demoError = (message: string) => new HoneError({ reason: "rejected", message });
+ 
+@@ -166,6 +165,10 @@ const make = Effect.gen(function* () {
+   });
+ 
+   const seed = Effect.fn("HoneDemo.seed")(function* (folder: string, manifest: DemoManifest) {
++    const piModel: ModelSelection = {
++      instanceId: PI_INSTANCE,
++      model: (yield* readHoneConfig).demoModel,
++    };
+     yield* writeProjectFolder(folder, manifest);
+ 
+     const projectId = ProjectId.make(yield* crypto.randomUUIDv4());
+@@ -178,7 +181,7 @@ const make = Effect.gen(function* () {
+     yield* projects.update({
+       commandId: CommandId.make(`hone-demo:model:${projectId}`),
+       projectId,
+-      defaultModelSelection: PI_MODEL,
++      defaultModelSelection: piModel,
+     });
+ 
+     // Pi appends to a session file when a chat continues, so every reset writes clean copies
+@@ -205,7 +208,7 @@ const make = Effect.gen(function* () {
+         projectId,
+         title: chat.title,
+         providerInstanceId: PI_INSTANCE,
+-        modelSelection: PI_MODEL,
++        modelSelection: piModel,
+         sessionFile,
+         jsonl,
+       });
+-- 
+2.43.0
+
