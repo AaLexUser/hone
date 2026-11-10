@@ -1,0 +1,42 @@
+From bbcc50d4f23aee18522308b4a42183aab99a382c Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Tue, 10 Nov 2026 21:14:38 +0300
+Subject: [PATCH] feat: serve the orchestration WebSocket under /api/ws/
+
+The route and the client's default socket path move from /ws to /api/ws/,
+so a reverse proxy that only enables WebSocket upgrades on an /api/ws/
+prefix can carry the socket without a config change.
+---
+ apps/server/src/ws.ts                              | 2 +-
+ packages/client-runtime/src/connection/resolver.ts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/apps/server/src/ws.ts b/apps/server/src/ws.ts
+index 2a82a191..72887710 100644
+--- a/apps/server/src/ws.ts
++++ b/apps/server/src/ws.ts
+@@ -3353,7 +3353,7 @@ export const layer = Layer.unwrap(
+     const sql = yield* SqlClient.SqlClient;
+     return HttpRouter.add(
+       "GET",
+-      "/ws",
++      "/api/ws/",
+       Effect.gen(function* () {
+         const request = yield* HttpServerRequest.HttpServerRequest;
+         const requestUrl = HttpServerRequest.toURL(request);
+diff --git a/packages/client-runtime/src/connection/resolver.ts b/packages/client-runtime/src/connection/resolver.ts
+index d3b22143..1d82cc99 100644
+--- a/packages/client-runtime/src/connection/resolver.ts
++++ b/packages/client-runtime/src/connection/resolver.ts
+@@ -82,7 +82,7 @@ function primarySocketUrl(
+ ): string {
+   const url = new URL(target.wsBaseUrl);
+   if (url.pathname === "" || url.pathname === "/") {
+-    url.pathname = "/ws";
++    url.pathname = "/api/ws/";
+   }
+   appendClientConnectionParams(url, clientMetadata, "direct", owners);
+   return url.toString();
+-- 
+2.54.0 (Apple Git-157)
+

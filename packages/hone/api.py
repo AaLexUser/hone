@@ -391,7 +391,11 @@ async def global_events() -> StreamingResponse:
         finally:
             hone.bus.unsubscribe(q)
 
-    return StreamingResponse(gen(), media_type="text/event-stream", headers={"cache-control": "no-store"})
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"cache-control": "no-store", "x-accel-buffering": "no"},
+    )
 
 
 @app.get("/api/runs/{run_id}/events")
@@ -404,7 +408,11 @@ async def run_events(run_id: str) -> StreamingResponse:
         async for line in tail_sse(events_path):
             yield line
 
-    return StreamingResponse(gen(), media_type="text/event-stream", headers={"cache-control": "no-store"})
+    return StreamingResponse(
+        gen(),
+        media_type="text/event-stream",
+        headers={"cache-control": "no-store", "x-accel-buffering": "no"},
+    )
 
 
 # -------------------------------------------------------------------- UI
