@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hone video overlay</title>
+<style>
+  @font-face { font-family: 'Inter'; font-weight: 500; src: url('../poster/assets/fonts/Inter-Medium.ttf'); }
+  @font-face { font-family: 'Inter'; font-weight: 600; src: url('../poster/assets/fonts/Inter-SemiBold.ttf'); }
+  @font-face { font-family: 'Inter'; font-weight: 700; src: url('../poster/assets/fonts/Inter-Bold.ttf'); }
+  @font-face { font-family: 'Inter'; font-weight: 800; src: url('../poster/assets/fonts/Inter-ExtraBold.ttf'); }
+  @font-face { font-family: 'Inter Display'; font-weight: 700; src: url('../poster/assets/fonts/InterDisplay-Bold.ttf'); }
+  @font-face { font-family: 'Inter Display'; font-weight: 800; src: url('../poster/assets/fonts/InterDisplay-ExtraBold.ttf'); }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: url('../poster/assets/fonts/JetBrainsMono-Medium.ttf'); }
+
+  /* Colour tokens from apps/web/src/index.css. */
+  :root {
+    --accent: oklch(0.55 0.17 277);
+    --accent-dark: oklch(0.62 0.15 277);
+    --accent-2-dark: oklch(0.74 0.12 277);
+    --ink: oklch(0.23 0.01 270);
+    --ink-3: oklch(0.56 0.012 270);
+    --line: oklch(0.92 0.004 270);
+    --bg: oklch(0.985 0.002 270);
+    --band: oklch(0.155 0.004 270 / 0.9);
+    --red: oklch(0.56 0.2 25);
+  }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+  body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; }
+
+  .cap { position: absolute; left: 50%; max-width: 1560px; transform: translateX(-50%);
+    background: var(--band); color: #fff; border-radius: 22px; padding: 20px 38px 22px;
+    font: 800 50px/1.22 'Inter', sans-serif; letter-spacing: -0.012em; text-align: center;
+    box-shadow: 0 10px 40px oklch(0 0 0 / 0.25); white-space: nowrap; }
+  .cap.bottom { bottom: 58px; }
+  .cap.top { top: 58px; }
+  .cap .w { display: inline-block; }
+  .cap .k { color: var(--accent-2-dark); }
+
+  .hl { position: absolute; border-radius: 10px; }
+  .hl.red { border: 5px solid var(--red); background: oklch(0.56 0.2 25 / 0.08); box-shadow: 0 0 0 6px oklch(0.56 0.2 25 / 0.18); }
+  .hl.indigo { border: 5px solid var(--accent); background: oklch(0.55 0.17 277 / 0.08); box-shadow: 0 0 0 6px oklch(0.55 0.17 277 / 0.18); }
+
+  .badge { position: absolute; right: 40px; top: 120px; background: var(--accent); color: #fff; border-radius: 18px;
+    padding: 16px 26px 18px; box-shadow: 0 10px 34px oklch(0.3 0.1 277 / 0.35); }
+  .badge .big { font: 800 40px/1.1 'Inter', sans-serif; font-variant-numeric: tabular-nums; }
+  .badge .small { font: 600 24px/1.3 'Inter', sans-serif; opacity: 0.9; margin-top: 4px; }
+
+  .cursor { position: absolute; width: 26px; height: 38px; transform-origin: 0 0; }
+  .ripple { position: absolute; border-radius: 50%; border: 4px solid var(--accent); }
+
+  .card { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .card.title { background: var(--accent); color: #fff; }
+  .card.title .word { font: 800 260px/1 'Inter Display', sans-serif; letter-spacing: -0.04em; }
+  .card.title .line { font: 600 54px/1.3 'Inter', sans-serif; margin-top: 30px; opacity: 0.92; }
+
+  .card.result { background: var(--bg); color: var(--ink); align-items: stretch; padding: 0 220px 230px; box-sizing: border-box; }
+  .card.result h2 { font: 800 64px/1.15 'Inter Display', sans-serif; letter-spacing: -0.02em; margin: 0 0 12px; }
+  .card.result .sub { font: 500 32px/1.3 'Inter', sans-serif; color: var(--ink-3); margin-bottom: 48px; }
+  .bench { margin-bottom: 40px; }
+  .bench .name { font: 700 40px/1 'Inter', sans-serif; margin-bottom: 20px; }
+  .bar { display: flex; align-items: center; height: 64px; margin-bottom: 14px; }
+  .bar .fill { height: 100%; border-radius: 12px; display: flex; align-items: center; justify-content: flex-end; box-sizing: border-box; padding-right: 22px;
+    font: 800 36px/1 'Inter', sans-serif; font-variant-numeric: tabular-nums; color: #fff; }
+  .bar.base .fill { background: oklch(0.8 0.01 270); color: var(--ink); }
+  .bar.hone .fill { background: var(--accent); }
+  .bar .label { font: 600 30px/1 'Inter', sans-serif; margin-left: 22px; white-space: nowrap; }
+  .bar.base .label { color: var(--ink-3); }
+  .bar.hone .label { color: var(--accent); }
+  .bar .delta { font: 800 30px/1 'Inter', sans-serif; color: var(--accent); margin-left: 16px; }
+
+  .card.end { background: var(--bg); color: var(--ink); }
+  .card.end .word { font: 800 200px/1 'Inter Display', sans-serif; letter-spacing: -0.04em; color: var(--accent); }
+  .card.end .paper { font: 700 50px/1.25 'Inter', sans-serif; text-align: center; margin-top: 36px; max-width: 1400px; }
+  .card.end .venue { font: 600 36px/1.3 'Inter', sans-serif; color: var(--ink-3); margin-top: 44px; }
+  .card.end .url { font: 500 38px/1.3 'JetBrains Mono', monospace; color: var(--accent); margin-top: 18px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const easeOut = (u) => 1 - Math.pow(1 - clamp(u), 3);
+const easeInOut = (u) => { u = clamp(u); return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+// In: rises in after delay d over 0.35 s. Out: fades during the last 0.3 s of the item.
+const inOut = (t, left, d = 0) => Math.min(easeOut((t - d) / 0.35), clamp(left / 0.3));
+
+function caption(c) {
+  const box = el('div', 'cap ' + (c.pos || 'bottom'));
+  const lines = c.text.split(' / ');
+  let i = 0;
+  lines.forEach((line, li) => {
+    if (li) box.appendChild(document.createElement('br'));
+    line.split(' ').forEach((word, wi) => {
+      const key = /^\*.*\*[.,!?]*$/.test(word);
+      const text = word.replace(/\*/g, '');
+      const w = el('span', 'w' + (key ? ' k' : ''), text);
+      const u = easeOut((c.t - 0.045 * i) / 0.2);
+      w.style.opacity = u;
+      w.style.transform = `translateY(${(1 - u) * 14}px)`;
+      box.appendChild(w);
+      if (wi < line.split(' ').length - 1) box.appendChild(document.createTextNode(' '));
+      i++;
+    });
+  });
+  const a = Math.min(easeOut(c.t / 0.18), clamp(c.left / 0.25));
+  box.style.opacity = a;
+  return box;
+}
+
+function highlight(h) {
+  const u = easeOut(h.t / 0.45);
+  const grow = 1.25 - 0.25 * u;
+  const e = el('div', 'hl ' + h.tone);
+  const w = h.w * grow, hh = h.h + (grow - 1) * h.w * 0.1;
+  Object.assign(e.style, { left: h.x + (h.w - w) / 2 + 'px', top: h.y + (h.h - hh) / 2 + 'px', width: w + 'px', height: hh + 'px', opacity: Math.min(u, clamp(h.left / 0.3)) });
+  return e;
+}
+
+function badge(b) {
+  const e = el('div', 'badge', `<div class="big">${b.big}</div><div class="small">${b.small}</div>`);
+  const u = Math.min(easeOut(b.t / 0.4), clamp(b.left / 0.3));
+  e.style.opacity = u;
+  e.style.transform = `translateY(${(1 - u) * -16}px)`;
+  return e;
+}
+
+const CURSOR_SVG = '<svg viewBox="0 0 26 38" width="26" height="38"><path d="M2 2 L2 30 L9 23.5 L13.5 34 L18 32 L13.6 21.8 L23 21.8 Z" fill="#111" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg>';
+function cursor(c, stage) {
+  if (c.click !== null && c.click !== undefined) {
+    const r = el('div', 'ripple');
+    const d = 16 + 46 * easeOut(c.click) * c.s;
+    Object.assign(r.style, { left: c.x - d / 2 + 'px', top: c.y - d / 2 + 'px', width: d + 'px', height: d + 'px', opacity: 1 - c.click });
+    stage.appendChild(r);
+  }
+  const e = el('div', 'cursor', CURSOR_SVG);
+  Object.assign(e.style, { left: c.x - 2 * c.s + 'px', top: c.y - 2 * c.s + 'px', transform: `scale(${c.s})`, opacity: c.a });
+  stage.appendChild(e);
+}
+
+function titleCard(t, dur) {
+  const e = el('div', 'card title');
+  const word = el('div', 'word', 'Hone');
+  const line = el('div', 'line', 'An optimizer for AGENTS.md');
+  const u = easeOut(t / 0.6), v = easeOut((t - 0.35) / 0.5);
+  word.style.opacity = u; word.style.transform = `translateY(${(1 - u) * 40}px) scale(${0.94 + 0.06 * u})`;
+  line.style.opacity = v; line.style.transform = `translateY(${(1 - v) * 24}px)`;
+  e.append(word, line);
+  e.style.opacity = clamp(t / 0.25);
+  return e;
+}
+
+const BENCH = [
+  { name: 'OfficeQA', base: 56.7, hone: 59.7 },
+  { name: 'SpreadsheetBench', base: 71.0, hone: 82.3 },
+];
+function resultCard(t) {
+  const e = el('div', 'card result');
+  e.append(el('h2', '', 'Task success rate'));
+  e.append(el('div', 'sub', 'Percent of tasks solved, from Table I of the paper'));
+  const span = 1180;
+  BENCH.forEach((b, bi) => {
+    const box = el('div', 'bench');
+    box.append(el('div', 'name', b.name));
+    [['base', b.base, 'Pi without Hone'], ['hone', b.hone, 'Pi with Hone']].forEach(([kind, v, label], ki) => {
+      const u = easeInOut((t - 0.4 - bi * 0.35 - ki * 0.5) / 0.9);
+      const bar = el('div', 'bar ' + kind);
+      const fill = el('div', 'fill', u > 0.25 ? (v * u).toFixed(1) : '');
+      fill.style.width = Math.max(4, (v / 100) * span * u) + 'px';
+      bar.append(fill);
+      const lab = el('div', 'label', label);
+      lab.style.opacity = easeOut((u - 0.6) / 0.4);
+      bar.append(lab);
+      if (kind === 'hone') {
+        const d = el('div', 'delta', '+' + (b.hone - b.base).toFixed(1));
+        d.style.opacity = easeOut((t - 1.6 - bi * 0.35) / 0.4);
+        bar.append(d);
+      }
+      box.append(bar);
+    });
+    e.append(box);
+  });
+  e.style.opacity = clamp(t / 0.25);
+  return e;
+}
+
+function endCard(t) {
+  const e = el('div', 'card end');
+  const parts = [
+    el('div', 'word', 'Hone'),
+    el('div', 'paper', 'Mining Agent Trajectories to Optimize<br>AGENTS.md via Cross-Examination'),
+    el('div', 'venue', 'IEEE ICDM 2026 demo'),
+    el('div', 'url', 'github.com/AaLexUser/hone'),
+  ];
+  parts.forEach((p, i) => { const u = easeOut((t - i * 0.18) / 0.5); p.style.opacity = u; p.style.transform = `translateY(${(1 - u) * 22}px)`; });
+  e.append(...parts);
+  e.style.opacity = clamp(t / 0.25);
+  return e;
+}
+
+window.render = (s) => {
+  const stage = document.getElementById('stage');
+  stage.replaceChildren();
+  if (s.card) stage.appendChild({ title: titleCard, result: resultCard, end: endCard }[s.card.kind](s.card.t, s.card.dur));
+  (s.highlights || []).forEach((h) => stage.appendChild(highlight(h)));
+  if (s.badge) stage.appendChild(badge(s.badge));
+  if (s.cursor) cursor(s.cursor, stage);
+  (s.captions || []).forEach((c) => stage.appendChild(caption(c)));
+};
+window.fontsReady = document.fonts.ready.then(() => Promise.all(['800 50px Inter', '600 30px Inter', '700 40px Inter', '500 30px Inter', '800 200px "Inter Display"', '500 30px "JetBrains Mono"'].map((f) => document.fonts.load(f))));
+</script>
+</body>
+</html>

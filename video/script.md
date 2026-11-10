@@ -1,13 +1,14 @@
 # Hone demo video script
 
-Vertical video, 1080 by 1920, about 75 seconds, for social feeds and the conference.
-Burned in captions do the guiding. There is no voice over, so every caption must read on its own, on a phone, with the sound off.
+A landscape screen recording, 1920 by 1080 at 30 fps, about 75 seconds, for the conference.
+The full browser screen is the main picture. Burned in captions do the guiding. There is no voice over, so every caption must read on its own with the sound off.
 
 ## Principles
 
 - Show the real product. Every screen is a real recording of the booth stack. The optimization is a real MAJICS run, shown as a time lapse with a visible speed badge.
 - One idea per caption. At most two short lines. Sentence case, bold, white on a dark band, the key word in Hone indigo.
-- Motion has a reason. Zoom in to the thing the caption names, then zoom back out. Highlight boxes appear on the exact row being discussed.
+- The screen is the hero. Zoom in only where a detail would be unreadable at full frame, then zoom back out. Highlight boxes appear on the exact row being discussed.
+- The title, result and end cards are short and simple.
 - No all caps letter spaced labels. No colons, semicolons or dashes in captions. Hone's brand indigo, no other accent colour.
 
 ## Scenes
