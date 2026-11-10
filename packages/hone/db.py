@@ -119,7 +119,7 @@ class Db:
             },
         )
 
-    def set_trace_feedback(self, session_id: str, text: str) -> bool:
+    def append_trace_feedback(self, session_id: str, text: str) -> bool:
         # Feedback accumulates: a session can be rated turn by turn, and each
         # note is evidence the optimizer must see.
         cur = self.execute(
@@ -127,6 +127,10 @@ class Db:
             "THEN ? ELSE feedback || char(10) || ? END WHERE session_id = ?",
             (text, text, session_id),
         )
+        return cur.rowcount > 0
+
+    def replace_trace_feedback(self, session_id: str, text: str | None) -> bool:
+        cur = self.execute("UPDATE traces SET feedback = ? WHERE session_id = ?", (text, session_id))
         return cur.rowcount > 0
 
     def mark_traces_analyzed(self, session_ids: list[str], run_id: str) -> None:

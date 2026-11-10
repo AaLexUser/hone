@@ -222,6 +222,18 @@ async def post_feedback(session_id: str, payload: dict[str, Any]) -> dict[str, A
     return {"ok": True}
 
 
+@app.put("/api/traces/{session_id}/feedback", dependencies=[Depends(require_write)])
+async def put_feedback(session_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Replace the session's whole feedback, so a client can edit or remove
+    lines. Empty text clears it."""
+    text = (payload or {}).get("text")
+    if not isinstance(text, str):
+        raise HTTPException(status_code=422, detail="feedback text required")
+    if not hone.replace_feedback(session_id, text):
+        raise HTTPException(status_code=404, detail="trace not found")
+    return {"ok": True}
+
+
 @app.post("/api/traces/reset", dependencies=[Depends(require_write)])
 async def reset_traces(payload: dict[str, Any]) -> dict[str, Any]:
     """Return traces to 'new' so the optimizer can produce another candidate

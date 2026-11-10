@@ -343,10 +343,24 @@ class Hone:
         return payload
 
     def add_feedback(self, session_id: str, text: str) -> bool:
-        ok = self.db.set_trace_feedback(session_id, text.strip())
+        ok = self.db.append_trace_feedback(session_id, text.strip())
         if ok:
-            self.bus.publish({"type": "trace_feedback", "sessionId": session_id, "feedback": text.strip()})
+            self._publish_feedback(session_id)
         return ok
+
+    def replace_feedback(self, session_id: str, text: str) -> bool:
+        """Swap the session's whole feedback for `text`. Empty text clears it."""
+        ok = self.db.replace_trace_feedback(session_id, text.strip() or None)
+        if ok:
+            self._publish_feedback(session_id)
+        return ok
+
+    def _publish_feedback(self, session_id: str) -> None:
+        # The dashboard replaces the trace's feedback with the event's, so send
+        # the whole stored text and not only the line that changed.
+        trace = self.db.one("SELECT feedback FROM traces WHERE session_id = ?", (session_id,))
+        feedback = trace["feedback"] if trace else None
+        self.bus.publish({"type": "trace_feedback", "sessionId": session_id, "feedback": feedback})
 
     def set_config(self, *, batch_size: int | None = None, auto_optimize: bool | None = None) -> None:
         if batch_size is not None:
