@@ -51,14 +51,47 @@ services:
       HONE_DEMO: "1"
       HONE_TOKEN: ${HONE_TOKEN}
       HONE_EXPOSE_WRITE_TOKEN: "false"
+      HONE_CONFIG: /app/hone.booth.yaml
+      OPENCODE_API_KEY: ${OPENCODE_API_KEY}
+      # Harbor starts the optimization sandboxes on the docker service below.
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_TLS_VERIFY: "1"
+      DOCKER_CERT_PATH: /certs/client
     volumes:
       - hone-data:/data
-    networks: [backend]
+      - ./hone.yaml:/app/hone.booth.yaml:ro
+      - docker-certs:/certs/client:ro
+    networks:
+      backend: {}
+      sandbox:
+        # The sandboxes' DNS forwards only dotted names, so they call Hone by this one.
+        aliases: [hone.internal]
+    depends_on: [docker]
+
+  # A Docker daemon of its own for the optimization sandboxes. Only Hone holds
+  # its client certificate. It sees Hone's data at the same path, /data,
+  # because Harbor mounts the run folders into the sandboxes by path.
+  docker:
+    image: docker:29-dind
+    privileged: true
+    restart: unless-stopped
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+    volumes:
+      - docker-certs:/certs/client
+      - docker-lib:/var/lib/docker
+      - hone-data:/data
+    networks: [sandbox, sandbox-egress]
 
 networks:
   backend:
     internal: true
   outbound: {}
+  # Hone and the docker service only. The sandboxes call Hone back over it.
+  sandbox:
+    internal: true
+  # The docker service's way out, for image builds and the sandboxes' model calls.
+  sandbox-egress: {}
 
 volumes:
   caddy-data:
@@ -67,3 +100,5 @@ volumes:
   t3code-state:
   pi-sessions:
   demo-project:
+  docker-certs:
+  docker-lib:

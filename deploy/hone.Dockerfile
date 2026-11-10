@@ -10,6 +10,9 @@ RUN HONE_WEB_BASE="$HONE_WEB_BASE" npm run build
 
 FROM python:3.13-slim-trixie
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /usr/local/bin/uv
+# Harbor drives the optimization sandboxes with the Docker CLI and Compose.
+COPY --from=docker:29-cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker:29-cli /usr/local/libexec/docker/cli-plugins/ /usr/local/libexec/docker/cli-plugins/
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git poppler-utils libreoffice-writer-nogui fonts-liberation \
  && rm -rf /var/lib/apt/lists/*

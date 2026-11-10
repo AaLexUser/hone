@@ -1,0 +1,72 @@
+version: 1
+
+# Hone's configuration for the booth stack. docker-compose.yml mounts this file
+# into the hone container and points HONE_CONFIG at it. Every MAJICS seat uses
+# the same OpenCode Go model as the Pi agent in t3code, with the key from
+# OPENCODE_API_KEY in .env.
+
+service:
+  data_dir: /data
+  ui_dir: apps/web/dist
+  # Harbor's sandboxes call Hone back by its alias on the sandbox network.
+  announce_host: hone.internal
+
+target:
+  model: opencode-go/deepseek-v4.1-flash
+
+majics:
+  providers:
+    opencode-go:
+      name: OpenCode Go
+      base_url: https://opencode.ai/inference/go/openai/v1
+      api: openai-completions
+      api_key_env: OPENCODE_API_KEY
+
+  models:
+    deepseek-v4.1-flash:
+      provider: opencode-go
+      id: deepseek-v4.1-flash
+      name: DeepSeek V4.1 Flash
+      reasoning: true
+      input: [text]
+      context_window: 1000000
+      max_tokens: 128000
+      thinking_level_map:
+        "off": null
+        minimal: null
+        low: low
+        medium: null
+        high: high
+        xhigh: null
+        max: max
+      compat:
+        supportsStore: false
+        supportsDeveloperRole: false
+        supportsStrictMode: true
+        maxTokensField: max_tokens
+        requiresReasoningContentOnAssistantMessages: true
+        thinkingFormat: deepseek
+
+  review:
+    panel:
+      - model: deepseek-v4.1-flash
+        reasoning: high
+      - model: deepseek-v4.1-flash
+        reasoning: high
+      - model: deepseek-v4.1-flash
+        reasoning: high
+    judge:
+      model: deepseek-v4.1-flash
+      reasoning: high
+
+  propose:
+    panel:
+      - model: deepseek-v4.1-flash
+        reasoning: high
+      - model: deepseek-v4.1-flash
+        reasoning: high
+      - model: deepseek-v4.1-flash
+        reasoning: high
+    judge:
+      model: deepseek-v4.1-flash
+      reasoning: high

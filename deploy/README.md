@@ -1,12 +1,13 @@
 # Booth stack with Docker Compose
 
-This folder runs the booth demo as three containers behind one shared login.
+This folder runs the booth demo as four containers behind one shared login.
 
 - `caddy` is the only service with published ports. It asks every visitor for the booth login and password, then sends `/hone/` to Hone and everything else to t3code.
 - `t3code` is the web interface for the Pi agent. It is built from the pinned t3code commit with every patch in `clients/t3code/patches`, applied in name order. The image also holds Pi, the Hone extension and the office tools the agent runs, which are `pdftotext`, python-docx and LibreOffice.
-- `hone` is the Hone service with its dashboard, started in demo mode.
+- `hone` is the Hone service with its dashboard, started in demo mode. Its settings are in `hone.yaml` in this folder.
+- `docker` is a Docker daemon of its own, used only by Hone to run the sandboxes of a real optimization.
 
-t3code and Hone talk to each other on an internal network. Hone has no internet access. t3code reaches the internet only to call the model.
+t3code and Hone talk to each other on an internal network. Hone has no internet access. t3code reaches the internet only to call the model. The sandboxes reach the internet only to build their image and to call the model.
 
 ## Set up
 
@@ -41,6 +42,8 @@ Named volumes keep the state across restarts.
 | Volume | Holds |
 |---|---|
 | `hone-data` | Hone's sessions, feedback, runs and AGENTS.md history |
+| `docker-lib` | The sandbox images, so the second run skips the image build |
+| `docker-certs` | The client certificate Hone uses to reach the `docker` service |
 | `t3code-state` | t3code's projects, chats and settings |
 | `pi-sessions` | Pi's session files |
 | `demo-project` | The Offer letters project folder |
@@ -48,9 +51,29 @@ Named volumes keep the state across restarts.
 
 t3code resets the demo on every start and on the Reset demo button, so a restart of the `t3code` service brings back the prepared state. `docker compose down -v` deletes every volume and starts from nothing.
 
-## Start optimization is not wired
+## Real optimization
 
-Play prepared run works. Start optimization does not work in this stack. A real optimization runs each MAJICS stage as a Harbor job, and Harbor starts a Docker container for every stage (`packages/hone/majics/executor.py`). The Hone container has no Docker. Giving it the host's Docker socket would hand it control of the host. Harbor would also mount task folders by their path inside the Hone container, which does not exist on the host. The sandbox then calls back to Hone through `host.docker.internal`, which this stack does not expose. Run a real optimization with Hone outside Docker, as the main README describes.
+Play prepared run and Start optimization both work in this stack. Play prepared run replays a recorded run in about a minute. Start optimization runs the real MAJICS pipeline on the current batch. With this roster a run took 10 to 13 minutes in testing.
+
+A real run starts each MAJICS stage, review and then propose, as a Harbor job (`packages/hone/majics/executor.py`). Harbor builds a sandbox image, starts the sandbox with Docker Compose next to an egress sidecar, and lets the sandbox reach only the model provider and Hone. The stack wires this up as follows.
+
+- The `docker` service is a separate Docker daemon (`docker:29-dind`). Hone talks to it with the Docker CLI over TLS on port 2376. The daemon writes a client certificate into the `docker-certs` volume, and only Hone mounts that volume.
+- The `docker` service mounts `hone-data` at `/data`, the same path as in Hone. Harbor mounts the run folders into the sandboxes by path, so both containers must see them at one path.
+- The sandboxes call Hone back at `hone.internal:8080`, Hone's alias on the internal `sandbox` network. The sandboxes' DNS forwards only names with a dot, so the plain name `hone` does not work there.
+- Every MAJICS seat, the three reviewers, the three proposers and both judges, uses `deepseek-v4.1-flash` from OpenCode Go, the same model as the Pi agent. The key is `OPENCODE_API_KEY` from `.env`. Change the roster in `hone.yaml` and restart Hone with `docker compose restart hone`.
+
+The first run builds the sandbox image, which adds about two minutes and 2.5 GB in `docker-lib`. Later runs reuse it. Run one real optimization before the booth opens, so the image is ready.
+
+### What this costs in security
+
+The `docker` service runs privileged, because a Docker daemon inside a container needs it. Code that takes over this daemon or escapes a sandbox into it controls the host. These rules keep that risk small.
+
+- No port is published. Caddy is still the only service the outside can reach, and Hone's API stays behind the booth login.
+- The daemon listens only on the internal `sandbox` network and on its own outbound network. Only Hone shares a network with it, and the daemon accepts only clients with the certificate from `docker-certs`. t3code, Caddy and the sandboxes cannot use it.
+- The sandboxes are ordinary unprivileged containers inside that daemon. Harbor's egress sidecar limits them to the model provider, `hone.internal` and the hosts the image build needs (`packages/hone/majics/runtime.py`).
+- A sandbox can reach Hone's API without the booth login, as it does when Hone runs on a laptop. It holds Hone's write token for its callbacks, so it can do what the dashboard buttons do.
+
+The host must allow privileged containers, which stock Docker on Linux does. To turn real optimization off, remove the `docker` service and the `depends_on` line under `hone`. Play prepared run keeps working. Start optimization then fails within seconds, and the run's Harbor job log says the Docker API cannot be reached.
 
 ## Change t3code or Pi
 
