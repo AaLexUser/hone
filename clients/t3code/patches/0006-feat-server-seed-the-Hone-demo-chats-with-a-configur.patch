@@ -1,4 +1,4 @@
-From e27944e9f12cc98d14900518260cf84152299793 Mon Sep 17 00:00:00 2001
+From 779d992d0e40b28ced0cff3fccca086b528246a2 Mon Sep 17 00:00:00 2001
 From: Alexey Lapin <a.lapin03@gmail.com>
 Date: Tue, 10 Nov 2026 15:41:29 +0000
 Subject: [PATCH] feat(server): seed the Hone demo chats with a configured Pi
@@ -10,10 +10,10 @@ Subject: [PATCH] feat(server): seed the Hone demo chats with a configured Pi
  2 files changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
-index 47d5faad..e456c16b 100644
+index 43e864ef..d126da86 100644
 --- a/apps/server/src/hone/Hone.ts
 +++ b/apps/server/src/hone/Hone.ts
-@@ -25,6 +25,8 @@ const HoneConfig = Config.all({
+@@ -24,6 +24,8 @@ const HoneConfig = Config.all({
    dashboardUrl: Config.String("HONE_DASHBOARD_URL").pipe(Config.option),
    demo: Config.Boolean("HONE_DEMO").pipe(Config.withDefault(false)),
    demoDir: Config.String("HONE_DEMO_DIR").pipe(Config.option),

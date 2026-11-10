@@ -119,7 +119,7 @@ async def build(out: Path, settings: HoneConfig, today: dt.date) -> None:
             trace_ids[h.key] = trace["id"]
             if h.feedback:
                 clock.set(clock.now_ms() + trng.randint(60_000, 240_000))
-                hone.add_feedback(trace["id"], h.rated_feedback)
+                hone.set_feedback(trace["id"], h.rated_feedback)
             chats.append({"title": f"Offer letter for {h.name}", "sessionId": session_id,
                           "traceId": trace["id"], "feedback": h.rated_feedback, "jsonl": session.body().decode("utf-8")})
         else:

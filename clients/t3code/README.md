@@ -7,11 +7,10 @@ patches, a Pi agent driven from t3code shows its Hone connection and sends feedb
   version it runs, and how full the next optimization batch is. It shows `optimizing…` during
   a run and raises a toast when a session reaches Hone or `AGENTS.md` changes. Clicking it opens
   the Hone dashboard.
-- Each Pi reply gets thumbs up and thumbs down buttons. Either one opens a popover with the
-  feedback Hone already holds for the session, where each entry can be edited or removed, and a
-  comment box for a new entry. A new rating and comment are appended to the session's Hone trace.
-  The pressed thumb shows the newest rating, and the feedback under the newest reply expands to
-  its full text.
+- Each Pi reply gets thumbs up and thumbs down buttons. A session holds one feedback in Hone, a
+  rating and a comment. The pressed thumb shows the rating, and the comment under the newest reply
+  expands to its full text. Either thumb opens a popover with the comment filled in. Save replaces
+  the feedback with that thumb's rating, and Remove feedback clears it.
 
 Pi itself needs no patch. t3code runs `pi --mode rpc` per thread, so Pi loads the Hone extension
 (`clients/pi-extensions/hone.ts`) like any user extension: it syncs `AGENTS.md` into the project
@@ -27,7 +26,7 @@ folder at session start and publishes the session trace after each reply.
 | `0002` | The header chip and the reply rating control (`apps/web/src/components/chat/HoneControls.tsx`) |
 | `0003` | The booth demo seeder, the `hone.demoReset` and `hone.threadFeedback` RPCs, and the Hone page and Reset demo button in the sidebar (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/HonePage.tsx`) |
 | `0004` | Sign-in through an authenticating reverse proxy, with no pairing link (`apps/server/src/auth/proxyAuth.ts`) |
-| `0005` | Feedback that can be read in full, edited and removed, and the `hone.replaceFeedback` RPC that sends the edited list to Hone's `PUT /api/traces/{id}/feedback` (`apps/web/src/components/chat/HoneControls.tsx`) |
+| `0005` | One feedback per session that can be read in full, edited and removed. `hone.feedback` sets or clears it through Hone's `POST` and `DELETE /api/traces/{id}/feedback`, and `hone.threadFeedback` returns its rating and comment (`apps/web/src/components/chat/HoneControls.tsx`) |
 | `0006` | `HONE_DEMO_MODEL` names the Pi model the demo project and its prepared chats use, so the picker can hide Pi's `default` entry (`apps/server/src/hone/HoneDemo.ts`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and

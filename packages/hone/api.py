@@ -214,22 +214,18 @@ async def put_trace(session_id: str, request: Request) -> dict[str, Any]:
 
 @app.post("/api/traces/{session_id}/feedback", dependencies=[Depends(require_write)])
 async def post_feedback(session_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-    text = (payload or {}).get("text", "")
-    if not text.strip():
+    """Set the session's feedback. A session holds one, so this replaces any earlier one."""
+    text = (payload or {}).get("text")
+    if not isinstance(text, str) or not text.strip():
         raise HTTPException(status_code=422, detail="feedback text required")
-    if not hone.add_feedback(session_id, text):
+    if not hone.set_feedback(session_id, text):
         raise HTTPException(status_code=404, detail="trace not found")
     return {"ok": True}
 
 
-@app.put("/api/traces/{session_id}/feedback", dependencies=[Depends(require_write)])
-async def put_feedback(session_id: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """Replace the session's whole feedback, so a client can edit or remove
-    lines. Empty text clears it."""
-    text = (payload or {}).get("text")
-    if not isinstance(text, str):
-        raise HTTPException(status_code=422, detail="feedback text required")
-    if not hone.replace_feedback(session_id, text):
+@app.delete("/api/traces/{session_id}/feedback", dependencies=[Depends(require_write)])
+async def delete_feedback(session_id: str) -> dict[str, Any]:
+    if not hone.set_feedback(session_id, None):
         raise HTTPException(status_code=404, detail="trace not found")
     return {"ok": True}
 

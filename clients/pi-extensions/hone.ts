@@ -15,7 +15,7 @@
  *   /hone url <url>          override the service URL for this session
  *   /hone token <token>      override the token for this session
  *   /hone sync               re-sync AGENTS.md from the service now
- *   /feedback <text>         attach feedback to this session's trace
+ *   /feedback <text>         set this session's feedback, replacing any earlier one
  */
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import * as fs from "node:fs";
@@ -228,7 +228,7 @@ export default async function (pi: ExtensionAPI) {
   });
 
   pi.registerCommand("feedback", {
-    description: "Attach feedback to this session for the Hone optimizer",
+    description: "Set this session's feedback for the Hone optimizer, replacing any earlier one",
     handler: async (args, ctx) => {
       const text = (args ?? "").trim();
       if (!text) {
@@ -249,7 +249,7 @@ export default async function (pi: ExtensionAPI) {
           body: JSON.stringify({ text }),
         });
         if (res.ok) {
-          ctx.ui?.notify(`hone: feedback recorded — "${text.slice(0, 60)}"`, "info");
+          ctx.ui?.notify(`hone: feedback saved "${text.slice(0, 60)}"`, "info");
         } else {
           ctx.ui?.notify(`hone: feedback failed (${res.status})`, "error");
         }
