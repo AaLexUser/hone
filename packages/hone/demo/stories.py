@@ -314,14 +314,14 @@ STORIES: dict[str, Story] = {
                     "because it applied to a single candidate.",
         propose_asks=(
             Ask(1, "Your third edit makes family name first a rule for all Chinese names. The feedback in @t06 "
-                   "says 'For this candidate'. Defend or drop it.", "", timeout=True),
+                   "says 'For this candidate'. Defend or drop it.",
+                "Drop it. The feedback is scoped to one candidate and nothing in the approval marks name order. "
+                "It stays out of AGENTS.md."),
             Ask(2, "You left the PDF path alone as a tool problem. @t07's PDF lost bold only because it was "
                    "retyped. Is a conversion rule an instruction fix?",
                 "Yes. docx2pdf was missing, but retyping the text was the agent's choice. Converting the filled "
                 ".docx with soffice is an instruction it can follow, so add it."),
         ),
-        failed_propose_attempts=1,
-        transport_retry=True,
     ),
     "r3": Story(
         key="r3",
