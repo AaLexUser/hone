@@ -46,8 +46,8 @@
       "to": "replied@-1.0",
       "dur": 11.0,
       "badge": {
-        "big": "6 min 36 s",
-        "small": "agent at work, shown {speed}\u00d7 faster"
+        "big": "3 min 36 s",
+        "small": "agent at work, shown {speed}× faster"
       },
       "captions": [
         {
@@ -59,7 +59,7 @@
     },
     {
       "id": "3-table",
-      "clip": "rate-sale-daily",
+      "clip": "chat-sale-daily",
       "from": "table-top@0",
       "to": "table-top@5.8",
       "dur": 13.0,
@@ -118,8 +118,8 @@
       ]
     },
     {
-      "id": "4-backlog",
-      "clip": "rate-sale-daily",
+      "id": "4-caveat",
+      "clip": "chat-sale-daily",
       "from": "table-end@-0.8",
       "to": "thumb-down@-1.4",
       "dur": 7.0,
@@ -128,25 +128,36 @@
         [
           0,
           818,
-          548,
-          1.6
+          690,
+          1.45
         ],
         [
           7.0,
           818,
-          548,
-          1.62
+          690,
+          1.47
         ]
       ],
       "highlights": [
         {
           "at": 0.4,
-          "to": 7.0,
+          "to": 3.6,
           "rect": [
             462,
-            524,
+            490,
             720,
-            50
+            84
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 3.8,
+          "to": 7.0,
+          "rect": [
+            446,
+            806,
+            744,
+            70
           ],
           "tone": "red"
         }
@@ -155,14 +166,14 @@
         {
           "at": 0.4,
           "to": 7.0,
-          "text": "It even calls the midnight rush a *backlog*."
+          "text": "It sees one Beijing day, / yet groups by *UTC* date anyway."
         }
       ],
       "fade": 0.3
     },
     {
       "id": "5-feedback",
-      "clip": "rate-sale-daily",
+      "clip": "chat-sale-daily",
       "from": "thumb-down@-1.4",
       "to": "feedback-sent@2.0",
       "dur": 14.0,
@@ -209,7 +220,7 @@
     },
     {
       "id": "6-batch",
-      "clip": "rate-sale-daily",
+      "clip": "chat-sale-daily",
       "from": "chip@-1.0",
       "to": "rec-stop@0",
       "dur": 7.0,
@@ -258,6 +269,569 @@
           "at": 0.4,
           "to": 7.0,
           "text": "Four sessions, four thumbs down. / The batch is *full*."
+        }
+      ]
+    },
+    {
+      "id": "7-start",
+      "clip": "run",
+      "from": "rec-start@3",
+      "to": "start-clicked@1.0",
+      "dur": 8.0,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          5.0,
+          960,
+          540,
+          1
+        ],
+        [
+          6.6,
+          1090,
+          330,
+          1.35
+        ],
+        [
+          8.0,
+          1090,
+          330,
+          1.37
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 5.6,
+          "to": 8.0,
+          "rect": [
+            540,
+            248,
+            154,
+            156
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 6.0,
+          "to": 8.0,
+          "rect": [
+            1462,
+            300,
+            180,
+            50
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 8.0,
+          "text": "In Hone, press *Start optimization*."
+        }
+      ]
+    },
+    {
+      "id": "8-review",
+      "clip": "run",
+      "from": "run-started@0",
+      "to": "run-started@300",
+      "speed": 30,
+      "badge": {
+        "big": "11 min 43 s",
+        "small": "real run, shown {speed}× faster"
+      },
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          1088,
+          450,
+          1.4
+        ]
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 10.0,
+          "text": "Three *reviewers* read every session."
+        }
+      ]
+    },
+    {
+      "id": "9-judge",
+      "clip": "run",
+      "from": "run-started@300",
+      "to": "run-started@420",
+      "speed": 12,
+      "badge": {
+        "big": "11 min 43 s",
+        "small": "real run, shown {speed}× faster"
+      },
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          1088,
+          450,
+          1.4
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.5,
+          "to": 10.0,
+          "rect": [
+            770,
+            436,
+            150,
+            64
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 10.0,
+          "text": "A *judge* cross-examines them."
+        }
+      ]
+    },
+    {
+      "id": "10-propose",
+      "clip": "run",
+      "from": "run-started@420",
+      "to": "run-ended@0",
+      "speed": 25,
+      "badge": {
+        "big": "11 min 43 s",
+        "small": "real run, shown {speed}× faster"
+      },
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          1088,
+          450,
+          1.4
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.0,
+          "to": 7.2,
+          "rect": [
+            1120,
+            386,
+            200,
+            174
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 7.4,
+          "to": 11.5,
+          "rect": [
+            1337,
+            436,
+            146,
+            64
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 7.2,
+          "text": "Three *proposers* draft edits."
+        },
+        {
+          "at": 7.4,
+          "to": 11.5,
+          "text": "A judge questions them too."
+        }
+      ]
+    },
+    {
+      "id": "11-question",
+      "clip": "review",
+      "from": "question@0.3",
+      "to": "question@4.8",
+      "dur": 9.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          735,
+          470,
+          1.5
+        ],
+        [
+          9.0,
+          735,
+          470,
+          1.55
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 9.0,
+          "rect": [
+            440,
+            426,
+            600,
+            44
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 4.8,
+          "to": 9.0,
+          "rect": [
+            440,
+            474,
+            600,
+            34
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 4.6,
+          "text": "Does a rule on reading big files have *evidence*?"
+        },
+        {
+          "at": 4.8,
+          "to": 9.0,
+          "text": "Its author concedes. The rule stays *out*."
+        }
+      ]
+    },
+    {
+      "id": "12-commit",
+      "clip": "run",
+      "from": "run-ended@0.5",
+      "dur": 6.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          1088,
+          430,
+          1.3
+        ],
+        [
+          6.0,
+          1088,
+          430,
+          1.32
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 6.0,
+          "rect": [
+            1524,
+            590,
+            110,
+            64
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 0.8,
+          "to": 6.0,
+          "rect": [
+            1654,
+            590,
+            118,
+            64
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 1.4,
+          "to": 6.0,
+          "rect": [
+            404,
+            226,
+            896,
+            70
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 6.0,
+          "text": "A verifier checks the edits. / The new version is *committed*."
+        }
+      ]
+    },
+    {
+      "id": "13-versions",
+      "clip": "review",
+      "from": "versions@-0.4",
+      "to": "versions-end@0",
+      "dur": 12.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.8,
+          960,
+          540,
+          1
+        ],
+        [
+          2.6,
+          1300,
+          430,
+          1.6
+        ],
+        [
+          12.0,
+          1300,
+          430,
+          1.62
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.7,
+          "to": 6.8,
+          "rect": [
+            1036,
+            354,
+            616,
+            94
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 7.0,
+          "to": 12.0,
+          "rect": [
+            1036,
+            442,
+            616,
+            66
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 6.8,
+          "text": "Beijing *days* become a rule in AGENTS.md."
+        },
+        {
+          "at": 7.0,
+          "to": 12.0,
+          "text": "So do *yuan* amounts, with no symbol."
+        }
+      ]
+    },
+    {
+      "id": "14-again",
+      "clip": "chat2-sale-hourly",
+      "from": "new-thread@0.2",
+      "to": "sent@0.3",
+      "dur": 7.0,
+      "fade": 0.3,
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 7.0,
+          "text": "A new chat asks for orders per *hour* / on 11 November."
+        }
+      ]
+    },
+    {
+      "id": "15-agent",
+      "clip": "chat2-sale-hourly",
+      "from": "sent@0.3",
+      "to": "replied@-1.0",
+      "dur": 5.0,
+      "badge": {
+        "big": "1 min 21 s",
+        "small": "agent at work, shown {speed}× faster"
+      },
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 5.0,
+          "rect": [
+            1068,
+            10,
+            256,
+            32
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 5.0,
+          "text": "It runs on the new *AGENTS.md*."
+        }
+      ]
+    },
+    {
+      "id": "16-table",
+      "clip": "chat2-sale-hourly",
+      "from": "table-top@0.3",
+      "to": "table-top@5.8",
+      "dur": 11.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.6,
+          960,
+          540,
+          1
+        ],
+        [
+          2.4,
+          818,
+          320,
+          1.75
+        ],
+        [
+          11.0,
+          818,
+          320,
+          1.78
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.6,
+          "to": 11.0,
+          "rect": [
+            446,
+            90,
+            362,
+            32
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 2.6,
+          "to": 11.0,
+          "rect": [
+            446,
+            170,
+            744,
+            40
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 5.8,
+          "to": 11.0,
+          "rect": [
+            1072,
+            134,
+            116,
+            30
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 5.6,
+          "text": "The midnight rush now opens *11 November*, Beijing time."
+        },
+        {
+          "at": 5.8,
+          "to": 11.0,
+          "text": "Amounts in *yuan*, with no dollar sign."
+        }
+      ]
+    },
+    {
+      "id": "17-notes",
+      "clip": "chat2-sale-hourly",
+      "from": "table-end@0",
+      "to": "rec-stop@0",
+      "dur": 8.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          818,
+          720,
+          1.6
+        ],
+        [
+          8.0,
+          818,
+          720,
+          1.62
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.6,
+          "to": 8.0,
+          "rect": [
+            452,
+            560,
+            736,
+            72
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 1.2,
+          "to": 8.0,
+          "rect": [
+            452,
+            828,
+            724,
+            48
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 8.0,
+          "text": "It converts to Beijing time *before* it groups."
         }
       ]
     }

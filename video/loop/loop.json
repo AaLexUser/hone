@@ -37,6 +37,11 @@
       "sub": "A transcript and a minutes template"
     },
     {
+      "dir": "7-singles-day",
+      "title": "A sale in the right *time zone*",
+      "sub": "Daily sales reports from an order export"
+    },
+    {
       "dir": "6-versions",
       "title": "Every change is a *version*",
       "sub": "AGENTS.md history, kept in Git"
