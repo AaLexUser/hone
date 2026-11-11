@@ -2,10 +2,11 @@ version: 1
 
 # Hone's configuration for the booth stack. docker-compose.yml mounts this file
 # into the hone container and points HONE_CONFIG at it. As in the paper, each
-# MAJICS panel mixes three model families (Hy3, LongCat and MiniMax), and both
-# judges use a fourth family (GLM). LongCat replaced MiMo, whose seat kept
-# hitting transport retries, and Hy3 replaced DeepSeek, whose endpoint kept
-# answering 429 overloaded. DeepSeek stays defined as the agent's model. All four come from OpenCode Go with the key
+# MAJICS panel mixes three model families (MiniMax, Hy3 and Kimi), and both
+# judges use a fourth family (GLM). Every reviewer turn must finish within the
+# driver's five minute turn limit and every follow-up within 60 s. MiMo and
+# LongCat ran past the turn limit, and DeepSeek's endpoint kept answering 429
+# overloaded, so faster models took their seats. DeepSeek stays defined as the agent's model. All four come from OpenCode Go with the key
 # from OPENCODE_API_KEY in .env. The agent under optimization keeps the Pi
 # agent's model in t3code. Each model's thinking map and compat flags are
 # copied from Pi's model catalog.
@@ -77,14 +78,14 @@ majics:
         supportsStrictMode: true
         maxTokensField: max_tokens
 
-    longcat-2.0:
+    kimi-k2.7-code:
       provider: opencode-go
-      id: longcat-2.0
-      name: LongCat 2.0
+      id: kimi-k2.7-code
+      name: Kimi K2.7 Code
       reasoning: true
       input: [text]
-      context_window: 1000000
-      max_tokens: 131072
+      context_window: 262144
+      max_tokens: 262144
       compat:
         supportsStore: false
         supportsDeveloperRole: false
@@ -145,7 +146,7 @@ majics:
         reasoning: high
       - model: hy3
         reasoning: low
-      - model: longcat-2.0
+      - model: kimi-k2.7-code
         reasoning: low
     judge:
       model: glm-5.3-flash
@@ -157,7 +158,7 @@ majics:
         reasoning: low
       - model: minimax-m3.1-flash
         reasoning: high
-      - model: longcat-2.0
+      - model: kimi-k2.7-code
         reasoning: low
     judge:
       model: glm-5.3-flash
