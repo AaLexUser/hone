@@ -39,7 +39,7 @@ COPY deploy/t3code/settings.json deploy/t3code/settings.py deploy/t3code/pi-sett
 COPY clients/t3code/turn-cache/ /opt/hone-deploy/turn-cache/
 COPY --chown=node:node deploy/t3code/pi-settings.json /home/node/.pi/agent/settings.json
 COPY --chown=node:node clients/pi-extensions/hone.ts /home/node/.pi/agent/extensions/hone.ts
-RUN install -d -o node -g node /home/node/.t3 /home/node/.pi/agent/sessions /home/node/demo
+RUN install -d -o node -g node /home/node/.t3 /home/node/.pi/agent/sessions /home/node/demo /home/node/turn-cache
 
 USER node
 # Docker's default seccomp profile blocks the user namespaces Chrome's sandbox
