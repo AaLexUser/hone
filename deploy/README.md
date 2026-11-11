@@ -35,6 +35,14 @@ Caddy checks the booth login on every request, so nothing reaches t3code or Hone
 
 On its first start, t3code writes its settings from `t3code/settings.json` and `t3code/settings.py`. Pi is the only enabled provider, and Codex, Claude and the other built-in providers are off. The model picker shows exactly one entry, the model in `t3code/pi-settings.json`. The entrypoint passes it to t3code as `HONE_DEMO_MODEL`, so the prepared chats use it too. Every other model in Pi's catalog is hidden. Later changes made in Settings are kept in `t3code-state`.
 
+## Guide mode
+
+Guide mode lets visitors try the demo alone. `clients/t3code/README.md` describes it.
+
+- Put the booth loop MP4 at `deploy/booth-video/loop.mp4`. Caddy serves the folder at `/booth-video/` behind the booth login, and git ignores it.
+- `HONE_GUIDE_PIN`, `HONE_GUIDE_IDLE_VIDEO_SECONDS` and `HONE_GUIDE_IDLE_RESET_SECONDS` in `.env` set the exit PIN and the two idle times. `HONE_GUIDE_VIDEO_URL` defaults to `/booth-video/loop.mp4`.
+- On every start the entrypoint points Pi's binary path at the turn cache wrapper. It replays recordings from `clients/t3code/turn-cache/`, which the image holds, and from the `turn-cache` volume. `HONE_TURN_CACHE_RECORD=1` records new ones in the volume. `docs/booth-demo.md` says how to record the guided visit.
+
 ## Data
 
 Named volumes keep the state across restarts.
@@ -47,6 +55,7 @@ Named volumes keep the state across restarts.
 | `t3code-state` | t3code's projects, chats and settings |
 | `pi-sessions` | Pi's session files |
 | `demo-project` | The Offer letters project folder |
+| `turn-cache` | Recorded first turns of demo chats |
 | `caddy-data`, `caddy-config` | Caddy's certificates and settings |
 
 t3code resets the demo on every start and on the Reset demo button, so a restart of the `t3code` service brings back the prepared state. `docker compose down -v` deletes every volume and starts from nothing.

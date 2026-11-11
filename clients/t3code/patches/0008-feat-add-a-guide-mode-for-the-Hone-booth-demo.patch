@@ -1,0 +1,1774 @@
+From a7cc62c2e29629f8956758468dcf4996aa753710 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Wed, 11 Nov 2026 15:58:22 +0000
+Subject: [PATCH 8/9] feat: add a guide mode for the Hone booth demo
+
+A visitor at the booth can walk through the offer letter scenario alone.
+A card names each step, outlines the control to use and moves on when the
+real event happens, from opening a prepared chat to the new AGENTS.md
+version. The guide writes the request and the feedback word for word as
+the recorded visit had them.
+
+The Hone dashboard in the Hone page's frame posts its route, Start
+optimization and the start and end of a run to t3code, and t3code asks it
+to outline the next control. Both sides check the other's origin.
+
+After a short idle the booth video plays. After a long idle the guide
+resets the demo. The Guide button in the sidebar turns guide mode on, and
+leaving it takes a two second hold and the PIN when HONE_GUIDE_PIN is set.
+hone.status carries the guide settings, and hone.guideUnlock checks the PIN.
+---
+ apps/server/src/auth/RpcAuthorization.ts      |   1 +
+ apps/server/src/hone/Hone.test.ts             |  32 +-
+ apps/server/src/hone/Hone.ts                  |  49 +-
+ .../src/observability/RpcInstrumentation.ts   |   1 +
+ apps/server/src/ws.ts                         |   1 +
+ apps/web/src/components/chat/HoneControls.tsx |  42 +-
+ apps/web/src/components/hone/HonePage.tsx     |   4 +
+ .../src/components/hone/guide/GuideLayer.tsx  | 489 ++++++++++++++++++
+ .../src/components/hone/guide/GuideToggle.tsx | 141 +++++
+ .../components/hone/guide/guideSteps.test.ts  |  92 ++++
+ .../src/components/hone/guide/guideSteps.ts   | 143 +++++
+ .../src/components/hone/guide/guideStore.ts   | 106 ++++
+ .../src/components/hone/guide/guideText.ts    | 146 ++++++
+ .../src/components/hone/guide/honeFrame.ts    |  78 +++
+ .../src/components/sidebar/SidebarChrome.tsx  |   6 +-
+ apps/web/src/routes/_chat.tsx                 |   2 +
+ apps/web/src/state/hone.ts                    |   4 +
+ packages/contracts/src/hone.ts                |  19 +
+ packages/contracts/src/rpc.ts                 |  10 +
+ 19 files changed, 1349 insertions(+), 17 deletions(-)
+ create mode 100644 apps/web/src/components/hone/guide/GuideLayer.tsx
+ create mode 100644 apps/web/src/components/hone/guide/GuideToggle.tsx
+ create mode 100644 apps/web/src/components/hone/guide/guideSteps.test.ts
+ create mode 100644 apps/web/src/components/hone/guide/guideSteps.ts
+ create mode 100644 apps/web/src/components/hone/guide/guideStore.ts
+ create mode 100644 apps/web/src/components/hone/guide/guideText.ts
+ create mode 100644 apps/web/src/components/hone/guide/honeFrame.ts
+
+diff --git a/apps/server/src/auth/RpcAuthorization.ts b/apps/server/src/auth/RpcAuthorization.ts
+index 884ad615..6718ce4f 100644
+--- a/apps/server/src/auth/RpcAuthorization.ts
++++ b/apps/server/src/auth/RpcAuthorization.ts
+@@ -166,6 +166,7 @@ export const RPC_REQUIRED_SCOPES = {
+   [WS_METHODS.honeFeedback]: AuthOrchestrationOperateScope,
+   [WS_METHODS.honeThreadFeedback]: AuthOrchestrationReadScope,
+   [WS_METHODS.honeDemoReset]: AuthOrchestrationOperateScope,
++  [WS_METHODS.honeGuideUnlock]: AuthOrchestrationReadScope,
+   [WS_METHODS.mcpAppsCallTool]: AuthOrchestrationOperateScope,
+   [WS_METHODS.mcpAppsToolInfo]: AuthOrchestrationReadScope,
+   [WS_METHODS.mcpAppsReadResource]: AuthOrchestrationReadScope,
+diff --git a/apps/server/src/hone/Hone.test.ts b/apps/server/src/hone/Hone.test.ts
+index a4d5c52a..b16bca1b 100644
+--- a/apps/server/src/hone/Hone.test.ts
++++ b/apps/server/src/hone/Hone.test.ts
+@@ -1,6 +1,36 @@
+ import { describe, expect, it } from "@effect/vitest";
++import * as ConfigProvider from "effect/ConfigProvider";
++import * as Effect from "effect/Effect";
+ 
+-import { honeFeedbackText, honeTraceId, parseHoneFeedback, piSessionIdOf } from "./Hone.ts";
++import {
++  honeFeedbackText,
++  honeGuideUnlock,
++  honeTraceId,
++  parseHoneFeedback,
++  piSessionIdOf,
++} from "./Hone.ts";
++
++const withEnv = (env: Record<string, string>) =>
++  Effect.provide(ConfigProvider.layer(ConfigProvider.fromUnknown(env)));
++
++describe("honeGuideUnlock", () => {
++  it.effect("unlocks only with the configured PIN", () =>
++    Effect.gen(function* () {
++      const env = withEnv({ HONE_GUIDE_PIN: "2611" });
++      expect(yield* honeGuideUnlock({ pin: "1234" }).pipe(env)).toEqual({ unlocked: false });
++      expect(yield* honeGuideUnlock({ pin: " 2611 " }).pipe(env)).toEqual({ unlocked: true });
++    }),
++  );
++
++  it.effect("needs no PIN when none is set", () =>
++    Effect.gen(function* () {
++      expect(yield* honeGuideUnlock({ pin: "" }).pipe(withEnv({}))).toEqual({ unlocked: true });
++      expect(yield* honeGuideUnlock({ pin: "9" }).pipe(withEnv({ HONE_GUIDE_PIN: " " }))).toEqual({
++        unlocked: true,
++      });
++    }),
++  );
++});
+ 
+ describe("honeTraceId", () => {
+   it("matches the id Hone gives a Pi session", () => {
+diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
+index d126da86..55e44faf 100644
+--- a/apps/server/src/hone/Hone.ts
++++ b/apps/server/src/hone/Hone.ts
+@@ -4,6 +4,9 @@ import {
+   type HoneFeedbackInput,
+   type HoneFeedbackRating,
+   type HoneFeedbackResult,
++  type HoneGuideConfig,
++  type HoneGuideUnlockInput,
++  type HoneGuideUnlockResult,
+   type HoneStatus,
+   type HoneThreadFeedback,
+   type HoneThreadFeedbackInput,
+@@ -13,6 +16,7 @@ import * as Config from "effect/Config";
+ import * as Effect from "effect/Effect";
+ import * as FileSystem from "effect/FileSystem";
+ import * as Option from "effect/Option";
++import * as Redacted from "effect/Redacted";
+ import * as Schema from "effect/Schema";
+ import { HttpClient, HttpClientRequest } from "effect/http";
+ 
+@@ -26,8 +30,31 @@ const HoneConfig = Config.all({
+   demoDir: Config.String("HONE_DEMO_DIR").pipe(Config.option),
+   // Pi model the prepared chats and the demo project use. Pi's own default when unset.
+   demoModel: Config.String("HONE_DEMO_MODEL").pipe(Config.withDefault("default")),
++  guideVideoUrl: Config.String("HONE_GUIDE_VIDEO_URL").pipe(Config.option),
++  guideIdleVideoSeconds: Config.Int("HONE_GUIDE_IDLE_VIDEO_SECONDS").pipe(Config.withDefault(90)),
++  guideIdleResetSeconds: Config.Int("HONE_GUIDE_IDLE_RESET_SECONDS").pipe(Config.withDefault(300)),
++  guidePin: Config.Redacted("HONE_GUIDE_PIN").pipe(Config.option),
+ });
+ 
++type HoneConfig = typeof HoneConfig extends Config.Config<infer A> ? A : never;
++
++/** An empty HONE_GUIDE_PIN, as compose passes an unset one, means no PIN. */
++function guidePin(config: HoneConfig): Option.Option<string> {
++  return config.guidePin.pipe(
++    Option.map((pin) => Redacted.value(pin).trim()),
++    Option.filter((pin) => pin !== ""),
++  );
++}
++
++function guideConfig(config: HoneConfig): HoneGuideConfig {
++  return {
++    videoUrl: Option.getOrNull(config.guideVideoUrl),
++    idleVideoSeconds: Math.max(0, config.guideIdleVideoSeconds),
++    idleResetSeconds: Math.max(0, config.guideIdleResetSeconds),
++    exitPin: Option.isSome(guidePin(config)),
++  };
++}
++
+ const HoneState = Schema.Struct({
+   traces: Schema.Array(Schema.Struct({ status: Schema.String })),
+   versions: Schema.Array(
+@@ -51,7 +78,7 @@ export const readHoneConfig = Effect.orDie(HoneConfig);
+ 
+ export const honeBaseUrl = (url: string) => url.replace(/\/+$/, "");
+ 
+-function unreachableStatus(dashboardUrl: string | null, demo: boolean): HoneStatus {
++function unreachableStatus(dashboardUrl: string | null, config: HoneConfig): HoneStatus {
+   return {
+     reachable: false,
+     dashboardUrl,
+@@ -62,13 +89,14 @@ function unreachableStatus(dashboardUrl: string | null, demo: boolean): HoneStat
+     pendingCount: 0,
+     batchSize: 0,
+     run: null,
+-    demo,
++    demo: config.demo,
++    guide: guideConfig(config),
+   };
+ }
+ 
+ export const honeStatus = Effect.gen(function* () {
+   const config = yield* readHoneConfig;
+-  if (Option.isNone(config.url)) return unreachableStatus(null, config.demo);
++  if (Option.isNone(config.url)) return unreachableStatus(null, config);
+   const url = honeBaseUrl(config.url.value);
+   const dashboardUrl = Option.getOrElse(config.dashboardUrl, () => url);
+   const http = yield* HttpClient.HttpClient;
+@@ -88,13 +116,26 @@ export const honeStatus = Effect.gen(function* () {
+         batchSize: state.batchSize,
+         run: state.run ?? null,
+         demo: config.demo,
++        guide: guideConfig(config),
+       };
+     }),
+     Effect.timeout("3 seconds"),
+-    Effect.orElseSucceed(() => unreachableStatus(dashboardUrl, config.demo)),
++    Effect.orElseSucceed(() => unreachableStatus(dashboardUrl, config)),
+   );
+ }).pipe(Effect.withSpan("hone.status"));
+ 
++/** Lets the presenter leave the booth guide. Without HONE_GUIDE_PIN any PIN unlocks it. */
++export const honeGuideUnlock = Effect.fn("hone.guideUnlock")(function* (
++  input: HoneGuideUnlockInput,
++) {
++  const config = yield* readHoneConfig;
++  const unlocked = Option.match(guidePin(config), {
++    onNone: () => true,
++    onSome: (pin) => pin === input.pin.trim(),
++  });
++  return { unlocked } satisfies HoneGuideUnlockResult;
++});
++
+ /** Mirrors Hone's trace id derivation (hone/ids.py) for a Pi session id. */
+ export function honeTraceId(piSessionId: string): string {
+   return `ses_${piSessionId
+diff --git a/apps/server/src/observability/RpcInstrumentation.ts b/apps/server/src/observability/RpcInstrumentation.ts
+index decbb357..2782eaf5 100644
+--- a/apps/server/src/observability/RpcInstrumentation.ts
++++ b/apps/server/src/observability/RpcInstrumentation.ts
+@@ -169,6 +169,7 @@ const RPC_AGGREGATES = {
+   [WS_METHODS.honeFeedback]: "hone",
+   [WS_METHODS.honeThreadFeedback]: "hone",
+   [WS_METHODS.honeDemoReset]: "hone",
++  [WS_METHODS.honeGuideUnlock]: "hone",
+   [WS_METHODS.mcpAppsCallTool]: "provider",
+   [WS_METHODS.mcpAppsToolInfo]: "provider",
+   [WS_METHODS.mcpAppsUpdateModelContext]: "provider",
+diff --git a/apps/server/src/ws.ts b/apps/server/src/ws.ts
+index 72887710..cf7921c0 100644
+--- a/apps/server/src/ws.ts
++++ b/apps/server/src/ws.ts
+@@ -2487,6 +2487,7 @@ export const layerWsRpc = (
+         [WS_METHODS.honeFeedback]: (input) => Hone.honeFeedback(input),
+         [WS_METHODS.honeThreadFeedback]: (input) => Hone.honeThreadFeedback(input),
+         [WS_METHODS.honeDemoReset]: (_input) => honeDemo.reset,
++        [WS_METHODS.honeGuideUnlock]: (input) => Hone.honeGuideUnlock(input),
+         [WS_METHODS.serverUpdateProvider]: (input) =>
+           providerMaintenanceRunner.updateProvider(input),
+         [WS_METHODS.providerConsumeResetCredit]:
+diff --git a/apps/web/src/components/chat/HoneControls.tsx b/apps/web/src/components/chat/HoneControls.tsx
+index fd296fcd..fd0edcb7 100644
+--- a/apps/web/src/components/chat/HoneControls.tsx
++++ b/apps/web/src/components/chat/HoneControls.tsx
+@@ -28,6 +28,7 @@ import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "../ui/popov
+ import { Textarea } from "../ui/textarea";
+ import { toastManager } from "../ui/toast";
+ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
++import { guideFeedbackDraft, guideSignal } from "../hone/guide/guideStore";
+ 
+ /** Which AGENTS.md the agent runs and how close Hone is to rewriting it. */
+ export function HoneStatusChip({ environmentId }: { readonly environmentId: EnvironmentId }) {
+@@ -42,6 +43,7 @@ export function HoneStatusChip({ environmentId }: { readonly environmentId: Envi
+           <Link
+             to="/hone"
+             aria-label="Open the Hone dashboard"
++            data-guide="hone-chip"
+             className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
+           />
+         }
+@@ -90,18 +92,23 @@ export function useHoneStatus(environmentId: EnvironmentId | null): HoneStatus |
+   ).data;
+ }
+ 
+-/** Asks first, then has the server reload the prepared demo chats. Open chats update live. */
++/**
++ * Has the server reload the prepared demo chats, after asking unless `confirm` is false.
++ * Open chats update live. Resolves whether the demo was reset.
++ */
+ export function useHoneDemoReset(environmentId: EnvironmentId | null) {
+   const resetDemo = useAtomCommand(honeEnvironment.demoReset, { reportFailure: false });
+   const navigate = useNavigate();
+   const resetting = useRef(false);
+-  return async () => {
+-    if (environmentId === null || resetting.current) return;
+-    const confirmed = await requestConfirmDialog(
+-      "Reset the demo?\nThis deletes every chat in the demo project, new ones included, and loads the prepared chats and files again.",
+-      { variant: "destructive" },
+-    );
+-    if (confirmed !== true) return;
++  return async ({ confirm = true }: { readonly confirm?: boolean } = {}): Promise<boolean> => {
++    if (environmentId === null || resetting.current) return false;
++    if (confirm) {
++      const confirmed = await requestConfirmDialog(
++        "Reset the demo?\nThis deletes every chat in the demo project, new ones included, and loads the prepared chats and files again.",
++        { variant: "destructive" },
++      );
++      if (confirmed !== true) return false;
++    }
+     resetting.current = true;
+     const toastId = toastManager.add({ type: "loading", title: "Resetting the demo..." });
+     const result = await resetDemo({ environmentId, input: {} });
+@@ -118,7 +125,7 @@ export function useHoneDemoReset(environmentId: EnvironmentId | null) {
+         description: `${result.value.chatCount} prepared chats are ready.`,
+       });
+       void navigate({ to: "/" });
+-      return;
++      return true;
+     }
+     const error = squashAtomCommandFailure(result);
+     toastManager.update(toastId, {
+@@ -126,6 +133,7 @@ export function useHoneDemoReset(environmentId: EnvironmentId | null) {
+       title: "Could not reset the demo",
+       description: error instanceof Error ? error.message : "An error occurred.",
+     });
++    return false;
+   };
+ }
+ 
+@@ -219,6 +227,7 @@ export function HoneFeedbackControl({
+     if (result._tag === "Success") {
+       setOpenRating(null);
+       held.refresh();
++      if (next?.rating === "down") guideSignal("feedback-down-saved");
+       toastManager.add({
+         type: "success",
+         title: next === null ? "Feedback removed from Hone" : "Feedback saved to Hone",
+@@ -248,7 +257,12 @@ export function HoneFeedbackControl({
+               key={rating}
+               open={openRating === rating}
+               onOpenChange={(open) => {
+-                if (open) setComment(feedback?.comment ?? "");
++                if (open) {
++                  setComment(
++                    feedback?.comment ?? (rating === "down" ? guideFeedbackDraft() : null) ?? "",
++                  );
++                  if (rating === "down") guideSignal("thumbs-down-open");
++                }
+                 setOpenRating(open ? rating : null);
+               }}
+             >
+@@ -260,6 +274,7 @@ export function HoneFeedbackControl({
+                     variant={pressed ? "secondary" : "ghost"}
+                     aria-label={label}
+                     aria-pressed={pressed}
++                    data-guide={rating === "down" ? "thumbs-down" : undefined}
+                   />
+                 }
+               >
+@@ -312,6 +327,7 @@ export function HoneFeedbackControl({
+                       type="submit"
+                       size="xs"
+                       className="ms-auto"
++                      data-guide="send-feedback"
+                       disabled={sending || unchanged}
+                     >
+                       {feedback === null ? "Send to Hone" : "Save"}
+@@ -328,7 +344,11 @@ export function HoneFeedbackControl({
+           type="button"
+           aria-expanded={expanded}
+           aria-label={expanded ? "Show less of the feedback" : "Show the full feedback"}
+-          onClick={() => setExpanded((value) => !value)}
++          data-guide="hone-feedback"
++          onClick={() => {
++            if (!expanded) guideSignal("feedback-expanded");
++            setExpanded((value) => !value);
++          }}
+           className="order-last flex min-w-0 basis-full items-start gap-1.5 rounded-md px-1 py-0.5 text-left text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
+         >
+           <ChevronRightIcon
+diff --git a/apps/web/src/components/hone/HonePage.tsx b/apps/web/src/components/hone/HonePage.tsx
+index 6dc7d389..37dfa647 100644
+--- a/apps/web/src/components/hone/HonePage.tsx
++++ b/apps/web/src/components/hone/HonePage.tsx
+@@ -9,6 +9,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty";
+ import { SidebarInset } from "../ui/sidebar";
+ import { WorkspaceBreadcrumb, WorkspaceBreadcrumbItem } from "../WorkspaceBreadcrumb";
+ import { WorkspacePageHeader } from "../WorkspacePageHeader";
++import { registerHoneFrame } from "./guide/honeFrame";
+ 
+ /** Hone's mark drawn as a line icon, three document lines with the middle one honed to a point. */
+ export function HoneGlyph(props: SVGProps<SVGSVGElement>) {
+@@ -70,6 +71,9 @@ export function HonePage() {
+         ) : (
+           // oxlint-disable-next-line react/iframe-missing-sandbox -- Hone is another origin, and its dashboard needs scripts and its own origin for its API calls and saved theme.
+           <iframe
++            ref={(element) => {
++              registerHoneFrame(element, element === null ? null : dashboardUrl);
++            }}
+             src={dashboardUrl}
+             title="Hone dashboard"
+             className="min-h-0 w-full flex-1 border-0 bg-background"
+diff --git a/apps/web/src/components/hone/guide/GuideLayer.tsx b/apps/web/src/components/hone/guide/GuideLayer.tsx
+new file mode 100644
+index 00000000..0e1220d4
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/GuideLayer.tsx
+@@ -0,0 +1,489 @@
++import { parseScopedThreadKey, scopedThreadKey } from "@t3tools/client-runtime/environment";
++import type { HoneGuideConfig } from "@t3tools/contracts";
++import { serializeComposerFileLink } from "@t3tools/shared/composerTrigger";
++import { useLocation } from "@tanstack/react-router";
++import * as Option from "effect/Option";
++import { type CSSProperties, useEffect, useRef, useState } from "react";
++
++import { useComposerDraftStore } from "~/composerDraftStore";
++import { observeResize } from "~/lib/observeResize";
++import { useThreadRouteTarget } from "~/hooks/useThreadRouteTarget";
++import { useRightPanelStore } from "~/rightPanelStore";
++import { usePrimaryEnvironmentId } from "~/state/environments";
++import { useEnvironmentThread } from "~/state/threads";
++import { useHoneDemoReset, useHoneStatus } from "../../chat/HoneControls";
++import { Button } from "../../ui/button";
++import { QRCodeSvg } from "../../ui/qr-code";
++import {
++  GUIDE_STEPS,
++  type GuideFacts,
++  type GuideSignal,
++  type GuideStep,
++  guideFactsKey,
++  settledStep,
++} from "./guideSteps";
++import { useGuideStore } from "./guideStore";
++import { type GuideStepText, guideText } from "./guideText";
++import { parseHoneFrameMessage, sendHighlight, setHoneFrameHighlight } from "./honeFrame";
++
++const REPO_URL = "https://github.com/AaLexUser/hone";
++const VISITOR_FILES = {
++  approval: "Inbox/Hiring approval Amara Osei.pdf",
++  template: "Inbox/Offer letter template.docx",
++};
++const RUNNING = new Set(["preparing", "queued", "starting", "running"]);
++const ACTIVITY_EVENTS = ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"] as const;
++/** Steps between the welcome and closing cards, the ones the progress counts. */
++const COUNTED_STEPS = GUIDE_STEPS.length - 2;
++
++/** The booth guide. Shown over the chat routes while guide mode is on in the booth demo. */
++export function GuideLayer() {
++  const on = useGuideStore((state) => state.on);
++  const unlocking = useGuideStore((state) => state.unlocking);
++  const status = useHoneStatus(usePrimaryEnvironmentId());
++  if (!on || unlocking || status?.demo !== true) return null;
++  return <ActiveGuide config={status.guide} />;
++}
++
++function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
++  const step = useGuideStore((state) => state.step);
++  const signals = useGuideStore((state) => state.signals);
++  const runQuick = useGuideStore((state) => state.runQuick);
++  const runFailed = useGuideStore((state) => state.runFailed);
++  const visitorChat = useGuideStore((state) => state.visitorChat);
++  const signalSet = new Set<GuideSignal>(signals);
++  const facts = useGuideFacts(visitorChat);
++  const factsKey = guideFactsKey(facts, signalSet);
++  const current = GUIDE_STEPS[step]!;
++  const [video, setVideo] = useState(false);
++  const [resetting, setResetting] = useState(false);
++  const startOver = useStartOver(setResetting);
++
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the guide moves on when the real event its step waits for has happened
++  useEffect(() => {
++    const store = useGuideStore.getState();
++    if (store.heldAt !== null && store.heldAt === factsKey) return;
++    const next = settledStep(store.step, facts, signalSet);
++    if (next !== store.step || store.heldAt !== null) store.goTo(next);
++    // oxlint-disable-next-line react/exhaustive-effect-dependencies -- factsKey serializes facts and signals, which are new objects every render
++  }, [factsKey]);
++
++  useVisitorChatLatch(current);
++  usePrefilledRequest(current);
++  useFrameEvents();
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- tells the Hone frame which control to outline for this step
++  useEffect(() => {
++    setHoneFrameHighlight(current.target?.kind === "frame" ? current.target.highlight : null);
++  }, [current]);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- clears the Hone frame's outline when the guide closes
++  useEffect(() => () => setHoneFrameHighlight(null), []);
++
++  const busy = current.busy?.(facts, signalSet) ?? false;
++  useIdle({
++    config,
++    busy,
++    dirty: step > 0 || signals.length > 0,
++    onVideo: () => setVideo(true),
++    onActive: () => setVideo(false),
++    onReset: startOver,
++  });
++
++  const text =
++    current.id === "watch" && runQuick === false
++      ? guideText.watchLong
++      : current.id === "start" && runFailed
++        ? guideText.startAgain
++        : guideText.steps[current.id];
++  const rect = useTargetRect(current);
++
++  return (
++    <>
++      {rect !== null && !video ? <Spotlight rect={rect} /> : null}
++      {current.id === "welcome" ? (
++        <WelcomeCard
++          text={text}
++          resetting={resetting}
++          onStart={() => useGuideStore.getState().signal("started")}
++        />
++      ) : current.id === "done" ? (
++        <ClosingCard text={text} resetting={resetting} onStartOver={() => void startOver()} />
++      ) : (
++        <StepCard
++          rect={rect}
++          index={step}
++          text={text}
++          onBack={() => useGuideStore.getState().goTo(step - 1, factsKey)}
++          onSkip={() => useGuideStore.getState().goTo(step + 1, factsKey)}
++          {...(current.id === "watch" && runQuick === false && config.videoUrl !== null
++            ? { onVideo: () => setVideo(true) }
++            : {})}
++        />
++      )}
++      {video && config.videoUrl !== null ? (
++        <BoothVideo src={config.videoUrl} onDismiss={() => setVideo(false)} />
++      ) : null}
++    </>
++  );
++}
++
++function useGuideFacts(visitorChat: string | null): GuideFacts {
++  const pathname = useLocation({ select: (location) => location.pathname });
++  const target = useThreadRouteTarget();
++  const visitorRef = visitorChat === null ? null : parseScopedThreadKey(visitorChat);
++  const visitorState = useEnvironmentThread(
++    visitorRef?.environmentId ?? null,
++    visitorRef?.threadId ?? null,
++  );
++  const projection = Option.getOrNull(visitorState.data);
++  const currentKey = target?.kind === "server" ? scopedThreadKey(target.threadRef) : null;
++  const openFile = useRightPanelStore((state) => {
++    const panel = currentKey === null ? undefined : state.byThreadKey[currentKey];
++    const active = panel?.isOpen === true ? panel.activeSurfaceId : null;
++    return active?.startsWith("file:") ? active.slice("file:".length) : null;
++  });
++  const sent = projection?.turnItems.some((item) => item.type === "user_message") ?? false;
++  const replied = projection?.turnItems.some((item) => item.type === "assistant_message") ?? false;
++  const running = projection?.runs.some((run) => RUNNING.has(run.status)) ?? false;
++  const page: GuideFacts["page"] =
++    pathname === "/hone"
++      ? "hone"
++      : target?.kind === "draft"
++        ? "draft"
++        : target?.kind === "server"
++          ? "thread"
++          : pathname === "/"
++            ? "home"
++            : "other";
++  return {
++    page,
++    visitorChat: visitorChat === null ? null : { sent, replied, running },
++    onVisitorChat: currentKey !== null && currentKey === visitorChat,
++    openFile,
++  };
++}
++
++/** A draft becomes a chat when the visitor sends it, which is how the guide knows their chat. */
++function useVisitorChatLatch(current: GuideStep) {
++  const target = useThreadRouteTarget();
++  const previousKind = useRef(target?.kind ?? null);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- remembers the chat a sent draft turned into
++  useEffect(() => {
++    const was = previousKind.current;
++    previousKind.current = target?.kind ?? null;
++    if (target?.kind !== "server" || was !== "draft") return;
++    if (current.id !== "new-chat" && current.id !== "send") return;
++    useGuideStore.getState().setVisitorChat(scopedThreadKey(target.threadRef));
++  }, [target, current.id]);
++}
++
++/** Writes the request into the new chat, word for word the one the recorded chat sent. */
++function usePrefilledRequest(current: GuideStep) {
++  const target = useThreadRouteTarget();
++  const filled = useRef<string | null>(null);
++  const draftId = target?.kind === "draft" ? target.draftId : null;
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- fills the visitor's new chat once, when the guide asks them to send it
++  useEffect(() => {
++    if (current.id !== "send" || draftId === null || filled.current === draftId) return;
++    filled.current = draftId;
++    useComposerDraftStore.getState().setPrompt(
++      draftId,
++      guideText.prompt({
++        approval: serializeComposerFileLink(VISITOR_FILES.approval),
++        template: serializeComposerFileLink(VISITOR_FILES.template),
++      }),
++    );
++  }, [current.id, draftId]);
++}
++
++function useFrameEvents() {
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- listens to the Hone frame's messages while the guide is shown
++  useEffect(() => {
++    const onMessage = (event: MessageEvent) => {
++      const message = parseHoneFrameMessage(event);
++      if (message === null) return;
++      const store = useGuideStore.getState();
++      switch (message.type) {
++        case "route":
++          // A page that just loaded missed the outline request.
++          sendHighlight();
++          if (message.path.replace(/\/+$/, "").endsWith("/versions")) store.signal("versions-open");
++          return;
++        case "run-started":
++          store.setRunQuick(message.quick);
++          store.signal("run-started");
++          return;
++        case "run-finished":
++          if (message.status === "failed") store.failRun();
++          else store.signal("run-finished");
++          return;
++        case "start-pressed":
++        case "activity":
++          window.dispatchEvent(new Event("hone-guide-activity"));
++          return;
++      }
++    };
++    window.addEventListener("message", onMessage);
++    return () => window.removeEventListener("message", onMessage);
++  }, []);
++}
++
++/** Plays the booth video after a short idle and starts the demo over after a long one. */
++function useIdle(input: {
++  readonly config: HoneGuideConfig;
++  readonly busy: boolean;
++  readonly dirty: boolean;
++  readonly onVideo: () => void;
++  readonly onActive: () => void;
++  readonly onReset: () => Promise<void>;
++}) {
++  const latest = useRef(input);
++  const lastActive = useRef(0);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the idle timer below reads the latest settings without restarting
++  useEffect(() => {
++    latest.current = input;
++  });
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- window activity listeners and the idle timer, held while the guide is shown
++  useEffect(() => {
++    lastActive.current = Date.now();
++    const mark = (event: Event) => {
++      lastActive.current = Date.now();
++      // A tap on the video ends it on its click, so the tap never lands on the chat below.
++      const onVideo = event.target instanceof Element && event.target.closest("[data-guide-video]");
++      if (onVideo && (event.type === "pointerdown" || event.type === "touchstart")) return;
++      latest.current.onActive();
++    };
++    for (const name of ACTIVITY_EVENTS) {
++      window.addEventListener(name, mark, { capture: true, passive: true });
++    }
++    window.addEventListener("hone-guide-activity", mark);
++    const timer = window.setInterval(() => {
++      const { config, busy, dirty, onVideo, onReset } = latest.current;
++      if (busy) lastActive.current = Date.now();
++      const idle = Date.now() - lastActive.current;
++      if (config.videoUrl !== null && config.idleVideoSeconds > 0) {
++        if (idle >= config.idleVideoSeconds * 1000) onVideo();
++      }
++      if (dirty && config.idleResetSeconds > 0 && idle >= config.idleResetSeconds * 1000) {
++        void onReset();
++      }
++    }, 1000);
++    return () => {
++      for (const name of ACTIVITY_EVENTS) window.removeEventListener(name, mark, { capture: true });
++      window.removeEventListener("hone-guide-activity", mark);
++      window.clearInterval(timer);
++    };
++  }, []);
++}
++
++function useStartOver(setResetting: (resetting: boolean) => void) {
++  const resetDemo = useHoneDemoReset(usePrimaryEnvironmentId());
++  const running = useRef(false);
++  return async () => {
++    if (running.current) return;
++    running.current = true;
++    setResetting(true);
++    const reset = await resetDemo({ confirm: false });
++    running.current = false;
++    setResetting(false);
++    if (reset) useGuideStore.getState().restart();
++  };
++}
++
++/** Where the target is on screen, followed as the layout moves. */
++function useTargetRect(step: GuideStep): DOMRect | null {
++  const [rect, setRect] = useState<{ readonly step: GuideStep; readonly box: DOMRect } | null>(
++    null,
++  );
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- follows the target element's place in the DOM while its step is shown
++  useEffect(() => {
++    const target = step.target;
++    if (target?.kind !== "page") return;
++    let shown = "";
++    const measure = () => {
++      const candidates = [...document.querySelectorAll<HTMLElement>(target.selector)].filter(
++        (element) =>
++          (target.text === undefined || element.textContent?.includes(target.text) === true) &&
++          element.getClientRects().length > 0,
++      );
++      const box = candidates.at(-1)?.getBoundingClientRect() ?? null;
++      const key = box === null ? "" : `${box.x},${box.y},${box.width},${box.height}`;
++      if (key === shown) return;
++      shown = key;
++      setRect(box === null ? null : { step, box });
++    };
++    const first = window.requestAnimationFrame(measure);
++    const timer = window.setInterval(measure, 250);
++    return () => {
++      window.cancelAnimationFrame(first);
++      window.clearInterval(timer);
++    };
++  }, [step]);
++  return rect?.step === step ? rect.box : null;
++}
++
++function Spotlight({ rect }: { readonly rect: DOMRect }) {
++  const pad = 4;
++  return (
++    <div
++      aria-hidden
++      className="pointer-events-none fixed z-[60] animate-pulse rounded-lg ring-2 ring-primary ring-offset-2 ring-offset-background transition-all duration-300 motion-reduce:animate-none motion-reduce:transition-none"
++      style={{
++        left: rect.left - pad,
++        top: rect.top - pad,
++        width: rect.width + pad * 2,
++        height: rect.height + pad * 2,
++      }}
++    />
++  );
++}
++
++const CARD_WIDTH = 320;
++const GAP = 16;
++
++function cardPosition(rect: DOMRect | null, height: number): CSSProperties {
++  const vw = window.innerWidth;
++  const vh = window.innerHeight;
++  if (rect === null) return { right: GAP, bottom: GAP };
++  const top = Math.min(Math.max(GAP, rect.top + rect.height / 2 - height / 2), vh - height - GAP);
++  if (rect.right + GAP + CARD_WIDTH + GAP <= vw) return { left: rect.right + GAP, top };
++  if (rect.left - GAP - CARD_WIDTH >= GAP) return { left: rect.left - GAP - CARD_WIDTH, top };
++  const left = Math.min(Math.max(GAP, rect.left), vw - CARD_WIDTH - GAP);
++  return rect.top > vh / 2
++    ? { left, top: Math.max(GAP, rect.top - GAP - height) }
++    : { left, top: Math.min(rect.bottom + GAP, vh - height - GAP) };
++}
++
++function StepCard(props: {
++  readonly rect: DOMRect | null;
++  readonly index: number;
++  readonly text: GuideStepText;
++  readonly onBack: () => void;
++  readonly onSkip: () => void;
++  readonly onVideo?: () => void;
++}) {
++  const card = useRef<HTMLDivElement>(null);
++  const [height, setHeight] = useState(200);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- keeps the card's measured height, which places it beside its target
++  useEffect(() => {
++    const element = card.current;
++    if (element === null) return;
++    return observeResize(element, () => setHeight(element.offsetHeight));
++  }, []);
++  return (
++    <div
++      ref={card}
++      role="dialog"
++      aria-label={props.text.title}
++      data-guide-card=""
++      className="fixed z-[70] flex flex-col gap-2 rounded-xl border bg-popover p-4 text-popover-foreground shadow-lg/10 transition-[left,top] duration-300 motion-reduce:transition-none"
++      style={{ width: CARD_WIDTH, ...cardPosition(props.rect, height) }}
++    >
++      <div className="flex items-center gap-2 text-muted-foreground text-xs">
++        <span className="tabular-nums">{guideText.progress(props.index, COUNTED_STEPS)}</span>
++        <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
++          <div
++            className="h-full rounded-full bg-primary transition-[width] duration-300"
++            style={{ width: `${(props.index / COUNTED_STEPS) * 100}%` }}
++          />
++        </div>
++      </div>
++      <h2 className="font-medium text-sm">{props.text.title}</h2>
++      <p className="text-sm">{props.text.body}</p>
++      {props.text.next ? <p className="text-muted-foreground text-xs">{props.text.next}</p> : null}
++      <div className="mt-1 flex items-center gap-1">
++        <Button size="xs" variant="ghost" onClick={props.onBack}>
++          {guideText.back}
++        </Button>
++        <Button size="xs" variant="ghost" onClick={props.onSkip}>
++          {guideText.skip}
++        </Button>
++        {props.onVideo ? (
++          <Button size="xs" variant="outline" className="ms-auto" onClick={props.onVideo}>
++            {guideText.watchVideo}
++          </Button>
++        ) : null}
++      </div>
++    </div>
++  );
++}
++
++/** The welcome card sits over a dimmed screen. Clicks still pass, so the presenter can leave guide mode. */
++function WelcomeCard(props: {
++  readonly text: GuideStepText;
++  readonly resetting: boolean;
++  readonly onStart: () => void;
++}) {
++  return (
++    <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-black/30 p-4">
++      <div
++        role="dialog"
++        aria-label={props.text.title}
++        data-guide-card=""
++        className="pointer-events-auto flex w-full max-w-md flex-col gap-3 rounded-2xl border bg-popover p-6 text-popover-foreground shadow-xl/10"
++      >
++        <h2 className="font-semibold text-xl">{props.text.title}</h2>
++        <p className="text-sm">{props.text.body}</p>
++        {props.text.next ? (
++          <p className="text-muted-foreground text-sm">{props.text.next}</p>
++        ) : null}
++        <div className="mt-2 flex justify-end">
++          <Button disabled={props.resetting} onClick={props.onStart}>
++            {props.resetting ? guideText.resetting : guideText.start}
++          </Button>
++        </div>
++      </div>
++    </div>
++  );
++}
++
++/** The closing card leaves the new AGENTS.md version in view. */
++function ClosingCard(props: {
++  readonly text: GuideStepText;
++  readonly resetting: boolean;
++  readonly onStartOver: () => void;
++}) {
++  return (
++    <div
++      role="dialog"
++      aria-label={props.text.title}
++      data-guide-card=""
++      className="fixed right-4 bottom-4 z-[70] flex w-96 flex-col gap-3 rounded-xl border bg-popover p-4 text-popover-foreground shadow-lg/10"
++    >
++      <h2 className="font-semibold text-base">{props.text.title}</h2>
++      <p className="text-sm">{props.text.body}</p>
++      <div className="flex items-center gap-4">
++        <QRCodeSvg value={REPO_URL} size={104} title={guideText.codeLabel} />
++        <div className="flex flex-col gap-1 text-sm">
++          {props.text.next ? (
++            <span className="text-muted-foreground">{props.text.next}</span>
++          ) : null}
++          <span className="font-medium">{guideText.codeLabel}</span>
++          <span className="text-muted-foreground">{guideText.paper}</span>
++        </div>
++      </div>
++      <div className="flex justify-end">
++        <Button disabled={props.resetting} onClick={props.onStartOver}>
++          {props.resetting ? guideText.resetting : guideText.startOver}
++        </Button>
++      </div>
++    </div>
++  );
++}
++
++function BoothVideo({ src, onDismiss }: { readonly src: string; readonly onDismiss: () => void }) {
++  return (
++    <div
++      role="button"
++      tabIndex={-1}
++      aria-label={guideText.videoHint}
++      data-guide-video=""
++      className="fixed inset-0 z-[100] bg-black"
++      onClick={onDismiss}
++    >
++      <video src={src} autoPlay muted loop playsInline className="size-full object-contain" />
++      <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80">
++        {guideText.videoHint}
++      </p>
++    </div>
++  );
++}
+diff --git a/apps/web/src/components/hone/guide/GuideToggle.tsx b/apps/web/src/components/hone/guide/GuideToggle.tsx
+new file mode 100644
+index 00000000..a12d8d7b
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/GuideToggle.tsx
+@@ -0,0 +1,141 @@
++import type { EnvironmentId } from "@t3tools/contracts";
++import { SignpostIcon } from "lucide-react";
++import { useRef, useState } from "react";
++
++import { cn } from "~/lib/utils";
++import { honeEnvironment } from "~/state/hone";
++import { useAtomCommand } from "~/state/use-atom-command";
++import { useHoneStatus } from "../../chat/HoneControls";
++import { Button } from "../../ui/button";
++import { Input } from "../../ui/input";
++import {
++  Dialog,
++  DialogFooter,
++  DialogHeader,
++  DialogPanel,
++  DialogPopup,
++  DialogTitle,
++} from "../../ui/dialog";
++import { SidebarMenuButton, SidebarMenuItem } from "../../ui/sidebar";
++import { Tooltip, TooltipPopup, TooltipTrigger } from "../../ui/tooltip";
++import { useGuideStore } from "./guideStore";
++import { guideText } from "./guideText";
++
++const HOLD_MS = 2000;
++
++/**
++ * Turns guide mode on with a click. Turning it off takes a two second hold, then the PIN when
++ * HONE_GUIDE_PIN is set, so a visitor cannot leave the guide by accident.
++ */
++export function GuideToggle({ environmentId }: { readonly environmentId: EnvironmentId | null }) {
++  const on = useGuideStore((state) => state.on);
++  const status = useHoneStatus(environmentId);
++  const unlock = useAtomCommand(honeEnvironment.guideUnlock, { reportFailure: false });
++  const [holding, setHolding] = useState(false);
++  const pinOpen = useGuideStore((state) => state.unlocking);
++  const setPinOpen = useGuideStore((state) => state.setUnlocking);
++  const [pin, setPin] = useState("");
++  const [wrong, setWrong] = useState(false);
++  const timer = useRef<number | null>(null);
++
++  const cancelHold = () => {
++    if (timer.current !== null) window.clearTimeout(timer.current);
++    timer.current = null;
++    setHolding(false);
++  };
++  const startHold = () => {
++    cancelHold();
++    setHolding(true);
++    timer.current = window.setTimeout(() => {
++      timer.current = null;
++      setHolding(false);
++      if (status?.guide.exitPin === true) {
++        setPin("");
++        setWrong(false);
++        setPinOpen(true);
++      } else {
++        useGuideStore.getState().exit();
++      }
++    }, HOLD_MS);
++  };
++  const submitPin = async () => {
++    if (environmentId === null) return;
++    const result = await unlock({ environmentId, input: { pin } });
++    if (result._tag === "Success" && result.value.unlocked) {
++      useGuideStore.getState().exit();
++      return;
++    }
++    setWrong(true);
++  };
++
++  const label = on ? guideText.holdToExit : guideText.guideOn;
++  return (
++    <SidebarMenuItem className="shrink-0">
++      <Tooltip>
++        <TooltipTrigger
++          render={
++            <SidebarMenuButton
++              aria-label={label}
++              aria-pressed={on}
++              size="icon"
++              data-guide-toggle=""
++              isActive={on}
++              className="relative overflow-hidden"
++              onClick={on ? undefined : () => useGuideStore.getState().enter()}
++              onPointerDown={on ? startHold : undefined}
++              onPointerUp={cancelHold}
++              onPointerLeave={cancelHold}
++              onPointerCancel={cancelHold}
++            />
++          }
++        >
++          <SignpostIcon />
++          {on ? (
++            <span
++              aria-hidden
++              className={cn(
++                "absolute inset-x-0 bottom-0 h-0.5 bg-primary",
++                holding ? "w-full transition-[width] ease-linear" : "w-0",
++              )}
++              style={holding ? { transitionDuration: `${HOLD_MS}ms` } : undefined}
++            />
++          ) : null}
++        </TooltipTrigger>
++        <TooltipPopup side="top">{label}</TooltipPopup>
++      </Tooltip>
++      <Dialog open={pinOpen} onOpenChange={setPinOpen}>
++        <DialogPopup className="sm:max-w-xs" showCloseButton={false}>
++          <form
++            className="flex min-h-0 flex-col"
++            onSubmit={(event) => {
++              event.preventDefault();
++              void submitPin();
++            }}
++          >
++            <DialogHeader>
++              <DialogTitle>{guideText.pinTitle}</DialogTitle>
++            </DialogHeader>
++            <DialogPanel>
++              <Input
++                autoFocus
++                type="password"
++                inputMode="numeric"
++                autoComplete="off"
++                aria-label={guideText.pinTitle}
++                value={pin}
++                onChange={(event) => {
++                  setPin(event.target.value);
++                  setWrong(false);
++                }}
++              />
++              {wrong ? <p className="mt-2 text-destructive text-xs">{guideText.pinWrong}</p> : null}
++            </DialogPanel>
++            <DialogFooter>
++              <Button type="submit">{guideText.pinSubmit}</Button>
++            </DialogFooter>
++          </form>
++        </DialogPopup>
++      </Dialog>
++    </SidebarMenuItem>
++  );
++}
+diff --git a/apps/web/src/components/hone/guide/guideSteps.test.ts b/apps/web/src/components/hone/guide/guideSteps.test.ts
+new file mode 100644
+index 00000000..0c506281
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/guideSteps.test.ts
+@@ -0,0 +1,92 @@
++import { describe, expect, it } from "vite-plus/test";
++
++import { GUIDE_STEPS, type GuideFacts, type GuideSignal, settledStep } from "./guideSteps";
++import { GUIDE_STRINGS } from "./guideText";
++import { parseHoneFrameData } from "./honeFrame";
++
++const idle: GuideFacts = { page: "draft", visitorChat: null, onVisitorChat: false, openFile: null };
++const at = (id: string) => GUIDE_STEPS.findIndex((step) => step.id === id);
++const signals = (...names: GuideSignal[]) => new Set(names);
++
++describe("settledStep", () => {
++  it("waits on the welcome card until the visitor starts", () => {
++    expect(settledStep(0, idle, signals())).toBe(0);
++    expect(settledStep(0, idle, signals("started"))).toBe(at("open-past-chat"));
++  });
++
++  it("moves on only when the real event happened", () => {
++    const onPastChat = { ...idle, page: "thread" as const };
++    expect(settledStep(at("open-past-chat"), onPastChat, signals())).toBe(at("read-feedback"));
++    expect(settledStep(at("read-feedback"), onPastChat, signals("feedback-expanded"))).toBe(
++      at("new-chat"),
++    );
++  });
++
++  it("follows the visitor's chat from sent to replied", () => {
++    const working = {
++      ...idle,
++      page: "thread" as const,
++      onVisitorChat: true,
++      visitorChat: { sent: true, replied: false, running: true },
++    };
++    expect(settledStep(at("send"), working, signals())).toBe(at("working"));
++    expect(GUIDE_STEPS[at("working")]!.busy?.(working, signals())).toBe(true);
++    const replied = { ...working, visitorChat: { sent: true, replied: true, running: false } };
++    expect(settledStep(at("working"), replied, signals())).toBe(at("open-letter"));
++    expect(
++      settledStep(at("open-letter"), { ...replied, openFile: "Offer_Osei_Amara.pdf" }, signals()),
++    ).toBe(at("thumbs-down"));
++    expect(
++      settledStep(at("open-letter"), { ...replied, openFile: "Offer_Grant_Olivia.pdf" }, signals()),
++    ).toBe(at("open-letter"));
++  });
++
++  it("ends on the closing card", () => {
++    const all = signals(
++      "started",
++      "feedback-expanded",
++      "thumbs-down-open",
++      "feedback-down-saved",
++      "run-started",
++      "run-finished",
++      "versions-open",
++    );
++    expect(settledStep(at("batch"), { ...idle, page: "hone" }, all)).toBe(at("done"));
++  });
++});
++
++describe("guide text", () => {
++  const languages = Object.entries(GUIDE_STRINGS);
++
++  it.each(languages)("has a card for every step in %s", (_language, strings) => {
++    for (const step of GUIDE_STEPS) expect(strings.steps[step.id].title).not.toBe("");
++  });
++
++  it.each(languages)(
++    "keeps %s sentences free of colons, semicolons and dashes",
++    (_language, strings) => {
++      const cards = [...Object.values(strings.steps), strings.watchLong, strings.startAgain];
++      const text = cards.flatMap((card) => [card.title, card.body, card.next ?? ""]);
++      for (const line of text) expect(line).not.toMatch(/[:;\u2013\u2014]/);
++    },
++  );
++});
++
++describe("parseHoneFrameData", () => {
++  it("reads Hone's messages and drops anything else", () => {
++    expect(
++      parseHoneFrameData({ source: "hone", type: "run-started", runId: "r_1", quick: true }),
++    ).toEqual({
++      type: "run-started",
++      runId: "r_1",
++      quick: true,
++    });
++    expect(parseHoneFrameData({ source: "hone", type: "route", path: "/versions" })).toEqual({
++      type: "route",
++      path: "/versions",
++    });
++    expect(parseHoneFrameData({ source: "other", type: "activity" })).toBeNull();
++    expect(parseHoneFrameData({ source: "hone", type: "run-started" })).toBeNull();
++    expect(parseHoneFrameData("hone")).toBeNull();
++  });
++});
+diff --git a/apps/web/src/components/hone/guide/guideSteps.ts b/apps/web/src/components/hone/guide/guideSteps.ts
+new file mode 100644
+index 00000000..52656b09
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/guideSteps.ts
+@@ -0,0 +1,143 @@
++// The booth guide's scenario. Each step names what the visitor uses and the real event that ends it.
++
++export type GuideStepId =
++  | "welcome"
++  | "open-past-chat"
++  | "read-feedback"
++  | "new-chat"
++  | "send"
++  | "working"
++  | "open-letter"
++  | "thumbs-down"
++  | "send-feedback"
++  | "batch"
++  | "start"
++  | "watch"
++  | "versions"
++  | "done";
++
++/** Events that happened during this visit. They stay set until the guide starts over. */
++export type GuideSignal =
++  | "started"
++  | "feedback-expanded"
++  | "thumbs-down-open"
++  | "feedback-down-saved"
++  | "run-started"
++  | "run-finished"
++  | "versions-open";
++
++/** What the screen shows right now. */
++export interface GuideFacts {
++  readonly page: "home" | "thread" | "draft" | "hone" | "other";
++  /** The chat the visitor started in this visit, once it exists. */
++  readonly visitorChat: {
++    readonly sent: boolean;
++    readonly replied: boolean;
++    readonly running: boolean;
++  } | null;
++  readonly onVisitorChat: boolean;
++  /** The file open in the right panel of the shown chat, relative to the project. */
++  readonly openFile: string | null;
++}
++
++/** An element in t3code to spotlight, or a control in the Hone frame to outline. */
++export type GuideTarget =
++  | { readonly kind: "page"; readonly selector: string; readonly text?: string }
++  | { readonly kind: "frame"; readonly highlight: string };
++
++export interface GuideStep {
++  readonly id: GuideStepId;
++  readonly target: GuideTarget | null;
++  readonly done: (facts: GuideFacts, signals: ReadonlySet<GuideSignal>) => boolean;
++  /** Idle time does not count while this holds. A visitor watching work is not idle. */
++  readonly busy?: (facts: GuideFacts, signals: ReadonlySet<GuideSignal>) => boolean;
++}
++
++/** The letter the visitor's chat writes. */
++const OUTPUT_LETTER = /^Offer_Osei[^/]*\.(pdf|docx)$/;
++
++export const GUIDE_STEPS: ReadonlyArray<GuideStep> = [
++  { id: "welcome", target: null, done: (_f, s) => s.has("started") },
++  {
++    id: "open-past-chat",
++    target: {
++      kind: "page",
++      selector: '[role="treeitem"][aria-label^="Offer letter for Olivia Grant"]',
++    },
++    done: (f) => f.page === "thread" && !f.onVisitorChat,
++  },
++  {
++    id: "read-feedback",
++    target: { kind: "page", selector: '[data-guide="hone-feedback"]' },
++    done: (_f, s) => s.has("feedback-expanded"),
++  },
++  {
++    id: "new-chat",
++    target: { kind: "page", selector: 'button[aria-label="New thread"]' },
++    done: (f) => f.page === "draft" || f.visitorChat !== null,
++  },
++  {
++    id: "send",
++    target: { kind: "page", selector: 'form button[type="submit"][aria-label="Submit message"]' },
++    done: (f) => f.visitorChat?.sent === true,
++  },
++  {
++    id: "working",
++    target: null,
++    done: (f) => f.visitorChat?.replied === true && !f.visitorChat.running,
++    busy: (f) => f.visitorChat?.running === true,
++  },
++  {
++    id: "open-letter",
++    target: { kind: "page", selector: '[data-item-path="Offer_Osei_Amara.pdf"]' },
++    done: (f) => f.openFile !== null && OUTPUT_LETTER.test(f.openFile),
++  },
++  {
++    id: "thumbs-down",
++    target: { kind: "page", selector: '[data-guide="thumbs-down"]' },
++    done: (_f, s) => s.has("thumbs-down-open") || s.has("feedback-down-saved"),
++  },
++  {
++    id: "send-feedback",
++    target: { kind: "page", selector: '[data-guide="send-feedback"]' },
++    done: (_f, s) => s.has("feedback-down-saved"),
++  },
++  {
++    id: "batch",
++    target: { kind: "page", selector: '[data-guide="hone-chip"]' },
++    done: (f) => f.page === "hone",
++  },
++  {
++    id: "start",
++    target: { kind: "frame", highlight: "start" },
++    done: (_f, s) => s.has("run-started"),
++  },
++  {
++    id: "watch",
++    target: { kind: "frame", highlight: "judge" },
++    done: (_f, s) => s.has("run-finished"),
++    busy: (_f, s) => s.has("run-started") && !s.has("run-finished"),
++  },
++  {
++    id: "versions",
++    target: { kind: "frame", highlight: "nav/versions" },
++    done: (_f, s) => s.has("versions-open"),
++  },
++  { id: "done", target: null, done: () => false },
++];
++
++/** The furthest step the visitor has reached, moving on past every step that is already done. */
++export function settledStep(
++  index: number,
++  facts: GuideFacts,
++  signals: ReadonlySet<GuideSignal>,
++): number {
++  let at = Math.max(0, Math.min(index, GUIDE_STEPS.length - 1));
++  while (at < GUIDE_STEPS.length - 1 && GUIDE_STEPS[at]!.done(facts, signals)) at += 1;
++  return at;
++}
++
++/** A key that changes whenever anything a step could wait for changes. */
++export function guideFactsKey(facts: GuideFacts, signals: ReadonlySet<GuideSignal>): string {
++  return JSON.stringify([facts, [...signals].toSorted()]);
++}
+diff --git a/apps/web/src/components/hone/guide/guideStore.ts b/apps/web/src/components/hone/guide/guideStore.ts
+new file mode 100644
+index 00000000..ad08236f
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/guideStore.ts
+@@ -0,0 +1,106 @@
++import { create } from "zustand";
++import { createJSONStorage, persist } from "zustand/middleware";
++
++import { resolveStorage } from "~/lib/storage";
++import { GUIDE_STEPS, type GuideSignal } from "./guideSteps";
++import { guideText } from "./guideText";
++
++interface GuideState {
++  /** Guide mode is on. It stays on through reloads until the presenter exits it. */
++  readonly on: boolean;
++  readonly step: number;
++  readonly signals: ReadonlyArray<GuideSignal>;
++  /** Set by Back, so the guide waits on that step until something changes. */
++  readonly heldAt: string | null;
++  /** The scoped key of the chat the visitor started, once it exists. */
++  readonly visitorChat: string | null;
++  /** Whether the visitor's optimization replays a recording, null until it starts. */
++  readonly runQuick: boolean | null;
++  /** The visitor's last optimization stopped with an error. */
++  readonly runFailed: boolean;
++  /** The presenter is entering the exit PIN, so the guide steps aside. Not kept over reloads. */
++  readonly unlocking: boolean;
++  readonly setUnlocking: (unlocking: boolean) => void;
++  readonly enter: () => void;
++  readonly exit: () => void;
++  /** Back to the welcome card with a fresh visit. */
++  readonly restart: () => void;
++  readonly goTo: (step: number, heldAt?: string | null) => void;
++  readonly signal: (signal: GuideSignal) => void;
++  readonly setVisitorChat: (key: string) => void;
++  readonly setRunQuick: (quick: boolean) => void;
++  /** A failed run sends the visitor back to Start optimization. */
++  readonly failRun: () => void;
++}
++
++const freshVisit = {
++  step: 0,
++  signals: [],
++  heldAt: null,
++  visitorChat: null,
++  runQuick: null,
++  runFailed: false,
++} as const;
++
++export const useGuideStore = create<GuideState>()(
++  persist(
++    (set) => ({
++      on: false,
++      unlocking: false,
++      ...freshVisit,
++      enter: () => set({ on: true, ...freshVisit }),
++      exit: () => set({ on: false, unlocking: false, ...freshVisit }),
++      setUnlocking: (unlocking) => set({ unlocking }),
++      restart: () => set(freshVisit),
++      goTo: (step, heldAt = null) =>
++        set({ step: Math.max(0, Math.min(step, GUIDE_STEPS.length - 1)), heldAt }),
++      signal: (signal) =>
++        set((state) =>
++          state.on && !state.signals.includes(signal)
++            ? { signals: [...state.signals, signal] }
++            : state,
++        ),
++      setVisitorChat: (visitorChat) => set({ visitorChat }),
++      setRunQuick: (runQuick) => set({ runQuick, runFailed: false }),
++      failRun: () =>
++        set((state) => ({
++          runFailed: true,
++          runQuick: null,
++          signals: state.signals.filter((signal) => signal !== "run-started"),
++          step: Math.min(
++            state.step,
++            GUIDE_STEPS.findIndex((step) => step.id === "start"),
++          ),
++          heldAt: null,
++        })),
++    }),
++    {
++      name: "t3code:hone-guide:v1",
++      version: 1,
++      storage: createJSONStorage(() =>
++        resolveStorage(typeof window !== "undefined" ? window.localStorage : undefined),
++      ),
++      partialize: ({ on, step, signals, heldAt, visitorChat, runQuick, runFailed }) => ({
++        on,
++        step,
++        signals,
++        heldAt,
++        visitorChat,
++        runQuick,
++        runFailed,
++      }),
++    },
++  ),
++);
++
++/** Records an event the guide may be waiting for. Does nothing outside guide mode. */
++export function guideSignal(signal: GuideSignal): void {
++  useGuideStore.getState().signal(signal);
++}
++
++/** The feedback the guide writes for the visitor, while it asks for a thumbs down. */
++export function guideFeedbackDraft(): string | null {
++  const { on, step } = useGuideStore.getState();
++  const id = GUIDE_STEPS[step]?.id;
++  return on && (id === "thumbs-down" || id === "send-feedback") ? guideText.feedback : null;
++}
+diff --git a/apps/web/src/components/hone/guide/guideText.ts b/apps/web/src/components/hone/guide/guideText.ts
+new file mode 100644
+index 00000000..8aab5f4b
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/guideText.ts
+@@ -0,0 +1,146 @@
++// Every visible string of the booth guide, one table per language, so a Chinese table can follow.
++import type { GuideStepId } from "./guideSteps";
++
++export interface GuideStepText {
++  readonly title: string;
++  readonly body: string;
++  /** What happens once the visitor does it. */
++  readonly next?: string;
++}
++
++export interface GuideStrings {
++  readonly steps: Record<GuideStepId, GuideStepText>;
++  /** The run step when Hone runs the real pipeline, which takes about ten minutes. */
++  readonly watchLong: GuideStepText;
++  /** The start step after a run stopped with an error. */
++  readonly startAgain: GuideStepText;
++  readonly progress: (step: number, total: number) => string;
++  readonly start: string;
++  readonly startOver: string;
++  readonly back: string;
++  readonly skip: string;
++  readonly watchVideo: string;
++  readonly videoHint: string;
++  readonly resetting: string;
++  readonly codeLabel: string;
++  readonly paper: string;
++  readonly guideOn: string;
++  readonly guideOff: string;
++  readonly holdToExit: string;
++  readonly pinTitle: string;
++  readonly pinWrong: string;
++  readonly pinSubmit: string;
++  /** The request the visitor sends. It must stay word for word what the recorded chat sent. */
++  readonly prompt: (files: { readonly approval: string; readonly template: string }) => string;
++  /** The feedback the visitor sends. It must stay word for word what the recorded run read. */
++  readonly feedback: string;
++}
++
++const en: GuideStrings = {
++  steps: {
++    welcome: {
++      title: "Meet Hone",
++      body: "An AI agent repeats the same mistakes until someone rewrites its instructions. Hone does that for you. It reads the feedback people leave on the agent's work and turns it into rules in AGENTS.md, the file the agent follows.",
++      next: "This guide takes about five minutes. You do every step yourself.",
++    },
++    "open-past-chat": {
++      title: "Open a past chat",
++      body: "These chats show a week of work. An HR coordinator asks the agent for offer letters. Open the chat for Olivia Grant.",
++      next: "You will see what the agent did and what the coordinator thought of it.",
++    },
++    "read-feedback": {
++      title: "Read the feedback",
++      body: "Under the agent's reply is the feedback the coordinator left. Click it to read it in full.",
++      next: "Hone collects feedback like this from every session.",
++    },
++    "new-chat": {
++      title: "Start a new chat",
++      body: "Now ask the agent yourself. Press New thread, the pen at the top of the sidebar.",
++      next: "A new chat opens with a request ready to send.",
++    },
++    send: {
++      title: "Send the request",
++      body: "The request names a new hiring approval and the letter template from Inbox. Press send.",
++      next: "The agent reads the approval and writes the letter.",
++    },
++    working: {
++      title: "The agent is working",
++      body: "It reads the approval PDF, fills the template and saves the letter as DOCX and PDF. This takes about a minute.",
++      next: "When it is done, you check its work.",
++    },
++    "open-letter": {
++      title: "Open the letter",
++      body: "Open Offer_Osei_Amara.pdf in the Files panel. Look at the sign-on bonus and the equity.",
++      next: "Amara's approval has no bonus and no equity.",
++    },
++    "thumbs-down": {
++      title: "Something is off",
++      body: "The letter prints a £0 bonus and 0 shares. A candidate would read that as a mistake. Press thumbs down under the agent's reply.",
++      next: "You will tell Hone what to do differently.",
++    },
++    "send-feedback": {
++      title: "Tell Hone",
++      body: "Your feedback is written for you. Press Send to Hone.",
++      next: "Hone files the session and your feedback for its next optimization.",
++    },
++    batch: {
++      title: "Your session joined the batch",
++      body: "The Hone chip in the header counts the sessions waiting for the next update of AGENTS.md. Yours is one of them. Click the chip.",
++      next: "The Hone dashboard opens.",
++    },
++    start: {
++      title: "Start an optimization",
++      body: "Hone holds the sessions and their feedback. Press Start optimization.",
++      next: "Hone reviews the batch and proposes changes to AGENTS.md.",
++    },
++    watch: {
++      title: "Watch Hone work",
++      body: "Three reviewers read the sessions and a judge questions them. Three proposers then draft edits for a second judge, and a verifier checks the result. This takes about a minute and a half.",
++      next: "The run ends with a new AGENTS.md version, or with no change if nothing holds up.",
++    },
++    versions: {
++      title: "See the new rule",
++      body: "Open Versions to see what changed in AGENTS.md and why.",
++      next: "Every change is a Git commit, so nothing is lost.",
++    },
++    done: {
++      title: "That is Hone",
++      body: "The agent now follows the new rule in every chat, with no retraining and no prompt work. Feedback became a rule the agent reads.",
++      next: "Scan the code for the source.",
++    },
++  },
++  watchLong: {
++    title: "Watch Hone work",
++    body: "Three reviewers read the sessions and a judge questions them. Three proposers then draft edits for a second judge, and a verifier checks the result. A real run takes about ten minutes.",
++    next: "You can watch the booth video meanwhile. The guide comes back when the run ends.",
++  },
++  startAgain: {
++    title: "Start the optimization again",
++    body: "The last run stopped with an error and changed nothing. Press Start optimization to try again.",
++    next: "Hone reviews the batch and proposes changes to AGENTS.md.",
++  },
++  progress: (step, total) => `Step ${step} of ${total}`,
++  start: "Start",
++  startOver: "Start over",
++  back: "Back",
++  skip: "Skip",
++  watchVideo: "Watch the video",
++  videoHint: "Touch the screen to try Hone yourself",
++  resetting: "Getting the demo ready",
++  codeLabel: "github.com/AaLexUser/hone",
++  paper: "ICDM 2026, paper S33237",
++  guideOn: "Guide",
++  guideOff: "Exit guide",
++  holdToExit: "Hold to exit the guide",
++  pinTitle: "Enter the PIN to exit the guide",
++  pinWrong: "Wrong PIN",
++  pinSubmit: "Exit guide",
++  prompt: ({ approval, template }) =>
++    `${approval} ${template} New hire today. Please prepare Amara Osei's offer letter from her approval and the template. Keep your reply short.`,
++  feedback:
++    "There's a '£0' sign-on bonus and '0 shares' of equity again. If the approval has none, leave the line out.",
++};
++
++export const GUIDE_STRINGS = { en } as const;
++
++export const guideText: GuideStrings = GUIDE_STRINGS.en;
+diff --git a/apps/web/src/components/hone/guide/honeFrame.ts b/apps/web/src/components/hone/guide/honeFrame.ts
+new file mode 100644
+index 00000000..72632cfe
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/honeFrame.ts
+@@ -0,0 +1,78 @@
++// The messages the Hone dashboard posts to t3code when it runs in the Hone page's frame
++// (Hone's apps/web/src/lib/embed.ts), and the outline requests t3code posts back.
++
++export type HoneFrameEvent =
++  | { readonly type: "route"; readonly path: string }
++  | { readonly type: "start-pressed" }
++  | { readonly type: "run-started"; readonly runId: string; readonly quick: boolean }
++  | { readonly type: "run-finished"; readonly runId: string; readonly status: string }
++  | { readonly type: "activity" };
++
++let frame: HTMLIFrameElement | null = null;
++let frameOrigin: string | null = null;
++let highlight: string | null = null;
++
++/** The Hone page registers its frame, so the guide can tell it what to outline. */
++export function registerHoneFrame(element: HTMLIFrameElement | null, src: string | null): void {
++  frame = element;
++  frameOrigin = element === null || src === null ? null : originOf(src);
++  sendHighlight();
++}
++
++function originOf(src: string): string | null {
++  try {
++    return new URL(src, window.location.href).origin;
++  } catch {
++    return null;
++  }
++}
++
++/** Asks the Hone frame to outline the control marked `data-guide="<name>"`, or nothing. */
++export function setHoneFrameHighlight(name: string | null): void {
++  highlight = name;
++  sendHighlight();
++}
++
++/** Called again once the frame has loaded, since a page that was not there yet missed it. */
++export function sendHighlight(): void {
++  if (frame?.contentWindow == null || frameOrigin === null) return;
++  frame.contentWindow.postMessage({ source: "hone-guide", highlight }, frameOrigin);
++}
++
++/** A message from the registered Hone frame, or null for anything else. */
++export function parseHoneFrameMessage(event: {
++  readonly origin: string;
++  readonly source: unknown;
++  readonly data: unknown;
++}): HoneFrameEvent | null {
++  if (frame === null || frameOrigin === null) return null;
++  if (event.origin !== frameOrigin || event.source !== frame.contentWindow) return null;
++  return parseHoneFrameData(event.data);
++}
++
++export function parseHoneFrameData(data: unknown): HoneFrameEvent | null {
++  if (typeof data !== "object" || data === null) return null;
++  const message = data as Record<string, unknown>;
++  if (message.source !== "hone") return null;
++  switch (message.type) {
++    case "route":
++      return typeof message.path === "string" ? { type: "route", path: message.path } : null;
++    case "start-pressed":
++    case "activity":
++      return { type: message.type };
++    case "run-started":
++      return typeof message.runId === "string"
++        ? { type: "run-started", runId: message.runId, quick: message.quick === true }
++        : null;
++    case "run-finished":
++      return typeof message.runId === "string"
++        ? {
++            type: "run-finished",
++            runId: message.runId,
++            status: typeof message.status === "string" ? message.status : "unknown",
++          }
++        : null;
++    default:
++      return null;
++  }
++}
+diff --git a/apps/web/src/components/sidebar/SidebarChrome.tsx b/apps/web/src/components/sidebar/SidebarChrome.tsx
+index 308490e5..c621f523 100644
+--- a/apps/web/src/components/sidebar/SidebarChrome.tsx
++++ b/apps/web/src/components/sidebar/SidebarChrome.tsx
+@@ -22,6 +22,8 @@ import { cn } from "../../lib/utils";
+ import { usePrimaryEnvironmentId, usePullRequestsSupported } from "../../state/environments";
+ import { useHoneDemoReset, useHoneStatus } from "../chat/HoneControls";
+ import { HoneGlyph } from "../hone/HonePage";
++import { GuideToggle } from "../hone/guide/GuideToggle";
++import { useGuideStore } from "../hone/guide/guideStore";
+ import { T3Wordmark } from "../T3Wordmark";
+ import {
+   resolveEnvironmentIdentificationPillLabel,
+@@ -237,6 +239,7 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+   const primaryEnvironmentId = usePrimaryEnvironmentId();
+   const honeStatus = useHoneStatus(primaryEnvironmentId);
+   const resetHoneDemo = useHoneDemoReset(primaryEnvironmentId);
++  const guideOn = useGuideStore((state) => state.on);
+   const closeMobileSidebar = () => {
+     if (isMobile) {
+       setOpenMobile(false);
+@@ -302,13 +305,14 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+           {honeStatus?.dashboardUrl ? (
+             <SidebarUtilityItem icon={<HoneGlyph />} label="Hone" onClick={handleHoneClick} />
+           ) : null}
+-          {honeStatus?.demo ? (
++          {honeStatus?.demo && !guideOn ? (
+             <SidebarUtilityItem
+               icon={<RotateCcwIcon />}
+               label="Reset demo"
+               onClick={() => void resetHoneDemo()}
+             />
+           ) : null}
++          {honeStatus?.demo ? <GuideToggle environmentId={primaryEnvironmentId} /> : null}
+         </>
+       )}
+       <SidebarThreadUndoNotice />
+diff --git a/apps/web/src/routes/_chat.tsx b/apps/web/src/routes/_chat.tsx
+index 8b5d7af3..afa8acc3 100644
+--- a/apps/web/src/routes/_chat.tsx
++++ b/apps/web/src/routes/_chat.tsx
+@@ -3,6 +3,7 @@ import { Outlet, createFileRoute, redirect, useMatches } from "@tanstack/react-r
+ import { useState } from "react";
+ 
+ import { ThreadRouteView } from "../components/ThreadRouteView";
++import { GuideLayer } from "../components/hone/guide/GuideLayer";
+ import { isAppModalPage } from "../components/sidebar/mainAppLocation";
+ import { SidebarInset } from "../components/ui/sidebar";
+ import { resolveThreadRouteTarget, type ThreadRouteTarget } from "../threadRoutes";
+@@ -41,6 +42,7 @@ function ChatRouteLayout() {
+         <Outlet />
+       )}
+       {modalOpen ? <Outlet /> : null}
++      <GuideLayer />
+     </>
+   );
+ }
+diff --git a/apps/web/src/state/hone.ts b/apps/web/src/state/hone.ts
+index e64b8264..0a1e8bea 100644
+--- a/apps/web/src/state/hone.ts
++++ b/apps/web/src/state/hone.ts
+@@ -31,6 +31,10 @@ export const honeEnvironment = {
+     label: "environment-data:hone:demo-reset",
+     tag: WS_METHODS.honeDemoReset,
+   }),
++  guideUnlock: createEnvironmentRpcCommand(connectionAtomRuntime, {
++    label: "environment-data:hone:guide-unlock",
++    tag: WS_METHODS.honeGuideUnlock,
++  }),
+ };
+ 
+ /** A Pi reply Hone can take feedback on, and whether it is the thread's newest reply. */
+diff --git a/packages/contracts/src/hone.ts b/packages/contracts/src/hone.ts
+index 33ab7e1e..7064ee7c 100644
+--- a/packages/contracts/src/hone.ts
++++ b/packages/contracts/src/hone.ts
+@@ -1,6 +1,18 @@
+ import * as Schema from "effect/Schema";
+ import { NonNegativeInt, ProjectId, ThreadId, TrimmedString } from "./baseSchemas.ts";
+ 
++/** How the booth guide behaves, from the t3code server's environment. */
++export const HoneGuideConfig = Schema.Struct({
++  /** The booth video that plays while nobody touches the screen. */
++  videoUrl: Schema.NullOr(Schema.String),
++  idleVideoSeconds: NonNegativeInt,
++  /** Idle time after which the guide resets the demo and starts over. */
++  idleResetSeconds: NonNegativeInt,
++  /** Leaving guide mode needs a PIN, checked by `hone.guideUnlock`. */
++  exitPin: Schema.Boolean,
++});
++export type HoneGuideConfig = typeof HoneGuideConfig.Type;
++
+ /** What the Hone service reports about the AGENTS.md the agent runs and the next optimization. */
+ export const HoneStatus = Schema.Struct({
+   reachable: Schema.Boolean,
+@@ -15,6 +27,7 @@ export const HoneStatus = Schema.Struct({
+   run: Schema.NullOr(Schema.Struct({ id: Schema.String, status: Schema.String })),
+   /** The server runs the booth demo (HONE_DEMO=1) and can reset it. */
+   demo: Schema.Boolean,
++  guide: HoneGuideConfig,
+ });
+ export type HoneStatus = typeof HoneStatus.Type;
+ 
+@@ -56,6 +69,12 @@ export const HoneDemoResetResult = Schema.Struct({
+ });
+ export type HoneDemoResetResult = typeof HoneDemoResetResult.Type;
+ 
++export const HoneGuideUnlockInput = Schema.Struct({ pin: Schema.String });
++export type HoneGuideUnlockInput = typeof HoneGuideUnlockInput.Type;
++
++export const HoneGuideUnlockResult = Schema.Struct({ unlocked: Schema.Boolean });
++export type HoneGuideUnlockResult = typeof HoneGuideUnlockResult.Type;
++
+ export const HoneErrorReason = Schema.Literals([
+   "unreachable",
+   "not-published",
+diff --git a/packages/contracts/src/rpc.ts b/packages/contracts/src/rpc.ts
+index d3cc0e3c..fcf0c6d2 100644
+--- a/packages/contracts/src/rpc.ts
++++ b/packages/contracts/src/rpc.ts
+@@ -170,6 +170,8 @@ import {
+   HoneError,
+   HoneFeedbackInput,
+   HoneFeedbackResult,
++  HoneGuideUnlockInput,
++  HoneGuideUnlockResult,
+   HoneStatus,
+   HoneThreadFeedback,
+   HoneThreadFeedbackInput,
+@@ -447,6 +449,7 @@ export const WS_METHODS = {
+   honeFeedback: "hone.feedback",
+   honeThreadFeedback: "hone.threadFeedback",
+   honeDemoReset: "hone.demoReset",
++  honeGuideUnlock: "hone.guideUnlock",
+   providerAuthStart: "provider.auth.start",
+   providerConsumeResetCredit: "provider.consumeResetCredit",
+   providerAuthComplete: "provider.auth.complete",
+@@ -1471,6 +1474,12 @@ const WsHoneDemoResetRpc = Rpc.make(WS_METHODS.honeDemoReset, {
+   error: Schema.Union([HoneError, EnvironmentAuthorizationError]),
+ });
+ 
++const WsHoneGuideUnlockRpc = Rpc.make(WS_METHODS.honeGuideUnlock, {
++  payload: HoneGuideUnlockInput,
++  success: HoneGuideUnlockResult,
++  error: EnvironmentAuthorizationError,
++});
++
+ const WsSubscribeVcsStatusRpc = Rpc.make(WS_METHODS.subscribeVcsStatus, {
+   payload: VcsStatusSubscriptionInput,
+   success: VcsStatusStreamEvent,
+@@ -2159,6 +2168,7 @@ export const WsRpcGroup = RpcGroup.make(
+   WsHoneFeedbackRpc,
+   WsHoneThreadFeedbackRpc,
+   WsHoneDemoResetRpc,
++  WsHoneGuideUnlockRpc,
+   WsSubscribeVcsStatusRpc,
+   WsSubscribeWorktreeSetupRpc,
+   WsWorktreeSetupCancelRpc,
+-- 
+2.43.0
+

@@ -11,6 +11,12 @@
 		}
 	}
 
+	# The booth video for guide mode, from ./booth-video next to the compose file.
+	handle_path /booth-video/* {
+		root * /srv/booth-video
+		file_server
+	}
+
 	# t3code signs in every request that carries the shared secret.
 	handle {
 		reverse_proxy t3code:3773 {

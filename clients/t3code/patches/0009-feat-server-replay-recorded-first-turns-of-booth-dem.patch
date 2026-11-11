@@ -1,0 +1,733 @@
+From 0d53b4b64802e1ead881bc1231413d165b1e1018 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Wed, 11 Nov 2026 16:10:22 +0000
+Subject: [PATCH 9/9] feat(server): replay recorded first turns of booth demo
+ chats
+
+hone-pi starts the real Pi and passes its RPC through. When the first
+message of a new chat, the model, the thinking level and the project
+folder match a recording, it plays the recorded Pi events back at their
+pace, writes the files the turn wrote and the Pi session file, sends the
+session to Hone as the Hone extension does, and loads it into Pi. Anything
+else runs live. HONE_TURN_CACHE_RECORD=1 records new first turns.
+
+A replay leaves <session file>.hone-replay.json with its source.
+---
+ apps/server/scripts/hone-pi-turn-cache.ts | 201 +++++++++++++
+ apps/server/scripts/hone-pi.test.ts       | 163 +++++++++++
+ apps/server/scripts/hone-pi.ts            | 325 ++++++++++++++++++++++
+ 3 files changed, 689 insertions(+)
+ create mode 100644 apps/server/scripts/hone-pi-turn-cache.ts
+ create mode 100644 apps/server/scripts/hone-pi.test.ts
+ create mode 100755 apps/server/scripts/hone-pi.ts
+
+diff --git a/apps/server/scripts/hone-pi-turn-cache.ts b/apps/server/scripts/hone-pi-turn-cache.ts
+new file mode 100644
+index 00000000..9ef024da
+--- /dev/null
++++ b/apps/server/scripts/hone-pi-turn-cache.ts
+@@ -0,0 +1,201 @@
++// @effect-diagnostics nodeBuiltinImport:off
++// The booth demo's agent turn cache. A recording is the first turn of a real Pi chat, its
++// RPC events, the files it wrote and its session file. A new chat whose first prompt, model and
++// project folder match a recording replays it instead of calling the model.
++import * as NodeCrypto from "node:crypto";
++import * as NodeFS from "node:fs";
++import * as NodePath from "node:path";
++
++export const TURN_RECORDING_VERSION = 1;
++
++export interface PiModelChoice {
++  readonly provider: string;
++  readonly modelId: string;
++}
++
++/** What a first prompt depends on. Two prompts with the same key see the same world. */
++export interface TurnKeyInput {
++  readonly message: string;
++  readonly images: ReadonlyArray<{ readonly data: string; readonly mimeType: string }>;
++  readonly model: PiModelChoice | null;
++  readonly thinkingLevel: string | null;
++  readonly cwd: string;
++}
++
++/** A file t3code saved for an upload, named in the prompt as `[Attached file "name" is saved at: path]`. */
++export interface PromptAttachment {
++  readonly name: string;
++  readonly path: string;
++  readonly extractedPath: string | null;
++}
++
++export interface TurnRecording {
++  readonly version: typeof TURN_RECORDING_VERSION;
++  readonly key: string;
++  readonly recordedAt: string;
++  readonly source: {
++    readonly sessionId: string;
++    readonly sessionFile: string;
++    readonly cwd: string;
++    readonly model: PiModelChoice | null;
++    readonly thinkingLevel: string | null;
++  };
++  readonly prompt: string;
++  readonly attachments: ReadonlyArray<PromptAttachment>;
++  /** Pi's stdout records from the prompt to `agent_settled`, `at` in ms after the prompt. */
++  readonly events: ReadonlyArray<{ readonly at: number; readonly record: Record<string, unknown> }>;
++  /** Files the turn created or changed in the project folder, relative to it, as base64. */
++  readonly files: ReadonlyArray<{
++    readonly at: number;
++    readonly path: string;
++    readonly base64: string;
++  }>;
++  /** The Pi session file as it stood when the turn settled. */
++  readonly session: string;
++}
++
++const ATTACHMENT_PATTERN =
++  /\[Attached (?:file|image) "((?:[^"\\]|\\.)*)" is saved at: (.+?)(?: \(text extracted to: (.+?)\))?\]/g;
++
++export function promptAttachments(message: string): PromptAttachment[] {
++  return [...message.matchAll(ATTACHMENT_PATTERN)].map((match) => ({
++    name: match[1]!,
++    path: match[2]!,
++    extractedPath: match[3] ?? null,
++  }));
++}
++
++function sha256(data: string | Buffer): string {
++  return NodeCrypto.createHash("sha256").update(data).digest("hex");
++}
++
++function fileHash(file: string): string {
++  try {
++    return sha256(NodeFS.readFileSync(file));
++  } catch {
++    return "missing";
++  }
++}
++
++/** Every file under `root` with its content hash, hidden entries skipped, sorted by path. */
++export function folderSnapshot(root: string): Map<string, string> {
++  const snapshot = new Map<string, string>();
++  const walk = (dir: string) => {
++    let entries: NodeFS.Dirent[];
++    try {
++      entries = NodeFS.readdirSync(dir, { withFileTypes: true });
++    } catch {
++      return;
++    }
++    for (const entry of entries) {
++      if (entry.name.startsWith(".")) continue;
++      const full = NodePath.join(dir, entry.name);
++      if (entry.isDirectory()) walk(full);
++      else if (entry.isFile()) snapshot.set(NodePath.relative(root, full), fileHash(full));
++    }
++  };
++  walk(root);
++  return new Map([...snapshot].toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
++}
++
++/**
++ * The cache key. An upload's saved path changes with every upload, so the prompt counts it by
++ * name and content. The project folder counts whole, because the agent reads it.
++ */
++export function turnKey(input: TurnKeyInput): string {
++  const message = input.message.replace(
++    ATTACHMENT_PATTERN,
++    (_match, name: string, saved: string) => `[Attached "${name}" ${fileHash(saved)}]`,
++  );
++  return sha256(
++    JSON.stringify({
++      version: TURN_RECORDING_VERSION,
++      message,
++      images: input.images.map((image) => [image.mimeType, sha256(image.data)]),
++      model: input.model,
++      thinkingLevel: input.thinkingLevel,
++      folder: [...folderSnapshot(input.cwd)],
++    }),
++  );
++}
++
++/** Pairs of recorded and current values, longest first so a path never loses to its prefix. */
++export function replayReplacements(
++  recording: TurnRecording,
++  current: {
++    readonly sessionId: string;
++    readonly sessionFile: string;
++    readonly cwd: string;
++    readonly attachments: ReadonlyArray<PromptAttachment>;
++  },
++): Array<readonly [string, string]> {
++  const pairs: Array<readonly [string, string]> = [
++    [recording.source.sessionFile, current.sessionFile],
++    [recording.source.cwd, current.cwd],
++    [recording.source.sessionId, current.sessionId],
++  ];
++  recording.attachments.forEach((recorded, index) => {
++    const now = current.attachments[index];
++    if (now === undefined) return;
++    pairs.push([recorded.path, now.path]);
++    if (recorded.extractedPath !== null && now.extractedPath !== null) {
++      pairs.push([recorded.extractedPath, now.extractedPath]);
++    }
++  });
++  return pairs
++    .filter(([from, to]) => from !== "" && from !== to)
++    .toSorted(([a], [b]) => b.length - a.length);
++}
++
++export function applyReplacements(
++  text: string,
++  replacements: ReadonlyArray<readonly [string, string]>,
++): string {
++  let out = text;
++  for (const [from, to] of replacements) {
++    out = out.split(from).join(to);
++    // Paths also appear inside JSON strings, with their slashes and quotes escaped.
++    const escapedFrom = JSON.stringify(from).slice(1, -1);
++    if (escapedFrom !== from) out = out.split(escapedFrom).join(JSON.stringify(to).slice(1, -1));
++  }
++  return out;
++}
++
++/** Whether a Pi session file already holds a user message, so a prompt to it is not a first turn. */
++export function sessionHasUserMessage(sessionFile: string | null): boolean {
++  if (sessionFile === null) return false;
++  let text: string;
++  try {
++    text = NodeFS.readFileSync(sessionFile, "utf8");
++  } catch {
++    return false;
++  }
++  return text.split("\n").some((line) => line.includes('"role":"user"'));
++}
++
++export function recordingPath(dir: string, key: string): string {
++  return NodePath.join(dir, `${key}.json`);
++}
++
++export function readRecording(dir: string, key: string): TurnRecording | null {
++  try {
++    const parsed = JSON.parse(
++      NodeFS.readFileSync(recordingPath(dir, key), "utf8"),
++    ) as TurnRecording;
++    return parsed.version === TURN_RECORDING_VERSION && parsed.key === key ? parsed : null;
++  } catch {
++    return null;
++  }
++}
++
++/** Files that are new or changed since `before`, relative to `root`. */
++export function changedFiles(
++  root: string,
++  before: ReadonlyMap<string, string>,
++): Array<{ path: string; hash: string }> {
++  const changed: Array<{ path: string; hash: string }> = [];
++  for (const [file, hash] of folderSnapshot(root)) {
++    if (before.get(file) !== hash) changed.push({ path: file, hash });
++  }
++  return changed;
++}
+diff --git a/apps/server/scripts/hone-pi.test.ts b/apps/server/scripts/hone-pi.test.ts
+new file mode 100644
+index 00000000..533b1049
+--- /dev/null
++++ b/apps/server/scripts/hone-pi.test.ts
+@@ -0,0 +1,163 @@
++// @effect-diagnostics nodeBuiltinImport:off globalDate:off
++import * as NodeChildProcess from "node:child_process";
++import * as NodeFS from "node:fs";
++import * as NodeOS from "node:os";
++import * as NodePath from "node:path";
++import * as NodeURL from "node:url";
++
++import { describe, expect, it } from "@effect/vitest";
++
++import { applyReplacements, promptAttachments, turnKey } from "./hone-pi-turn-cache.ts";
++
++const WRAPPER = NodeURL.fileURLToPath(new URL("./hone-pi.ts", import.meta.url));
++
++// A stand-in Pi. Each start makes a new session file. A prompt writes a file, logs that the
++// model ran and settles. It never answers a prompt it did not get.
++const FAKE_PI = `
++const fs = require("node:fs"), path = require("node:path");
++const dir = process.env.FAKE_PI_SESSIONS, id = "0000aaaa-0000-4000-8000-" + String(Date.now()).padStart(12, "0");
++const sessionFile = path.join(dir, id + ".jsonl");
++const out = (r) => process.stdout.write(JSON.stringify(r) + "\\n");
++let buffer = "";
++process.stdin.on("data", (chunk) => {
++  buffer += chunk;
++  for (let i; (i = buffer.indexOf("\\n")) >= 0; ) {
++    const r = JSON.parse(buffer.slice(0, i)); buffer = buffer.slice(i + 1);
++    if (r.type === "get_state") out({ type: "response", id: r.id, command: "get_state", success: true, data: { sessionFile, sessionId: id, model: { provider: "p", id: "m" }, thinkingLevel: "low" } });
++    if (r.type === "switch_session") out({ type: "response", id: r.id, command: "switch_session", success: true, data: { cancelled: false } });
++    if (r.type === "prompt") {
++      fs.appendFileSync(path.join(dir, "model-calls.log"), r.message + "\\n");
++      out({ type: "response", command: "prompt", success: true });
++      out({ type: "agent_start" });
++      out({ type: "tool_execution_start", toolCallId: "t1", toolName: "bash", args: { command: "write " + process.cwd() } });
++      fs.writeFileSync("letter.txt", "Dear Amara");
++      out({ type: "tool_execution_end", toolCallId: "t1", result: { content: [{ type: "text", text: "wrote " + process.cwd() + "/letter.txt" }] } });
++      fs.writeFileSync(sessionFile, JSON.stringify({ type: "session", id, cwd: process.cwd() }) + "\\n" + JSON.stringify({ type: "message", message: { role: "user", content: r.message } }) + "\\n");
++      out({ type: "agent_end" });
++      out({ type: "agent_settled" });
++    }
++  }
++});
++`;
++
++function talk(
++  cwd: string,
++  env: NodeJS.ProcessEnv,
++  prompt: string,
++): Promise<Array<Record<string, unknown>>> {
++  return new Promise((resolve, reject) => {
++    const child = NodeChildProcess.spawn(process.execPath, [WRAPPER, "--mode", "rpc"], {
++      cwd,
++      env,
++      stdio: ["pipe", "pipe", "inherit"],
++    });
++    const records: Array<Record<string, unknown>> = [];
++    let buffer = "";
++    child.stdout.setEncoding("utf8");
++    child.stdout.on("data", (chunk: string) => {
++      buffer += chunk;
++      for (let i = buffer.indexOf("\n"); i >= 0; i = buffer.indexOf("\n")) {
++        const record = JSON.parse(buffer.slice(0, i)) as Record<string, unknown>;
++        buffer = buffer.slice(i + 1);
++        records.push(record);
++        if (record.type === "response" && record.id === "state") {
++          child.stdin.write(`${JSON.stringify({ type: "prompt", message: prompt })}\n`);
++        }
++        if (record.type === "agent_settled") {
++          child.kill();
++          resolve(records);
++        }
++      }
++    });
++    child.on("error", reject);
++    child.stdin.write(`${JSON.stringify({ id: "state", type: "get_state" })}\n`);
++  });
++}
++
++describe("hone-pi", () => {
++  it("records a first turn and replays it without the model", async () => {
++    const root = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "hone-pi-"));
++    const sessions = NodePath.join(root, "sessions");
++    const cache = NodePath.join(root, "cache");
++    NodeFS.mkdirSync(sessions);
++    NodeFS.writeFileSync(NodePath.join(root, "fake-pi.cjs"), FAKE_PI);
++    const project = (name: string) => {
++      const dir = NodePath.join(root, name);
++      NodeFS.mkdirSync(NodePath.join(dir, "Inbox"), { recursive: true });
++      NodeFS.writeFileSync(NodePath.join(dir, "Inbox", "approval.txt"), "No bonus");
++      return dir;
++    };
++    const env = {
++      ...process.env,
++      HONE_PI_BIN: NodePath.join(root, "fake-pi.sh"),
++      HONE_TURN_CACHE_DIR: cache,
++      HONE_TURN_CACHE_MAX_GAP_MS: "10",
++      HONE_URL: "",
++      FAKE_PI_SESSIONS: sessions,
++    };
++    NodeFS.writeFileSync(
++      env.HONE_PI_BIN,
++      `#!/bin/sh\nexec "${process.execPath}" "${root}/fake-pi.cjs" "$@"\n`,
++      { mode: 0o755 },
++    );
++
++    const first = project("first");
++    await talk(first, { ...env, HONE_TURN_CACHE_RECORD: "1" }, "Write the letter.");
++    expect(NodeFS.readdirSync(cache)).toHaveLength(1);
++
++    const second = project("second");
++    const replayed = await talk(second, env, "Write the letter.");
++    const calls = NodeFS.readFileSync(NodePath.join(sessions, "model-calls.log"), "utf8");
++    expect(calls.trim().split("\n")).toEqual(["Write the letter."]);
++    expect(NodeFS.readFileSync(NodePath.join(second, "letter.txt"), "utf8")).toBe("Dear Amara");
++    const tool = replayed.find((record) => record.type === "tool_execution_end");
++    expect(JSON.stringify(tool)).toContain(`${second}/letter.txt`);
++    expect(JSON.stringify(tool)).not.toContain(first);
++
++    const notes = NodeFS.readdirSync(sessions).filter((name) => name.endsWith(".hone-replay.json"));
++    expect(notes).toHaveLength(1);
++    const session = NodePath.join(sessions, notes[0]!.replace(".hone-replay.json", ""));
++    expect(NodeFS.readFileSync(session, "utf8")).toContain(`"cwd":"${second}"`);
++
++    const third = project("third");
++    NodeFS.writeFileSync(NodePath.join(third, "Inbox", "approval.txt"), "A £3,000 bonus");
++    await talk(third, env, "Write the letter.");
++    expect(
++      NodeFS.readFileSync(NodePath.join(sessions, "model-calls.log"), "utf8").trim().split("\n"),
++    ).toHaveLength(2);
++    NodeFS.rmSync(root, { recursive: true, force: true });
++  });
++});
++
++describe("turnKey", () => {
++  it("counts an upload by name and content, not by where t3code saved it", () => {
++    const root = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "hone-pi-key-"));
++    const saved = (name: string, text: string) => {
++      const file = NodePath.join(root, name);
++      NodeFS.writeFileSync(file, text);
++      return file;
++    };
++    const message = (path: string) => `Use this.\n\n[Attached file "a.pdf" is saved at: ${path}]`;
++    const key = (path: string) =>
++      turnKey({
++        message: message(path),
++        images: [],
++        model: null,
++        thinkingLevel: null,
++        cwd: root + "/none",
++      });
++    expect(key(saved("one", "x"))).toBe(key(saved("two", "x")));
++    expect(key(saved("three", "y"))).not.toBe(key(saved("one", "x")));
++    expect(promptAttachments(message("/a/b.pdf"))).toEqual([
++      { name: "a.pdf", path: "/a/b.pdf", extractedPath: null },
++    ]);
++    NodeFS.rmSync(root, { recursive: true, force: true });
++  });
++
++  it("rewrites paths inside JSON strings too", () => {
++    const text = JSON.stringify({ text: 'cd "/old dir"' });
++    expect(applyReplacements(text, [["/old dir", "/new dir"]])).toBe(
++      JSON.stringify({ text: 'cd "/new dir"' }),
++    );
++  });
++});
+diff --git a/apps/server/scripts/hone-pi.ts b/apps/server/scripts/hone-pi.ts
+new file mode 100755
+index 00000000..586c46b0
+--- /dev/null
++++ b/apps/server/scripts/hone-pi.ts
+@@ -0,0 +1,325 @@
++#!/usr/bin/env node
++// @effect-diagnostics nodeBuiltinImport:off globalDate:off globalTimers:off globalFetch:off
++// Pi for the Hone booth demo, set as Pi's binary path. It replays a recorded first turn when one
++// matches and passes everything else to the real Pi. Settings in clients/t3code/README.md (Hone).
++import * as NodeChildProcess from "node:child_process";
++import * as NodeFS from "node:fs";
++import * as NodePath from "node:path";
++
++import {
++  applyReplacements,
++  changedFiles,
++  folderSnapshot,
++  type PiModelChoice,
++  promptAttachments,
++  readRecording,
++  recordingPath,
++  replayReplacements,
++  sessionHasUserMessage,
++  TURN_RECORDING_VERSION,
++  type TurnRecording,
++  turnKey,
++} from "./hone-pi-turn-cache.ts";
++
++type PiRecord = Record<string, unknown>;
++
++const args = process.argv.slice(2);
++// The first folder takes new recordings. A replay looks in each, in order.
++const cacheDirs = (process.env.HONE_TURN_CACHE_DIR ?? "").split(NodePath.delimiter).filter(Boolean);
++const cacheDir = cacheDirs[0] ?? null;
++const recordTurns = process.env.HONE_TURN_CACHE_RECORD === "1";
++const maxGapMs = Number(process.env.HONE_TURN_CACHE_MAX_GAP_MS) || 1500;
++const rpcMode = args.some(
++  (arg, i) => arg === "--mode=rpc" || (arg === "--mode" && args[i + 1] === "rpc"),
++);
++const cwd = process.cwd();
++
++const pi = NodeChildProcess.spawn(process.env.HONE_PI_BIN || "pi", args, {
++  stdio: cacheDir !== null && rpcMode ? ["pipe", "pipe", "inherit"] : "inherit",
++});
++pi.on("exit", (code, signal) => process.exit(code ?? (signal === null ? 0 : 1)));
++pi.on("error", (error) => {
++  process.stderr.write(`hone-pi: could not start Pi: ${error.message}\n`);
++  process.exit(127);
++});
++
++const log = (text: string) => process.stderr.write(`hone-pi: ${text}\n`);
++const out = (record: PiRecord) => process.stdout.write(`${JSON.stringify(record)}\n`);
++const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
++
++/** What Pi last reported about its session, from get_state and set_* responses. */
++const piState = {
++  sessionFile: null as string | null,
++  sessionId: null as string | null,
++  model: null as PiModelChoice | null,
++  thinkingLevel: null as string | null,
++};
++
++let recorder: {
++  readonly key: string;
++  readonly prompt: string;
++  readonly startedAt: number;
++  readonly events: Array<{ at: number; record: PiRecord }>;
++  readonly files: Array<{ at: number; path: string; base64: string }>;
++  before: Map<string, string>;
++} | null = null;
++let replaying: { finishNow: boolean } | null = null;
++/** Pi output during our own switch_session is ours to read, never t3code's. */
++let ownRequest: { readonly id: string; readonly done: (record: PiRecord) => void } | null = null;
++
++function noteState(record: PiRecord) {
++  if (record.type !== "response" || record.success !== true) return;
++  const data = (record.data ?? {}) as Record<string, unknown>;
++  if (record.command === "get_state") {
++    if (typeof data.sessionFile === "string") piState.sessionFile = data.sessionFile;
++    if (typeof data.sessionId === "string") piState.sessionId = data.sessionId;
++    const model = data.model as { provider?: unknown; id?: unknown } | undefined;
++    if (typeof model?.provider === "string" && typeof model.id === "string") {
++      piState.model = { provider: model.provider, modelId: model.id };
++    }
++    if (typeof data.thinkingLevel === "string") piState.thinkingLevel = data.thinkingLevel;
++  }
++}
++
++function sniffCommand(record: PiRecord) {
++  if (
++    record.type === "set_model" &&
++    typeof record.provider === "string" &&
++    typeof record.modelId === "string"
++  ) {
++    piState.model = { provider: record.provider, modelId: record.modelId };
++  }
++  if (record.type === "set_thinking_level" && typeof record.level === "string") {
++    piState.thinkingLevel = record.level;
++  }
++}
++
++function captureFiles(at: number) {
++  if (recorder === null) return;
++  for (const file of changedFiles(cwd, recorder.before)) {
++    recorder.files.push({
++      at,
++      path: file.path,
++      base64: NodeFS.readFileSync(NodePath.join(cwd, file.path)).toString("base64"),
++    });
++  }
++  recorder.before = folderSnapshot(cwd);
++}
++
++function finishRecording() {
++  const rec = recorder;
++  recorder = null;
++  if (
++    rec === null ||
++    cacheDir === null ||
++    piState.sessionFile === null ||
++    piState.sessionId === null
++  )
++    return;
++  captureFiles(Date.now() - rec.startedAt);
++  const recording: TurnRecording = {
++    version: TURN_RECORDING_VERSION,
++    key: rec.key,
++    recordedAt: new Date().toISOString(),
++    source: {
++      sessionId: piState.sessionId,
++      sessionFile: piState.sessionFile,
++      cwd,
++      model: piState.model,
++      thinkingLevel: piState.thinkingLevel,
++    },
++    prompt: rec.prompt,
++    attachments: promptAttachments(rec.prompt),
++    events: rec.events,
++    files: rec.files,
++    session: NodeFS.readFileSync(piState.sessionFile, "utf8"),
++  };
++  NodeFS.mkdirSync(cacheDir, { recursive: true });
++  NodeFS.writeFileSync(recordingPath(cacheDir, rec.key), `${JSON.stringify(recording)}\n`);
++  log(`recorded turn ${rec.key} from session ${piState.sessionId}`);
++}
++
++function fromPi(line: string) {
++  let record: PiRecord;
++  try {
++    record = JSON.parse(line) as PiRecord;
++  } catch {
++    process.stdout.write(`${line}\n`);
++    return;
++  }
++  noteState(record);
++  if (ownRequest !== null) {
++    if (record.type === "response" && record.id === ownRequest.id) ownRequest.done(record);
++    return;
++  }
++  if (recorder !== null) {
++    const at = Date.now() - recorder.startedAt;
++    // Answers to t3code's other requests during the turn belong to those requests, not the turn.
++    if (record.type !== "response" || record.command === "prompt")
++      recorder.events.push({ at, record });
++    if (record.type === "tool_execution_end") captureFiles(at);
++    // Saved before t3code hears the turn settle, so the recording is whole once it does.
++    if (record.type === "agent_settled") finishRecording();
++  }
++  process.stdout.write(`${line}\n`);
++}
++
++function askPi(record: PiRecord): Promise<PiRecord> {
++  const id = `hone-pi-${Date.now()}`;
++  return new Promise((resolve) => {
++    ownRequest = {
++      id,
++      done: (response) => {
++        ownRequest = null;
++        resolve(response);
++      },
++    };
++    pi.stdin?.write(`${JSON.stringify({ ...record, id })}\n`);
++  });
++}
++
++/** Sends Hone the session the way the Hone Pi extension does after a reply. */
++async function publishTrace(sessionId: string, body: string) {
++  const url = (process.env.HONE_URL ?? "").replace(/\/+$/, "");
++  if (url === "") return;
++  const auth = { authorization: `Bearer ${process.env.HONE_TOKEN ?? ""}` };
++  try {
++    const agents = await fetch(`${url}/agents.md`, { headers: auth });
++    const version = agents.headers.get("x-hone-version");
++    await agents.text();
++    const res = await fetch(`${url}/api/traces/${sessionId}`, {
++      method: "PUT",
++      headers: {
++        ...auth,
++        "content-type": "application/x-ndjson",
++        ...(version ? { "x-hone-version": version } : {}),
++      },
++      body,
++    });
++    if (!res.ok) log(`Hone answered ${res.status} to the replayed trace`);
++  } catch (error) {
++    log(`could not send the replayed trace to Hone: ${String(error)}`);
++  }
++}
++
++async function replay(recording: TurnRecording, prompt: PiRecord) {
++  const sessionFile = piState.sessionFile!;
++  const sessionId = piState.sessionId!;
++  const replacements = replayReplacements(recording, {
++    sessionId,
++    sessionFile,
++    cwd,
++    attachments: promptAttachments(String(prompt.message ?? "")),
++  });
++  const rewrite = <T>(value: T): T =>
++    JSON.parse(applyReplacements(JSON.stringify(value), replacements)) as T;
++  const state = { finishNow: false };
++  replaying = state;
++  log(`replaying turn ${recording.key}, recorded ${recording.recordedAt}`);
++  let clock = 0;
++  let nextFile = 0;
++  for (const { at, record } of recording.events) {
++    if (!state.finishNow) await sleep(Math.min(Math.max(0, at - clock), maxGapMs));
++    clock = at;
++    for (; nextFile < recording.files.length && recording.files[nextFile]!.at <= at; nextFile++) {
++      const file = recording.files[nextFile]!;
++      const target = NodePath.join(cwd, file.path);
++      NodeFS.mkdirSync(NodePath.dirname(target), { recursive: true });
++      NodeFS.writeFileSync(target, Buffer.from(file.base64, "base64"));
++    }
++    if (record.type === "agent_settled") {
++      const session = applyReplacements(recording.session, replacements);
++      NodeFS.writeFileSync(sessionFile, session);
++      // Pi reloads the session, so a follow-up message continues it.
++      await askPi({ type: "switch_session", sessionPath: sessionFile });
++      await publishTrace(sessionId, session);
++      NodeFS.writeFileSync(
++        `${sessionFile}.hone-replay.json`,
++        `${JSON.stringify(
++          {
++            replayOf: recording.key,
++            recordedAt: recording.recordedAt,
++            sourceSessionId: recording.source.sessionId,
++            replayedAt: new Date().toISOString(),
++          },
++          null,
++          2,
++        )}\n`,
++      );
++    }
++    const replayed = rewrite(record);
++    if (replayed.type === "response" && replayed.command === "prompt") {
++      if (prompt.id === undefined) delete replayed.id;
++      else replayed.id = prompt.id;
++    }
++    out(replayed);
++  }
++  replaying = null;
++}
++
++function fromT3code(line: string) {
++  let record: PiRecord;
++  try {
++    record = JSON.parse(line) as PiRecord;
++  } catch {
++    pi.stdin?.write(`${line}\n`);
++    return;
++  }
++  sniffCommand(record);
++  if (replaying !== null && record.type === "abort") replaying.finishNow = true;
++  if (
++    record.type === "prompt" &&
++    cacheDir !== null &&
++    replaying === null &&
++    recorder === null &&
++    piState.sessionFile !== null &&
++    piState.sessionId !== null &&
++    !sessionHasUserMessage(piState.sessionFile)
++  ) {
++    const key = turnKey({
++      message: String(record.message ?? ""),
++      images: Array.isArray(record.images) ? record.images : [],
++      model: piState.model,
++      thinkingLevel: piState.thinkingLevel,
++      cwd,
++    });
++    const recording =
++      cacheDirs.map((dir) => readRecording(dir, key)).find((found) => found !== null) ?? null;
++    if (recording !== null) {
++      void replay(recording, record);
++      return;
++    }
++    if (recordTurns) {
++      recorder = {
++        key,
++        prompt: String(record.message ?? ""),
++        startedAt: Date.now(),
++        events: [],
++        files: [],
++        before: folderSnapshot(cwd),
++      };
++    }
++  }
++  pi.stdin?.write(`${line}\n`);
++}
++
++if (cacheDir !== null && rpcMode) {
++  // Split on LF only, as Pi frames records. readline would also split on U+2028.
++  const lines = (stream: NodeJS.ReadableStream, onLine: (line: string) => void) => {
++    let buffer = "";
++    stream.setEncoding("utf8");
++    stream.on("data", (chunk: string) => {
++      buffer += chunk;
++      let newline = buffer.indexOf("\n");
++      while (newline >= 0) {
++        const line = buffer.slice(0, newline).replace(/\r$/, "");
++        buffer = buffer.slice(newline + 1);
++        if (line !== "") onLine(line);
++        newline = buffer.indexOf("\n");
++      }
++    });
++  };
++  lines(pi.stdout!, fromPi);
++  lines(process.stdin, fromT3code);
++  process.stdin.on("end", () => pi.stdin?.end());
++}
+-- 
+2.43.0
+

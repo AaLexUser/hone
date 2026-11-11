@@ -28,6 +28,9 @@ folder at session start and publishes the session trace after each reply.
 | `0004` | Sign-in through an authenticating reverse proxy, with no pairing link (`apps/server/src/auth/proxyAuth.ts`) |
 | `0005` | One feedback per session that can be read in full, edited and removed. `hone.feedback` sets or clears it through Hone's `POST` and `DELETE /api/traces/{id}/feedback`, and `hone.threadFeedback` returns its rating and comment (`apps/web/src/components/chat/HoneControls.tsx`) |
 | `0006` | `HONE_DEMO_MODEL` names the Pi model the demo project and its prepared chats use, so the picker can hide Pi's `default` entry (`apps/server/src/hone/HoneDemo.ts`) |
+| `0007` | The orchestration WebSocket at `/api/ws/`, for reverse proxies that upgrade only that prefix (`apps/server/src/ws.ts`) |
+| `0008` | Guide mode for the booth, the `hone.guideUnlock` RPC and the guide settings in `hone.status` (`apps/web/src/components/hone/guide/`) |
+| `0009` | The agent turn cache, a Pi wrapper that replays a recorded first turn of a demo chat (`apps/server/scripts/hone-pi.ts`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
@@ -106,6 +109,71 @@ export HONE_DEMO_MODEL=opencode-go/deepseek-v4.1-flash  # optional, Pi's default
 - The Hone button next to Settings, Usage and Pull requests shows the Hone dashboard inside
   t3code. It loads `HONE_DASHBOARD_URL`, or `HONE_URL` when that is not set, so the browser must
   reach that address. The header chip opens the same page.
+
+## Guide mode
+
+Guide mode lets a visitor try the booth demo alone. A card walks them through the offer letter
+scenario one step at a time. It outlines the control to use, says why, and moves on when the
+visitor does the real thing, such as sending the chat or pressing Start optimization. Back and
+Skip are always there, and a bar shows the progress.
+
+1. Meet Hone. One screen on what Hone does.
+2. Open the prepared chat for Olivia Grant and read the feedback under the reply.
+3. Start a new chat. The guide writes the request and adds the two Inbox files. The visitor
+   presses send.
+4. Watch the agent work, open `Offer_Osei_Amara.pdf` and spot the £0 bonus and 0 shares rows.
+5. Press thumbs down. The guide writes the feedback. The visitor presses Send to Hone.
+6. Click the Hone chip, press Start optimization and watch the reviewers and the judge.
+7. Open Versions and see the new rule. The last card has a QR code to the repository and a Start
+   over button.
+
+The steps on the Hone page follow messages the Hone dashboard posts to t3code from its frame,
+for the route, Start optimization, and the start and end of a run. Each side checks the other's
+origin. t3code asks the frame to outline Start optimization, the judge's open question and
+Versions. A run that replays a recording takes about a minute and a half and a real one about
+ten minutes, and the card says which. During a real run the card offers the booth video. A run
+that fails sends the visitor back to Start optimization.
+
+The Guide button in the sidebar footer turns guide mode on. It stays on through reloads, and
+Reset demo is hidden while it is on. To leave guide mode, hold the button for two seconds, then
+enter the PIN when one is set. After a short idle the booth video plays full screen and muted.
+A touch, a key or a mouse move ends it. After a long idle the guide resets the demo and shows
+the welcome card again. Idle time does not count while the agent or an optimization works.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `HONE_GUIDE_VIDEO_URL` | none | The booth video. Without it the guide plays no video |
+| `HONE_GUIDE_IDLE_VIDEO_SECONDS` | `90` | Idle seconds before the video plays, `0` for never |
+| `HONE_GUIDE_IDLE_RESET_SECONDS` | `300` | Idle seconds before the demo starts over, `0` for never |
+| `HONE_GUIDE_PIN` | none | The PIN that ends guide mode. Without it the hold is enough |
+
+All guide text is in one table, `apps/web/src/components/hone/guide/guideText.ts`, so another
+language can be added next to English.
+
+## Agent turn cache
+
+A live model answers differently every time, so a visitor's chat would never match a recorded
+optimization run. In the booth demo, Pi's binary path points at `apps/server/scripts/hone-pi.ts`.
+It starts the real Pi and passes every message through. When the first message of a new chat,
+the model, the thinking level and every file in the project folder match a recording, it plays
+the recorded Pi events back at their recorded pace, with each pause cut to 1.5 seconds. It writes
+the files the turn wrote, writes the Pi session file and sends it to Hone with the same request the
+Hone extension sends after a reply. Pi then loads that session, so a follow-up message continues
+it live. Anything that differs runs live. An upload counts by its name and content, not by where
+t3code saved it.
+
+A replay leaves `<session file>.hone-replay.json` next to the Pi session file, with the recording
+key, the recording date and the source session. Nothing on the page shows it.
+
+| Variable | Meaning |
+|---|---|
+| `HONE_TURN_CACHE_DIR` | Recording folders separated by `:`. New recordings go to the first. Unset, Pi runs untouched |
+| `HONE_TURN_CACHE_RECORD` | `1` records the first turn of each new chat that matches no recording |
+| `HONE_TURN_CACHE_MAX_GAP_MS` | The longest pause in a replay, `1500` by default |
+| `HONE_PI_BIN` | The real Pi, `pi` on `PATH` by default |
+
+A recording is the Pi output of a real turn, recorded as it happens. Never write one by hand.
+Shipped recordings live in `clients/t3code/turn-cache/`.
 
 ## Sign in through a reverse proxy
 

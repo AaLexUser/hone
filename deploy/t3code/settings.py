@@ -9,6 +9,17 @@ import json
 import sys
 from pathlib import Path
 
+PI_WRAPPER = "/opt/t3code/apps/server/scripts/hone-pi.ts"
+
+if sys.argv[1:2] == ["--pi-wrapper"]:
+    # Points Pi's binary path at the turn cache wrapper in an existing settings.json.
+    path = Path(sys.argv[2])
+    current = json.loads(path.read_text())
+    pi_instance = current.setdefault("providerInstances", {}).setdefault("pi", {"driver": "pi", "enabled": True})
+    pi_instance.setdefault("config", {})["binaryPath"] = PI_WRAPPER
+    path.write_text(json.dumps(current, indent=2))
+    sys.exit(0)
+
 HERE = Path(__file__).parent
 settings = json.loads((HERE / "settings.json").read_text())
 pi = json.loads((HERE / "pi-settings.json").read_text())

@@ -252,3 +252,5 @@ harbor-officeqa-offline-adapter/data/
 harbor-officeqa-offline-adapter/adapters/officeqa-offline/.venv/
 pi-gpt-5.4-mini-baseline
 reference
+# The booth loop for guide mode, served by Caddy and never committed.
+deploy/booth-video/
