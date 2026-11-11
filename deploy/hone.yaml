@@ -4,7 +4,7 @@ version: 1
 # into the hone container and points HONE_CONFIG at it. As in the paper, each
 # MAJICS panel mixes three model families (MiniMax, DeepSeek and Qwen), and both
 # judges use a fourth family (GLM). Every reviewer turn must finish within the
-# driver's five minute turn limit and every follow-up within 60 s. MiMo, LongCat
+# driver's five minute turn limit and every follow-up within 120 s. MiMo, LongCat
 # and Kimi ran past the turn limit and Hy3 missed a follow-up, so faster models
 # took their seats. DeepSeek's endpoint answered 429 overloaded for a while on
 # 11 November, then recovered. DeepSeek stays defined as the agent's model. All four come from OpenCode Go with the key
@@ -140,8 +140,8 @@ majics:
         supportsStrictMode: true
         maxTokensField: max_tokens
 
-  # A judge's ask_panel follow-up must answer within the driver's 60 s
-  # deadline, so each panel model runs at the highest reasoning level that
+  # A judge's ask_panel follow-up must answer within follow_up_timeout_s
+  # (below), so each panel model runs at the highest reasoning level that
   # still answers in time.
   review:
     # The first reviewer seat deep reads the whole batch, so the fastest model sits there.
@@ -167,3 +167,8 @@ majics:
     judge:
       model: glm-5.3-flash
       reasoning: high
+
+optimization:
+  # The judges' follow-up questions often make a reviewer re-check a trace,
+  # which takes longer than the default 60 seconds.
+  follow_up_timeout_s: 120

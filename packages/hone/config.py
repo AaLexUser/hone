@@ -469,6 +469,8 @@ class OptimizationConfig(FrozenConfigModel):
 
     max_attempts: int = Field(default=3, ge=1)
     stage_timeout_s: int = Field(default=3600, ge=1)
+    # How long a panel worker may take to answer one ask_panel follow-up from a judge.
+    follow_up_timeout_s: int = Field(default=60, ge=10)
 
 
 class HoneConfig(FrozenConfigModel):

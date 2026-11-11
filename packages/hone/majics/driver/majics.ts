@@ -44,6 +44,7 @@ interface RosterConfig {
   mode: "review" | "propose";
   attempt?: number;
   rejection?: string | null;
+  followUpTimeoutS?: number;
   reviewModels: ModelSpec[];
   reviewJudge: ModelSpec;
   proposeModels: ModelSpec[];
@@ -191,7 +192,7 @@ const EMPTY_BEFORE_WORK_RETRY_PROMPT =
 const EMPTY_OUTPUT_RETRIES = 3;
 const INTERRUPTED_TURN_RETRIES = 2;
 const MODEL_TURN_TIMEOUT_MS = 5 * 60 * 1000;
-const ASK_PANEL_FOLLOW_UP_TIMEOUT_MS = 60 * 1000;
+const ASK_PANEL_FOLLOW_UP_TIMEOUT_MS = (CONFIG.followUpTimeoutS ?? 60) * 1000;
 const INTERRUPTED_TURN_RETRY_PROMPT =
   "Your previous response was interrupted by a transient stream or network error. Continue from the work already in this session and complete the task now. Do not restart the analysis. If the task requires a final tool call, make that call now.";
 
