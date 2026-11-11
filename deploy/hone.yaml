@@ -139,13 +139,14 @@ majics:
   # deadline, so each panel model runs at the highest reasoning level that
   # still answers in time.
   review:
+    # The first reviewer seat deep reads the whole batch, so the fastest model sits there.
     panel:
-      - model: longcat-2.0
-        reasoning: low
-      - model: hy3
-        reasoning: low
       - model: minimax-m3.1-flash
         reasoning: high
+      - model: hy3
+        reasoning: low
+      - model: longcat-2.0
+        reasoning: low
     judge:
       model: glm-5.3-flash
       reasoning: high
