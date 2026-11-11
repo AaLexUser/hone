@@ -144,7 +144,8 @@ majics:
   # A judge's ask_panel follow-up must answer within follow_up_timeout_s
   # (below), so each panel model runs at the highest reasoning level that
   # still answers in time. The first reviewer runs MiniMax at medium, because
-  # at high its deep read of the batch once ran past the turn limit.
+  # at high its deep read of the batch once ran past the turn limit. The third
+  # reviewer runs Qwen at low, because at medium it once missed a follow-up.
   review:
     # The first reviewer seat deep reads the whole batch, so the fastest model sits there.
     panel:
@@ -153,7 +154,7 @@ majics:
       - model: deepseek-v4.1-flash
         reasoning: low
       - model: qwen3.8-flash
-        reasoning: medium
+        reasoning: low
     judge:
       model: glm-5.3
       reasoning: high
