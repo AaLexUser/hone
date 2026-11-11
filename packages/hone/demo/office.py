@@ -311,9 +311,13 @@ def relocation_block(p):
     if not RELOCATION:
         # AGENTS.md says a block that does not apply goes, heading included
         heading = p._p.getprevious()
+        spacer = p._p.getnext()
         p._p.getparent().remove(p._p)
         if heading is not None and 'Relocation' in ''.join(heading.itertext()):
             heading.getparent().remove(heading)
+        # The block sits between two spacers, so one goes with it
+        if spacer is not None and spacer.tag == p._p.tag and not ''.join(spacer.itertext()).strip():
+            spacer.getparent().remove(spacer)
         return
     for r in p.runs:
         r.text = r.text.replace('{{IF_RELOCATION}}', '').replace('{{END_IF_RELOCATION}}', '')"""

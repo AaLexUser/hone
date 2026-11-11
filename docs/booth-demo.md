@@ -52,7 +52,7 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 
 1. Install LibreOffice with `soffice` on PATH, poppler for `pdftotext`, and python-docx for the agent's Python.
 2. Build t3code with patches 0001 to 0003 as `clients/t3code/README.md` describes, and link the Pi extension.
-3. Start Hone with `HONE_DEMO=1` and its own empty `HONE_DATA_DIR`, bound to 127.0.0.1. Hone refuses a demo reset on a folder with real history. Set `HONE_DEMO_DATE=2026-11-14` so the prepared state matches the recorded runs. The first start builds the prepared state in about 20 seconds.
+3. Start Hone with `HONE_DEMO=1` and its own empty `HONE_DATA_DIR`, bound to 127.0.0.1. Hone refuses a demo reset on a folder with real history. Set `HONE_DEMO_DATE=2026-11-11` so the prepared state matches the recorded runs. The first start builds the prepared state in about 20 seconds.
 4. Start the t3code server with `HONE_DEMO=1`, `HONE_URL`, `HONE_TOKEN`, `HONE_DASHBOARD_URL` and `HONE_DEMO_DIR` set to a new empty folder. It seeds the chats on start.
 5. Pair the browser once, open the Offer letters project, and run one full visitor loop, then press Reset demo.
 
@@ -121,7 +121,8 @@ On a hit, each recorded value maps to the current one, as a whole token, in ever
 
 The prepared scenario does not move by whole days from one booth day to the next.
 Start dates fall on the following Monday, and the base AGENTS.md names a fixed example date, so the scenarios built for 14 November, 17 November and 1 December have three fingerprints.
-Record on the scenario of the booth day. `HONE_DEMO_DATE=2026-11-14` makes Hone build the prepared state for that day whatever the clock says. Set it on the stack that records and on the booth stack.
+Record on the scenario of the recording day. `HONE_DEMO_DATE=2026-11-11` makes Hone build the prepared state for that day whatever the clock says. Set it on the stack that records and on the booth stack.
+The recorded visitor turn keeps the clock of the day it was recorded, so the demo date must be that day. Otherwise the visitor's letter is dated before the approval it was written from, and the run argues about the dates instead of the feedback.
 
 Entries live in two places.
 - `<data dir>/run-cache/`, written by Hone. It survives restarts and demo resets.

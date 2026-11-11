@@ -1,6 +1,6 @@
 """Build the prepared demo state into a folder to inspect it.
 
-    uv run python -m hone.demo build --out /tmp/hone-demo [--date 2026-11-14]
+    uv run python -m hone.demo build --out /tmp/hone-demo [--date 2026-11-11]
 
 The service builds the same state on its own in demo mode (HONE_DEMO=1), so
 the booth never needs this command.

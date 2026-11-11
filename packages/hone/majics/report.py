@@ -80,12 +80,12 @@ def render_review(value: Any) -> str:
 <title>Trace Review Report</title><style>
 :root{{--bg:#08090b;--panel:#0f1114;--line:#1d2126;--text:#eef0f2;--muted:#9da3ad;--accent:#6672e0;--green:#3dd68c;--amber:#ffb224}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--text);font:13px/1.55 Inter,system-ui,sans-serif}}
-main{{max-width:960px;margin:auto;padding:36px 24px 64px}}h1{{font-size:28px;margin:4px 0 8px}}h2{{font-size:16px;margin:0 0 12px}}.eyebrow{{color:var(--accent);font:11px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}}
+main{{max-width:960px;margin:auto;padding:36px 24px 64px}}h1{{font-size:28px;margin:4px 0 8px}}h2{{font-size:16px;margin:0 0 12px}}
 .summary{{color:var(--muted);font-size:15px;max-width:760px}}section{{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:16px}}
 .item{{position:relative;border-top:1px solid var(--line);padding:14px 0}}.item:first-of-type{{border-top:0;padding-top:0}}.item p{{margin:0 70px 8px 0}}
 .confidence{{position:absolute;right:0;top:14px;font:10px ui-monospace,monospace;text-transform:uppercase}}.item:first-of-type .confidence{{top:0}}.high{{color:var(--green)}}.medium{{color:var(--amber)}}.low{{color:var(--muted)}}
 .chip{{display:inline-block;background:#171a20;border:1px solid #282d36;border-radius:99px;padding:2px 7px;margin:2px 4px 0 0;color:#cbd0da}}ul{{margin:0;padding-left:20px}}li+li{{margin-top:7px}}.empty,.contra{{color:var(--muted)}}
-</style></head><body><main><p class="eyebrow">Judged artifact · review.json v1</p><h1>Trace Review Report</h1><p class="summary">{summary}</p>
+</style></head><body><main><h1>Trace Review Report</h1><p class="summary">{summary}</p>
 <section><h2>Findings</h2>{_items(review["findings"])}</section>
 <section><h2>Hypotheses</h2>{_items(review["hypotheses"], hypotheses=True)}</section>
 <section><h2>Optimization directions</h2>{_plain_list(review["directions"])}</section>

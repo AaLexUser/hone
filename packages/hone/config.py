@@ -495,9 +495,12 @@ class HoneConfig(FrozenConfigModel):
 
     @property
     def pipeline_label(self) -> str:
+        def judge(seat: MajicsSeat) -> str:
+            return self.majics.seat_spec(seat)["id"].rsplit("/", 1)[-1]
+
         return (
-            f"MAJICS · review[{len(self.majics.review.panel)} → "
-            f"{self.majics.seat_label(self.majics.review.judge)}] · "
-            f"propose[{len(self.majics.propose.panel)} → "
-            f"{self.majics.seat_label(self.majics.propose.judge)}]"
+            f"MAJICS · {len(self.majics.review.panel)} reviewers and a "
+            f"{judge(self.majics.review.judge)} judge · "
+            f"{len(self.majics.propose.panel)} proposers and a "
+            f"{judge(self.majics.propose.judge)} judge"
         )
