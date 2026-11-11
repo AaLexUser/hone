@@ -143,12 +143,13 @@ majics:
 
   # A judge's ask_panel follow-up must answer within follow_up_timeout_s
   # (below), so each panel model runs at the highest reasoning level that
-  # still answers in time.
+  # still answers in time. The first reviewer runs MiniMax at medium, because
+  # at high its deep read of the batch once ran past the turn limit.
   review:
     # The first reviewer seat deep reads the whole batch, so the fastest model sits there.
     panel:
       - model: minimax-m3.1-flash
-        reasoning: high
+        reasoning: medium
       - model: deepseek-v4.1-flash
         reasoning: low
       - model: qwen3.8-flash
