@@ -201,7 +201,7 @@ const eventsEndpoint = `/api/runs/${HONE.runId}/pipeline-event`;
 
 let posted: Promise<void> = Promise.resolve();
 
-/** Posts one at a time: the service stamps and stores events in arrival order, and the run page reads that order. */
+/** Posts one at a time. The service stamps and stores events in arrival order, and the run page reads that order. */
 function postEvent(event: ProgressEvent): Promise<void> {
   const body = JSON.stringify(event);
   posted = posted.then(async () => {
