@@ -45,6 +45,7 @@ interface RosterConfig {
   attempt?: number;
   rejection?: string | null;
   followUpTimeoutS?: number;
+  turnTimeoutS?: number;
   reviewModels: ModelSpec[];
   reviewJudge: ModelSpec;
   proposeModels: ModelSpec[];
@@ -191,7 +192,7 @@ const EMPTY_BEFORE_WORK_RETRY_PROMPT =
   "Your previous turn ended without examining anything and without a visible answer. Start the work now: call your tools to read the code the task refers to, then give the final answer in visible assistant text only. Do not use hidden thinking as the answer.";
 const EMPTY_OUTPUT_RETRIES = 3;
 const INTERRUPTED_TURN_RETRIES = 2;
-const MODEL_TURN_TIMEOUT_MS = 5 * 60 * 1000;
+const MODEL_TURN_TIMEOUT_MS = (CONFIG.turnTimeoutS ?? 300) * 1000;
 const ASK_PANEL_FOLLOW_UP_TIMEOUT_MS = (CONFIG.followUpTimeoutS ?? 60) * 1000;
 const TURN_TIME_LIMIT_PROMPT =
   "Your previous turn reached its time limit. Stop researching. Finish the task now from the work already in this session, and if the task requires a final tool call, make that call now.";

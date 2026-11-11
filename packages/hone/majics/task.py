@@ -133,6 +133,7 @@ class MajicsTaskBuilder:
             "attempt": attempt,
             "rejection": rejection,
             "followUpTimeoutS": self.s.optimization.follow_up_timeout_s,
+            "turnTimeoutS": self.s.optimization.turn_timeout_s,
             **self._roster(),
         }, indent=2), encoding="utf-8")
         (config_dir / "hone.json").write_text(json.dumps({

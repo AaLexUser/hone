@@ -4,7 +4,7 @@ version: 1
 # into the hone container and points HONE_CONFIG at it. As in the paper, each
 # MAJICS panel mixes three model families (MiniMax, DeepSeek and Qwen), and both
 # judges use a fourth family (GLM). Every worker turn must finish within the
-# driver's five minute turn limit and every follow-up within
+# turn limit in optimization.turn_timeout_s and every follow-up within
 # optimization.follow_up_timeout_s. MiMo, LongCat and Kimi ran past the turn
 # limit and Hy3 missed a follow-up, so faster models took their seats. The
 # judges run the full GLM 5.3, because GLM 5.3 Flash kept rules the paper's
@@ -175,3 +175,6 @@ optimization:
   # The judges' follow-up questions often make a reviewer re-check a trace,
   # which takes longer than the default 60 seconds.
   follow_up_timeout_s: 120
+  # A seat's deep read of a batch of long sessions sometimes passed the default
+  # five minute turn limit, on a different model each time, so seats get eight.
+  turn_timeout_s: 480

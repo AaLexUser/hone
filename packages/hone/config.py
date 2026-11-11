@@ -471,6 +471,8 @@ class OptimizationConfig(FrozenConfigModel):
     stage_timeout_s: int = Field(default=3600, ge=1)
     # How long a panel worker may take to answer one ask_panel follow-up from a judge.
     follow_up_timeout_s: int = Field(default=60, ge=10)
+    # How long one model turn of a seat may run before the driver stops it and asks it to finish.
+    turn_timeout_s: int = Field(default=300, ge=60)
 
 
 class HoneConfig(FrozenConfigModel):
