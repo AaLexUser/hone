@@ -1,0 +1,302 @@
+// node capture.cjs <stage> <footage dir> [chat]
+// Records the time zone scenario on a booth stack with demo mode off (BOOTH_URL).
+// Stages, run in this order:
+//   setup           adds the Sales reports project in t3code (not recorded)
+//   prep <chat>     one of the CHATS below, then the feedback from <footage>/feedback-<chat>.txt (not recorded)
+//   chat <chat>     the same, recorded
+//   rate <chat> <title>
+//                   reopens a finished chat whose sidebar title matches <title>, recorded, holds on its
+//                   table and sends the feedback (for a chat whose recording stopped early)
+//   run             the Hone page, Start optimization and the whole real run, recorded
+//   review <question> <rule>
+//                   the finished run page scrolled to the activity line that matches <question>, then the
+//                   new version on the Versions page with the line that matches <rule>
+//   chat2 <chat>    a new chat with another question, after the commit
+// The feedback file is written by hand after reading the agent's table, so the complaint is about
+// what this chat really got wrong. Its first line is up or down, the rest is the comment.
+const fs = require('fs');
+const path = require('path');
+const { openRig, sleep, now } = require('../../capture/rig.cjs');
+const F = require('../../capture/flows.cjs');
+
+const PROJECT_DIR = '/home/node/demo/Sales reports/';
+const PROJECT = 'Sales reports';
+const ASK = 'Show the table in your reply.';
+const OCT = 'Inbox/orders_2026-10.csv';
+const NOV = 'Inbox/orders_2026-11.csv';
+const CHATS = {
+  'oct-daily': [OCT, `Daily orders and GMV for 25 to 31 October from this export. ${ASK}`],
+  'nov-channels': [NOV, `Orders and GMV by channel for 1 to 7 November from this export, biggest first. ${ASK}`],
+  'nov-daily': [NOV, `Daily orders and GMV for 1 to 7 November from this export. ${ASK}`],
+  'sale-daily': [NOV, `Daily orders and GMV for 8 to 14 November from this export. ${ASK}`],
+  'sale-hourly': [NOV, `Orders per hour on 11 November from this export. ${ASK}`],
+};
+
+const [stage, out, chat] = process.argv.slice(2);
+
+async function closeOnboarding(page) {
+  const close = page.getByRole('dialog').getByRole('button', { name: 'Close' });
+  if (await close.isVisible().catch(() => false)) {
+    await close.click();
+    await sleep(0.8);
+  }
+}
+
+async function showFiles(page) {
+  await sleep(1);
+  if (!(await F.item(page, 'Inbox/').isVisible().catch(() => false))) {
+    await page.getByRole('button', { name: 'Toggle right panel' }).click();
+    await sleep(1.5);
+    const files = page.getByText('Files', { exact: true });
+    if (await files.isVisible().catch(() => false)) {
+      await files.click();
+      await sleep(1.5);
+    }
+  }
+}
+
+async function openApp(rig) {
+  const { page } = rig;
+  await page.goto(rig.BASE + '/');
+  await sleep(6);
+  await closeOnboarding(page);
+  await page.getByText(PROJECT).first().click();
+  await sleep(2);
+  await F.closeDetailsCard(page);
+  await showFiles(page);
+}
+
+async function setup(rig) {
+  const { page } = rig;
+  await page.goto(rig.BASE + '/');
+  await sleep(6);
+  await closeOnboarding(page);
+  await page.getByRole('button', { name: 'Add project' }).first().click();
+  await sleep(1);
+  await page.getByText('Local folder', { exact: true }).click();
+  await sleep(1);
+  await page.getByRole('dialog').locator('input').first().fill(PROJECT_DIR);
+  await sleep(1.5);
+  await page.getByText('Add', { exact: true }).first().click();
+  await sleep(3);
+  rig.mark('project-added');
+}
+
+async function waitForFeedback(rig, name) {
+  const file = path.join(out, `feedback-${name}.txt`);
+  console.log('waiting for', file);
+  while (!fs.existsSync(file)) await sleep(3);
+  const [verdict, ...rest] = fs.readFileSync(file, 'utf8').trim().split('\n');
+  return { verdict: verdict.trim(), comment: rest.join(' ').trim() };
+}
+
+async function rate(rig, { verdict, comment }) {
+  const { page } = rig;
+  const label = verdict === 'up' ? 'Good reply, tell Hone' : 'Needs work, tell Hone';
+  await rig.click(page.getByRole('button', { name: label }).last(), 0.9);
+  await sleep(0.8);
+  rig.mark('thumb-' + verdict);
+  if (comment) {
+    const box = page.getByPlaceholder('Hone uses this to improve AGENTS.md');
+    await box.evaluate((e) => { e.spellcheck = false; });
+    await rig.click(box, 0.4);
+    await rig.type(comment, 30);
+    rig.mark('feedback-typed');
+    await sleep(0.6);
+  }
+  await rig.click(page.getByRole('button', { name: 'Send to Hone' }), 0.6);
+  rig.mark('feedback-sent');
+  await sleep(4);
+  const header = await page.locator('header, [data-slot="header"]').first().innerText().catch(() => '');
+  rig.mark('chip', { header: header.replace(/\n+/g, ' ') });
+}
+
+const box = async (loc) => {
+  const b = await loc.boundingBox();
+  return b && { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.width), h: Math.round(b.height) };
+};
+
+async function tableRows(table) {
+  const rows = [];
+  for (const row of await table.locator('tr').all()) rows.push({ text: (await row.innerText()).replace(/\s+/g, ' '), box: await box(row) });
+  return { table: await box(table), rows };
+}
+
+// Holds on the reply's last table. If its top is cut off, scrolls up slowly to show it.
+async function showTable(rig) {
+  const { page } = rig;
+  const table = page.locator('main table').last();
+  if (!(await table.count())) {
+    rig.mark('no-table');
+    await sleep(6);
+    return;
+  }
+  rig.mark('table', await tableRows(table));
+  await sleep(6);
+  const top = (await table.boundingBox()).y;
+  if (top < 90) {
+    await rig.moveTo(1000, 600, 0.6);
+    await rig.wheel(top - 130, 14, 1.6);
+    await sleep(1);
+    rig.mark('table-top', await tableRows(table));
+    await sleep(6);
+    await rig.wheel(4000, 14, 1.6);
+    await sleep(1);
+  }
+  rig.mark('table-end');
+}
+
+// t3code renders a long thread lazily, so "Worked for" can be out of the page. The reply is done
+// when nothing says Working and its thumbs are there, twice in a row.
+async function waitForReply(page, maxSec) {
+  const t0 = now();
+  let done = 0;
+  for (;;) {
+    await sleep(3);
+    const text = await page.locator('main').innerText().catch(() => '');
+    const thumbs = await page.getByRole('button', { name: 'Needs work, tell Hone' }).count();
+    done = !/Working/.test(text) && thumbs > 0 ? done + 1 : 0;
+    if (done >= 2) return text;
+    if (now() - t0 > maxSec) throw new Error('agent reply timed out');
+  }
+}
+
+// Reopens a finished chat, recorded, holds on its table and rates it.
+async function rateChat(rig, name, title) {
+  const { page } = rig;
+  await openApp(rig);
+  await page.locator('[data-thread-item]').filter({ hasText: new RegExp(title) }).first().click();
+  await sleep(4);
+  await rig.startRecording();
+  await sleep(2);
+  rig.mark('thread-open');
+  await showTable(rig);
+  await sleep(1);
+  await rate(rig, await waitForFeedback(rig, name));
+  await sleep(2);
+  await rig.stopRecording();
+}
+
+async function newChat(rig, name, { record }) {
+  const { page } = rig;
+  const [file, request] = CHATS[name];
+  await openApp(rig);
+  if (record) await rig.startRecording();
+  await sleep(1.5);
+  const fresh = page.getByRole('button', { name: 'New thread', exact: true });
+  if (await fresh.isVisible().catch(() => false)) {
+    await rig.click(fresh, 0.8);
+    await sleep(2);
+    await F.closeDetailsCard(page);
+    await showFiles(page);
+  }
+  rig.mark('new-thread');
+  await F.composeRequest(rig, { send: true, files: [file], request });
+  await rig.moveTo(1180, 700, 0.8);
+  rig.hideCursor();
+  const reply = await waitForReply(page, 900).catch(async (e) => {
+    await page.screenshot({ path: path.join(out, `timeout-${name}.png`) });
+    throw e;
+  });
+  rig.mark('replied', { tail: reply.replace(/\n+/g, ' | ').slice(-1500) });
+  rig.showCursor();
+  await sleep(1);
+  await showTable(rig);
+}
+
+async function optimize(rig) {
+  const { page } = rig;
+  await rig.click(page.getByRole('button', { name: 'Hone', exact: true }), 1);
+  await sleep(4);
+  rig.mark('hone-dashboard');
+  const frame = page.frameLocator('iframe');
+  await rig.click(frame.getByRole('button', { name: 'Start optimization' }), 0.9);
+  rig.mark('start-clicked');
+  let run = null;
+  for (let i = 0; i < 30 && !run; i++) {
+    await sleep(1);
+    const st = await rig.api('/hone/api/state');
+    if (st.run && st.run.id) run = st.run;
+  }
+  rig.mark('run-started', { id: run.id });
+  await rig.moveTo(1880, 1040, 1);
+  rig.hideCursor();
+  const t0 = now();
+  for (;;) {
+    await sleep(10);
+    const r = await rig.api('/hone/api/runs/' + run.id);
+    if (!['running', 'validating'].includes(r.status)) {
+      rig.mark('run-ended', r);
+      break;
+    }
+    if (now() - t0 > 45 * 60) throw new Error('run still going after 45 minutes');
+  }
+  await sleep(8);
+  rig.showCursor();
+  rig.mark('run-settled');
+}
+
+async function review(rig, question, rule) {
+  const { page } = rig;
+  await page.goto(rig.BASE + '/hone');
+  await sleep(5);
+  const runs = await rig.api('/hone/api/runs');
+  const run = (Array.isArray(runs) ? runs : runs.runs)[0];
+  const frame = page.frames().find((f) => f.url().includes('/hone/'));
+  await frame.goto(rig.BASE + '/hone/runs/' + run.id);
+  await sleep(5);
+  const ui = page.frameLocator('iframe');
+  await rig.startRecording();
+  await sleep(2.5);
+  rig.mark('run-page', { run: run.id, durationMs: run.durationMs });
+  const q = ui.getByText(new RegExp(question)).first();
+  await rig.moveTo(700, 640, 0.6);
+  for (let i = 0; i < 3; i++) {
+    const b = await q.boundingBox();
+    const dy = b.y - 430;
+    if (Math.abs(dy) < 8) break;
+    await rig.wheel(dy, 14, 1.2);
+    await sleep(0.8);
+  }
+  await sleep(0.6);
+  rig.mark('question', { question: await box(q) });
+  await sleep(5);
+  await rig.wheel(-6000, 12, 1.2);
+  await sleep(1.2);
+  await rig.click(ui.getByRole('link', { name: /View version/ }).or(ui.getByRole('button', { name: /View version/ })).first(), 1);
+  await sleep(3);
+  rig.mark('versions', { rule: await box(ui.getByText(new RegExp(rule)).first()).catch(() => null) });
+  await sleep(7);
+  rig.mark('versions-end');
+  await rig.stopRecording();
+}
+
+(async () => {
+  const rig = await openRig(out, chat && stage !== 'review' ? `${stage}-${chat}` : stage);
+  if (stage === 'setup') await setup(rig);
+  else if (stage === 'prep' || stage === 'chat') {
+    const record = stage === 'chat';
+    await newChat(rig, chat, { record });
+    await rate(rig, await waitForFeedback(rig, chat));
+    if (record) {
+      await sleep(2);
+      await rig.stopRecording();
+    }
+  } else if (stage === 'rate') {
+    await rateChat(rig, chat, process.argv[5]);
+  } else if (stage === 'run') {
+    await openApp(rig);
+    await rig.startRecording();
+    await sleep(2);
+    await optimize(rig);
+    await sleep(1);
+    await rig.stopRecording();
+  } else if (stage === 'review') {
+    await review(rig, chat, process.argv[5]);
+  } else if (stage === 'chat2') {
+    await newChat(rig, chat, { record: true });
+    await sleep(2);
+    await rig.stopRecording();
+  } else throw new Error('unknown stage ' + stage);
+  await rig.close();
+})().catch((e) => { console.error(e); process.exit(1); });

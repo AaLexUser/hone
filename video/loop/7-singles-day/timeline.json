@@ -1,0 +1,265 @@
+{
+  "shots": [
+    {
+      "id": "1-request",
+      "clip": "chat-sale-daily",
+      "from": "inbox-open@-0.6",
+      "to": "typed@0.6",
+      "dur": 12.5,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          6.6,
+          960,
+          540,
+          1
+        ],
+        [
+          8.6,
+          830,
+          380,
+          1.5
+        ]
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 6.2,
+          "text": "A shop analyst works with a Pi agent."
+        },
+        {
+          "at": 6.4,
+          "to": 12.5,
+          "text": "Daily orders for 8 to 14 November, / from the order *export*."
+        }
+      ]
+    },
+    {
+      "id": "2-agent",
+      "clip": "chat-sale-daily",
+      "from": "sent@0.3",
+      "to": "replied@-1.0",
+      "dur": 11.0,
+      "badge": {
+        "big": "6 min 36 s",
+        "small": "agent at work, shown {speed}\u00d7 faster"
+      },
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 11.0,
+          "text": "The agent sums the orders by *day*."
+        }
+      ]
+    },
+    {
+      "id": "3-table",
+      "clip": "rate-sale-daily",
+      "from": "table-top@0",
+      "to": "table-top@5.8",
+      "dur": 13.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          1.0,
+          960,
+          540,
+          1
+        ],
+        [
+          3.0,
+          818,
+          300,
+          1.75
+        ],
+        [
+          13.0,
+          818,
+          300,
+          1.78
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 3.2,
+          "to": 13.0,
+          "rect": [
+            446,
+            243,
+            744,
+            44
+          ],
+          "tone": "red"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 6.4,
+          "text": "Its table puts the peak on *10 November*."
+        },
+        {
+          "at": 6.6,
+          "to": 13.0,
+          "text": "But the sale opens at midnight Beijing time. / The agent split the days at *UTC* midnight."
+        }
+      ]
+    },
+    {
+      "id": "4-backlog",
+      "clip": "rate-sale-daily",
+      "from": "table-end@-0.8",
+      "to": "thumb-down@-1.4",
+      "dur": 7.0,
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          818,
+          548,
+          1.6
+        ],
+        [
+          7.0,
+          818,
+          548,
+          1.62
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 7.0,
+          "rect": [
+            462,
+            524,
+            720,
+            50
+          ],
+          "tone": "red"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 7.0,
+          "text": "It even calls the midnight rush a *backlog*."
+        }
+      ],
+      "fade": 0.3
+    },
+    {
+      "id": "5-feedback",
+      "clip": "rate-sale-daily",
+      "from": "thumb-down@-1.4",
+      "to": "feedback-sent@2.0",
+      "dur": 14.0,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.6,
+          960,
+          540,
+          1
+        ],
+        [
+          2.4,
+          740,
+          800,
+          1.6
+        ],
+        [
+          11.6,
+          740,
+          800,
+          1.6
+        ],
+        [
+          13.4,
+          960,
+          540,
+          1
+        ]
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 14.0,
+          "text": "One thumbs down, in plain *words*."
+        }
+      ]
+    },
+    {
+      "id": "6-batch",
+      "clip": "rate-sale-daily",
+      "from": "chip@-1.0",
+      "to": "rec-stop@0",
+      "dur": 7.0,
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          1.0,
+          960,
+          540,
+          1
+        ],
+        [
+          2.6,
+          1190,
+          200,
+          1.6
+        ],
+        [
+          7.0,
+          1190,
+          200,
+          1.62
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.8,
+          "to": 7.0,
+          "rect": [
+            1070,
+            10,
+            256,
+            32
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 7.0,
+          "text": "Four sessions, four thumbs down. / The batch is *full*."
+        }
+      ]
+    }
+  ]
+}
