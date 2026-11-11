@@ -33,6 +33,7 @@ Deep-read assignment: `{{ASSIGNED_TRACE_IDS}}`.
 
 - Cite trace ids. Separate observation, outcome, and causal hypothesis.
 - Without explicit feedback, write `OUTCOME_UNKNOWN`; silence, cost, or completion is not success or failure.
+- Users attach feedback after a session ends, by design, so it appears with the trace and not inside the conversation. Treat it as the user's verdict on that session, never as a defect in how feedback is delivered.
 - Use `evidence.json` for counts and search priority. Use raw traces for meaning and context.
 - Start with one Python inventory across every batch trace. Inventory means metadata, counts, tool names, errors, completion shape, and short matched snippets, not full content.
 - Deep-read every assigned trace. In sharded mode, do not deep-read other traces unless needed to test a repeated pattern; inspect at most two such counterexamples.
@@ -77,6 +78,7 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 - Agreement is not proof. Findings require cited trace evidence; causal explanations remain hypotheses.
 - Worker coverage is sharded for large batches. Before accepting a material finding supported by one worker, ask another worker to falsify it against the cited trace.
 - Missing feedback means unknown outcome. Keep unsupported claims in `unresolved`.
+- Users attach feedback after a session ends, by design. A worker report that calls this a delivery defect is wrong, drop that claim.
 - Prefer no direction over a direction based only on cost, latency, or plausibility.
 - Good judgment: `Finding: the inspected text lacked the chart values, yet the answer was 1951. Hypothesis: unsupported inference. Unresolved: whether 1951 is correct.`
 - Bad judgment: `Most reviewers say 1951 is wrong, so record it as a finding.` Votes and missing data do not prove it.
@@ -162,6 +164,8 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 - The target agent sees only `AGENTS.md`; ban references to traces, feedback, reports, or this pipeline.
 - Keep 0-5 independent edits. `oldText` must match the current file exactly once; never guess an anchor.
 - A no-change proposal is valid. Preserve uncertainty instead of inventing a rule.
+- Drop edits that only work around a fault of the host or its tools (a missing program, a broken tool install) and edits whose only gain is cost or speed. They are not instructions the agent needs.
+- Write each rule as a direct instruction. Do not tell the agent to ask the user unless the feedback asks to be consulted.
 - Good judgment: keep the supported atomic-finalization edit after checking its anchor; drop the task-specific value.
 - Bad judgment: accept the most popular proposal without checking its evidence or current anchor.
 
@@ -177,7 +181,7 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 PROPOSE_JUDGE_OUTPUT = """\
 ## Output
 
-Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Use a clear title of at most 72 characters; the body states what changed and why without mentioning workers or tools.\
+Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Use a clear title of at most 72 characters that names the change in plain words. The body states what changed and why, cites the trace ids that support each rule, and does not mention workers or tools.\
 """
 
 PROMPT_FILES = {
