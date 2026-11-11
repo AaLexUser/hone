@@ -229,3 +229,19 @@ body {
     animation: none;
   }
 }
+
+/* The t3code booth guide outlines the control it asks the visitor to use (lib/embed.ts). */
+[data-guide-highlight='start'] [data-guide='start'],
+[data-guide-highlight='nav/versions'] [data-guide='nav/versions'],
+[data-guide-highlight='judge'] [data-guide='judge'] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 8px;
+  animation: guide-pulse 1.6s ease-in-out infinite;
+}
+@keyframes guide-pulse {
+  50% { outline-color: color-mix(in oklch, var(--color-accent) 35%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-guide-highlight] [data-guide] { animation: none; }
+}

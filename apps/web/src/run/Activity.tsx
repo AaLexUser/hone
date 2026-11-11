@@ -316,7 +316,7 @@ function AskView({ row, now, onOpenAgent }: { row: AskRow; now: number; onOpenAg
   const live = row.end === null
   const asked = [...new Map(row.turns.map((t) => [t.seat.key, t.seat])).values()]
   return (
-    <div className={`my-1 ${live ? 'bg-accent/5' : ''}`}>
+    <div className={`my-1 ${live ? 'bg-accent/5' : ''}`} data-guide={live ? 'judge' : undefined}>
       <div className="flex h-9 items-center gap-2.5 px-4 text-body">
         <SeatChip seat={row.judge} />
         <span

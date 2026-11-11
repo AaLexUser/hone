@@ -7,6 +7,7 @@ import type { Trace, RunRecord } from '../data'
 import { Badge, CountUp, Sparkline, StatCard } from '../components/ui'
 import { BatchRing } from '../components/BatchRing'
 import { url } from '../lib/url'
+import { tellParent } from '../lib/embed'
 
 const filters = ['All', 'New', 'Analyzed', 'Feedback'] as const
 type Filter = (typeof filters)[number]
@@ -45,6 +46,7 @@ export function Dashboard() {
 
   const startRun = async () => {
     setStartError(null)
+    tellParent({ type: 'start-pressed' })
     try {
       const { id } = await actions.startRun()
       navigate(`/runs/${id}`)
@@ -141,6 +143,7 @@ export function Dashboard() {
             <div className="w-full md:w-auto">
               <motion.button
                 onClick={startRun}
+                data-guide="start"
                 whileTap={{ scale: 0.985 }}
                 className="btn-primary flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium text-white md:w-auto"
               >

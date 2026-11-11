@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode } from 'react'
 import type { BranchInfo, Trace, VersionNode } from './data'
 import { BASE, url } from './lib/url'
+import { tellParent, tellRunStarted } from './lib/embed'
 
 export type RunStatus = 'running' | 'validating' | 'succeeded'
 
@@ -141,6 +142,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return
         }
         if (msg.type === 'run_started') {
+          tellRunStarted(msg.run.id)
           setState((s) => ({
             ...s,
             run: { id: msg.run.id, nodeId: '', status: 'running', startedAt: Date.now() },
@@ -154,6 +156,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               : s,
           )
           return
+        }
+        if (msg.type === 'run_completed') {
+          fetch(url(`/api/runs/${msg.runId}`))
+            .then((res) => (res.ok ? res.json() : null))
+            .then((run) => tellParent({ type: 'run-finished', runId: msg.runId, status: run?.status ?? 'unknown' }))
+            .catch(() => tellParent({ type: 'run-finished', runId: msg.runId, status: 'unknown' }))
         }
         if (
           msg.type === 'run_completed' ||

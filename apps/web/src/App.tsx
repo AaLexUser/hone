@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { Header } from './components/Layout'
 import { pageWidth } from './lib/pageWidth'
+import { tellParent } from './lib/embed'
 import { Dashboard } from './pages/Dashboard'
 import { TracePage } from './pages/TracePage'
 import { RunPage } from './pages/RunPage'
@@ -10,6 +12,7 @@ import { VersionsPage } from './pages/VersionsPage'
 
 export default function App() {
   const location = useLocation()
+  useEffect(() => tellParent({ type: 'route', path: location.pathname }), [location.pathname])
   return (
     <div className="min-h-screen">
       <Header />

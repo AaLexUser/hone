@@ -49,7 +49,7 @@ export function Header() {
 
         <nav className="flex items-center gap-1">
           {tabs.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.to === '/'} className="relative rounded-md px-2.5 py-1.5 text-[12.5px]">
+            <NavLink key={t.to} to={t.to} end={t.to === '/'} data-guide={`nav${t.to}`} className="relative rounded-md px-2.5 py-1.5 text-[12.5px]">
               {({ isActive }) => (
                 <>
                   {isActive && (
