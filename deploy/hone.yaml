@@ -141,7 +141,7 @@ majics:
   review:
     panel:
       - model: longcat-2.0
-        reasoning: medium
+        reasoning: low
       - model: hy3
         reasoning: low
       - model: minimax-m3.1-flash
@@ -157,7 +157,7 @@ majics:
       - model: minimax-m3.1-flash
         reasoning: high
       - model: longcat-2.0
-        reasoning: medium
+        reasoning: low
     judge:
       model: glm-5.3-flash
       reasoning: high
