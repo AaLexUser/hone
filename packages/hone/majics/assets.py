@@ -80,7 +80,8 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 - Agreement is not proof. Findings require cited trace evidence; causal explanations remain hypotheses.
 - A finding survives only when it recurs in the batch (feedback names it, or at least two traces show it) and holds up under cross-examination. A trace where the agent did the right thing is a counterexample, not a second instance. A finding the panel confirms as a single instance without feedback moves to `unresolved`.
 - When workers disagree about a material finding, ask each with `ask_panel` to answer the other's analysis before you settle it. Never settle a disagreement alone.
-- Hypotheses and directions follow the same recurrence rule as findings. Attach counterevidence only to the hypothesis it bears on, and never turn a single instance or a cost only item into a direction.
+- Hypotheses and directions follow the same recurrence rule as findings. Attach counterevidence only to the hypothesis it bears on, and never turn a single instance or a cost only item into a direction. Drop a hypothesis that rests on one trace or on cost figures alone.
+- Count a trace as an instance only after you confirm it shows the same behavior, not a related remark. A direction never states as fact anything you list as unresolved.
 - Worker coverage is sharded for large batches. Before accepting a material finding supported by one worker, ask another worker to falsify it against the cited trace.
 - Missing feedback means unknown outcome. Keep unsupported claims in `unresolved`.
 - Users attach feedback after a session ends, by design. A worker report that calls this a delivery defect is wrong, drop that claim.
@@ -100,7 +101,9 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 REVIEW_JUDGE_OUTPUT = """\
 ## Output
 
-Call `submit_review` exactly once with `summary`, `findings`, `hypotheses`, `directions`, and `unresolved`. Use the tool schema; do not narrate the process.\
+Call `submit_review` exactly once with `summary`, `findings`, `hypotheses`, `directions`, and `unresolved`. Use the tool schema; do not narrate the process.
+
+People who never saw the traces read this review. Write plain sentences. Name each session by its full trace id, never by a short form. Leave out internal labels and codes, pipeline file names, pixel sizes and cost figures. Do not use em dashes, en dashes or backticks. Keep at most four unresolved items, the ones that matter for the next session.\
 """
 
 PROPOSER_PROMPT = """\
@@ -167,7 +170,10 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 
 - Evidence beats votes. Drop unsupported, duplicate, conflicting, or non-actionable edits.
 - Keep an edit only when the behavior it targets recurs in the batch, meaning feedback names it or at least two traces show it. A rule from one trace without feedback stays out. A trace where the agent did the right thing is a counterexample, not a second instance.
-- When one proposer leaves out an edit that another keeps, ask both with `ask_panel` before you decide, then keep the edit only if it still meets the recurrence rule.
+- When one proposer leaves out an edit that another keeps, ask both in the same `ask_panel` call, the one who keeps it to defend it and the one who left it out to give their reason, then keep the edit only if it still meets the recurrence rule.
+- Check that each trace an edit cites worked on the input the edit is about. Evidence from a different file does not count.
+- Drop a line that states a fact about one input file or dataset, such as its file name, a time window or a count. It goes stale with the next file. Keep the general behavior instead.
+- Never turn a claim the review lists as unresolved into a rule.
 - An edit must not contradict the feedback it cites. It must not override the agent's system prompt seen in the traces unless feedback asks for that, and then the rule says so.
 - The target agent sees only `AGENTS.md`; ban references to traces, feedback, reports, or this pipeline.
 - Keep 0-5 independent edits. `oldText` must match the current file exactly once; never guess an anchor.
@@ -189,7 +195,7 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 PROPOSE_JUDGE_OUTPUT = """\
 ## Output
 
-Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Write AGENTS.md lines as plain sentences without em dashes. Use a clear title of at most 72 characters that names the change in plain words. The body states what changed and why, cites the trace ids that support each rule, matches the diff (the same rules, the same count), gives each rule the cause its evidence shows, and does not mention workers or tools.\
+Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Write AGENTS.md lines as plain sentences without em dashes. Use a clear title of at most 72 characters that names the change in plain words. The body states what changed and why, cites the trace ids that support each rule, matches the diff (the same rules, the same count), gives each rule the cause its evidence shows, describes each cited session as its trace and feedback show it, and does not mention workers or tools. The `note` reports what each proposer answered as they said it.\
 """
 
 PROMPT_FILES = {

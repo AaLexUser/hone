@@ -905,7 +905,7 @@ async function reviewStage(): Promise<void> {
   const review = JSON.stringify(judgeCapture.review, null, 2) + "\n";
   fs.writeFileSync(path.join(APP, "review.json"), review, "utf8");
   await postEvent({ kind: "stage", stage: "review", status: "end", durationMs: Date.now() - startedAt });
-  await postEvent({ kind: "report", bytes: Buffer.byteLength(review), title: judgeCapture.review.summary.slice(0, 120) });
+  await postEvent({ kind: "report", bytes: Buffer.byteLength(review), title: judgeCapture.review.summary });
   for (const r of panel) try { r.session.dispose(); } catch {}
   try { judge.session.dispose(); } catch {}
 }
@@ -981,11 +981,11 @@ async function proposeStage(): Promise<Proposal> {
       kind: "proposal",
       agent: result.roleKey,
       count: p.edits.length,
-      note: (p.note ?? "").slice(0, 200),
+      note: p.note ?? "",
       edits: p.edits.map((e) => ({
-        oldText: (e.oldText ?? "").slice(0, 160),
-        newText: (e.newText ?? "").slice(0, 240),
-        rationale: (e.rationale ?? "").slice(0, 240),
+        oldText: e.oldText ?? "",
+        newText: e.newText ?? "",
+        rationale: e.rationale ?? "",
         evidence: e.evidence ?? [],
       })),
     });
