@@ -238,17 +238,17 @@ function attachActivityLog(session: AgentSession, emit: (e: ProgressEvent) => vo
       ...(name === "ask_panel" ? { queries: askedQueries(args) } : {}),
     });
   };
-  const end = (key: string): void => {
+  const end = (key: string, refused?: string): void => {
     const step = open.get(key);
     if (!step) return;
     open.delete(key);
-    emit({ kind: "tool_result", name: step.name, detail: step.detail?.slice(0, 160) });
+    emit({ kind: "tool_result", name: step.name, detail: step.detail?.slice(0, 160), ...(refused ? { error: refused.slice(0, 400) } : {}) });
   };
   const unsubscribe = session.subscribe((event: any) => {
     if (event.type === "tool_execution_start") {
       start(event.toolCallId, event.toolName, event.args);
     } else if (event.type === "tool_execution_end") {
-      end(event.toolCallId);
+      end(event.toolCallId, event.isError ? assistantText(event.result ?? {}) || "tool error" : undefined);
     } else if (event.type === "message_end" && event.message?.role === "assistant") {
       // The session commits a message to its history only at message_end, so read the text off the event.
       const text = assistantText(event.message);
@@ -528,7 +528,9 @@ async function runPanel(
  * Some models send an array argument as its JSON text. Pi's validator coerces
  * such a string into a one-item array of that text, and a list of objects then
  * fails validation. Decode those strings wherever the schema expects an array,
- * before validation, as Pi's own edit tool does for its `edits` argument.
+ * before validation, as Pi's own edit tool does for its `edits` argument. The
+ * text can run on into the arguments after it, as in `[…], "note": "…"`, and
+ * those come back as the arguments they are.
  */
 function decodeJsonArrays(schema: any, value: unknown): unknown {
   if (schema?.type === "array") {
@@ -543,11 +545,36 @@ function decodeJsonArrays(schema: any, value: unknown): unknown {
     return Array.isArray(value) ? value.map((item) => decodeJsonArrays(schema.items, item)) : value;
   }
   if (schema?.type === "object" && value && typeof value === "object" && !Array.isArray(value)) {
+    const members: Record<string, unknown> = { ...value };
+    for (const [key, v] of Object.entries(value)) {
+      if (schema.properties?.[key]?.type !== "array" || typeof v !== "string") continue;
+      const spilled = runOnMembers(key, v);
+      if (spilled) Object.assign(members, { ...spilled, ...value, [key]: spilled[key] });
+    }
     return Object.fromEntries(
-      Object.entries(value).map(([key, v]) => [key, decodeJsonArrays(schema.properties?.[key], v)]),
+      Object.entries(members).map(([key, v]) => [key, decodeJsonArrays(schema.properties?.[key], v)]),
     );
   }
   return value;
+}
+
+/** `key`'s JSON text read as the rest of the call's arguments, with or without their closing brace, when it is not JSON on its own. */
+function runOnMembers(key: string, text: string): Record<string, unknown> | null {
+  try {
+    JSON.parse(text);
+    return null;
+  } catch {
+    /* read on below */
+  }
+  const members = `{${JSON.stringify(key)}:${text}`;
+  for (const object of [members, `${members}}`]) {
+    try {
+      return JSON.parse(object);
+    } catch {
+      /* try with the closing brace */
+    }
+  }
+  return null;
 }
 
 /* --------------------------------------------------------------- ask_panel */
@@ -672,6 +699,7 @@ function submitReviewTool(capture: Capture): ToolDefinition {
     async execute(_toolCallId: string, params: Omit<Review, "version">) {
       const fail = (text: string) => ({
         content: [{ type: "text" as const, text: `submit_review failed: ${text}` }],
+        isError: true,
       });
       if (!params.summary.trim()) return fail("summary is empty");
       for (const item of [...params.findings, ...params.hypotheses]) {
@@ -692,6 +720,25 @@ function submitReviewTool(capture: Capture): ToolDefinition {
 }
 
 /* ------------------------------------------------------- submit_proposal */
+
+/** The longest commit title the service commits. */
+const TITLE_MAX = 72;
+
+/**
+ * The judge's commit title, or the title without its last word when only that word
+ * runs past {@link TITLE_MAX} characters. Judges overshoot by a word, as in "Add
+ * Beijing-day conversion, yuan amounts, and audit-before-flagging rules" (73), and
+ * refusing it made them send the whole proposal again. Null when it does not fit.
+ */
+function fitTitle(title: string): string | null {
+  const whole = title.trim();
+  if (whole.length <= TITLE_MAX) return whole || null;
+  const space = whole.lastIndexOf(" ");
+  let fitted = space > 0 ? whole.slice(0, space) : "";
+  const dangling = /(?:[\s,;:\u2013\u2014-]+|\s+(?:and|or|plus|for|to|with|of|in|on|the|a|an))$/i;
+  while (dangling.test(fitted)) fitted = fitted.replace(dangling, "");
+  return fitted && fitted.length <= TITLE_MAX ? fitted : null;
+}
 
 /** The proposers' and the propose judge's answer channel: validated at call
  *  time. Anchors must match the current file exactly once, evidence must be
@@ -731,7 +778,7 @@ function submitProposalTool({ judge, capture, agentsMd }: {
     parameters,
     prepareArguments: (args) => decodeJsonArrays(parameters, args) as any,
     async execute(_toolCallId: string, params: any) {
-      const fail = (text: string) => ({ content: [{ type: "text" as const, text: `submit_proposal failed: ${text}` }] });
+      const fail = (text: string) => ({ content: [{ type: "text" as const, text: `submit_proposal failed: ${text}` }], isError: true });
       if (!Array.isArray(params.edits)) return fail("edits must be an array");
       let text = agentsMd;
       for (let i = 0; i < params.edits.length; i++) {
@@ -748,8 +795,9 @@ function submitProposalTool({ judge, capture, agentsMd }: {
         }
       }
       if (judge) {
-        const title = (params.commit_title ?? "").trim();
-        if (!title || title.length > 72) return fail("commit_title must be present and at most 72 characters");
+        const title = fitTitle(params.commit_title ?? "");
+        if (!title) return fail("commit_title must be present and at most 72 characters");
+        params.commit_title = title;
         if (!(params.commit_body ?? "").trim()) return fail("commit_body missing — explain the changes");
       }
       capture.proposal = params;
