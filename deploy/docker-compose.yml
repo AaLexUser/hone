@@ -49,6 +49,8 @@ services:
     restart: unless-stopped
     environment:
       HONE_DEMO: "1"
+      # The prepared state is built for the booth day so it matches the recorded runs in the cache.
+      HONE_DEMO_DATE: ${HONE_DEMO_DATE:-2026-11-14}
       HONE_TOKEN: ${HONE_TOKEN}
       HONE_EXPOSE_WRITE_TOKEN: "false"
       HONE_CONFIG: /app/hone.booth.yaml
