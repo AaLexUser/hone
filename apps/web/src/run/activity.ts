@@ -183,6 +183,14 @@ export function activityRows(m: RunModel): Row[] {
       case 'tool_result':
         if (ev.name === 'ask_panel' && ask) {
           ask.end = ev.at
+          // The judge's work after its questions gets its own row below them.
+          const before = open.get(ev.agent)
+          if (before) {
+            const after: WorkRow = { ...before, id: `${id}-after`, tools: [], text: null, drafted: null, retries: 0 }
+            rows.push(after)
+            open.set(ev.agent, after)
+            lastWork.set(ev.agent, after)
+          }
           ask = null
         }
         break
