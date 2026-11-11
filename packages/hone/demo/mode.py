@@ -1,9 +1,9 @@
-"""Demo mode in the service (HONE_DEMO=1): rewind to the prepared scenario,
-and replay its next run through Hone's own run loop.
+"""Demo mode in the service (HONE_DEMO=1) rewinds to the prepared scenario.
 
 The prepared state is built once per day by a child process, because the
 build's virtual clock patches module globals, and cached under the data dir.
-A reset copies it over the live data dir and reopens Hone in place.
+A reset copies it over the live data dir and reopens Hone in place. It keeps
+the run cache, so a recorded run of the prepared batch survives every reset.
 """
 
 from __future__ import annotations
@@ -15,29 +15,26 @@ import json
 import shutil
 import sys
 from pathlib import Path
-from typing import Any
 
+from ..runcache import RUN_CACHE_DIR
 from ..service import Hone
-from .build import META_FILE, SEED
+from .build import META_FILE
 from .scenario import WORKSPACE
-from .scripted import Clock, Director
-from .stories import STORIES
 
 CACHE_DIR = "demo-cache"
 STAGING_IN = ".demo-incoming"
 STAGING_OUT = ".demo-outgoing"
-# Script time runs this many times faster than the run it stands for, so the
-# prepared run (about 13 minutes of script time) plays in about a minute.
-REPLAY_SPEED = 13.0
-REPLAY = STORIES["live"]
+KEEP = (CACHE_DIR, RUN_CACHE_DIR, STAGING_IN, STAGING_OUT)
 
 
 def _scenario_version() -> str:
     """Changes whenever the scenario code or assets change, so an updated
-    checkout never serves a prepared state built by older code."""
+    checkout never serves a prepared state built by older code. Shipped run
+    cache entries are not part of the scenario."""
     digest = hashlib.sha256()
     root = Path(__file__).parent
-    for path in sorted(p for p in root.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
+    for path in sorted(p for p in root.rglob("*")
+                       if p.is_file() and "__pycache__" not in p.parts and RUN_CACHE_DIR not in p.parts):
         digest.update(path.relative_to(root).as_posix().encode())
         digest.update(path.read_bytes())
     return digest.hexdigest()[:12]
@@ -116,7 +113,7 @@ class DemoMode:
                 # Until the swap below, a failure leaves the old state whole.
                 outgoing.mkdir()
                 for child in list(self.data_dir.iterdir()):
-                    if child.name not in (CACHE_DIR, STAGING_IN, STAGING_OUT):
+                    if child.name not in KEEP:
                         child.rename(outgoing / child.name)
                 for child in list(incoming.iterdir()):
                     child.rename(self.data_dir / child.name)
@@ -133,33 +130,3 @@ class DemoMode:
         if (self.data_dir / META_FILE).exists():
             return True
         return not self.hone.db.traces() and not self.hone.db.query("SELECT id FROM runs LIMIT 1")
-
-    # -------------------------------------------------------------- replay
-
-    def _meta(self) -> dict[str, Any] | None:
-        path = self.data_dir / META_FILE
-        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
-
-    def replay_ready(self) -> bool:
-        """True while the prepared run has not played since the last reset."""
-        meta = self._meta()
-        if meta is None or self._lock.locked() or self.hone.active_run():
-            return False
-        status = {t["session_id"]: t["status"] for t in self.hone.db.traces()}
-        if any(status.get(meta["traces"].get(key)) != "new" for key in REPLAY.batch):
-            return False
-        return REPLAY.final.edits[0].old in self.hone.dirs.read_current()
-
-    def status(self) -> dict[str, Any]:
-        return {"enabled": True, "replayReady": self.replay_ready()}
-
-    def replay(self) -> dict[str, Any]:
-        """Play the prepared run over the whole unanalyzed batch, so live
-        sessions from the booth join the prepared ones."""
-        if not self.replay_ready():
-            raise DemoError("the prepared run is not ready, reset the demo first")
-        meta = self._meta()
-        assert meta is not None
-        fresh = [t for t in self.hone.db.traces() if t["status"] == "new"]
-        director = Director(self.hone, Clock(speed=REPLAY_SPEED), REPLAY, meta["traces"], SEED)
-        return self.hone.start_run(trigger="manual", batch_size=len(fresh), executor_factory=director.executor)

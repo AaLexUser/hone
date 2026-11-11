@@ -53,7 +53,7 @@ t3code resets the demo on every start and on the Reset demo button, so a restart
 
 ## Real optimization
 
-Play prepared run and Start optimization both work in this stack. Play prepared run replays a recorded run in about a minute. Start optimization runs the real MAJICS pipeline on the current batch. With this roster a run took 10 to 13 minutes in testing.
+Start optimization runs the real MAJICS pipeline on the current batch. With this roster a run took 10 to 13 minutes in testing. When Hone holds an approved recording of a real run on exactly the same batch, it replays that run in about a minute and a half instead. Approved recordings in `packages/hone/demo/run-cache/` ship with the image, and every finished real run is kept as a candidate in `hone-data`. `docs/booth-demo.md` describes the run cache.
 
 A real run starts each MAJICS stage, review and then propose, as a Harbor job (`packages/hone/majics/executor.py`). Harbor builds a sandbox image, starts the sandbox with Docker Compose next to an egress sidecar, and lets the sandbox reach only the model provider and Hone. The stack wires this up as follows.
 
@@ -73,7 +73,7 @@ The `docker` service runs privileged, because a Docker daemon inside a container
 - The sandboxes are ordinary unprivileged containers inside that daemon. Harbor's egress sidecar limits them to the model provider, `hone.internal` and the hosts the image build needs (`packages/hone/majics/runtime.py`).
 - A sandbox can reach Hone's API without the booth login, as it does when Hone runs on a laptop. It holds Hone's write token for its callbacks, so it can do what the dashboard buttons do.
 
-The host must allow privileged containers, which stock Docker on Linux does. To turn real optimization off, remove the `docker` service and the `depends_on` line under `hone`. Play prepared run keeps working. Start optimization then fails within seconds, and the run's Harbor job log says the Docker API cannot be reached.
+The host must allow privileged containers, which stock Docker on Linux does. To turn real optimization off, remove the `docker` service and the `depends_on` line under `hone`. Replays of approved recordings keep working. Start optimization on any other batch then fails within seconds, and the run's Harbor job log says the Docker API cannot be reached.
 
 ## Change t3code or Pi
 

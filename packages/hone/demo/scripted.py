@@ -10,12 +10,10 @@ AGENTS.md commit all come from Hone's code.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import random
 import re
-import time
 import types
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -26,7 +24,7 @@ from .. import db as db_mod
 from .. import logedits
 from .. import service as service_mod
 from ..config import HoneConfig
-from ..majics.runtime import AGENT_IMPORT_PATH
+from ..majics.runtime import emit_launch
 from ..store import DataDirs
 from .stories import Ask, Finding, Proposal, Story
 
@@ -43,37 +41,25 @@ TRACE_REF = re.compile(r"@([tx]\d+)")
 
 
 class Clock:
-    """In a build, a virtual clock that jumps, stamped into service time and
-    git dates. In a replay, wall time, with script time slept at `speed`x."""
+    """The build's virtual clock. It jumps, and its time is stamped into
+    service time and git dates."""
 
-    def __init__(self, *, start_ms: int | None = None, speed: float = 1.0) -> None:
-        self.virtual = start_ms is not None
-        self.speed = 1.0 if self.virtual else speed
-        self._now = start_ms or 0
+    def __init__(self, *, start_ms: int) -> None:
+        self._now = start_ms
 
     def now_ms(self) -> int:
-        if not self.virtual:
-            return int(time.time() * 1000)
         # Code takes time to run, so back to back service events get distinct stamps.
         self._now += 1
         return self._now
 
     def set(self, ms: int) -> None:
-        assert self.virtual and ms >= self._now, "the virtual clock only moves forward"
+        assert ms >= self._now, "the virtual clock only moves forward"
         self._now = ms
         self._stamp_git()
 
     async def sleep(self, script_ms: int) -> None:
-        if script_ms <= 0:
-            return
-        if self.virtual:
+        if script_ms > 0:
             self.set(self._now + script_ms)
-        else:
-            await asyncio.sleep(script_ms / self.speed / 1000)
-
-    def span(self, script_ms: int) -> int:
-        """A duration as the run's own clock measures it."""
-        return round(script_ms / self.speed)
 
     def _stamp_git(self) -> None:
         stamp = f"@{self._now // 1000} +0000"
@@ -83,7 +69,6 @@ class Clock:
     def install(self) -> None:
         """Route Hone's clocks through this one. It patches module globals, so
         only a throwaway build process may call it."""
-        assert self.virtual
         self._stamp_git()
         service_mod._now_ms = self.now_ms
         shim = types.SimpleNamespace(time=lambda: self._now / 1000)
@@ -171,18 +156,12 @@ class StageScript:
 @dataclass
 class Cast:
     """The story bound to the run's frozen batch. `ids` maps the story's
-    trace keys to trace ids, plus `xN` for every session the story does not
-    know (a visitor's live chat), whose findings are `extra`."""
+    trace keys to trace ids."""
     story: Story
     ids: dict[str, str]
     batch: list[str]
-    extra: tuple[Finding, ...]
     rng: random.Random
     roster: dict[str, Any]
-
-    @property
-    def findings(self) -> tuple[Finding, ...]:
-        return self.story.findings + self.extra
 
     def text(self, value: str) -> str:
         return TRACE_REF.sub(lambda m: self.ids[m.group(1)], value)
@@ -192,15 +171,6 @@ class Cast:
 
     def key_of(self, trace_id: str) -> str:
         return next(k for k, v in self.ids.items() if v == trace_id)
-
-
-def extra_finding(key: str, feedback: str | None) -> Finding:
-    if feedback:
-        end = "" if feedback.rstrip()[-1:] in ".!?" else "."
-        return Finding(None, (f"@{key} joined this batch from a live chat with the feedback '{feedback}'{end}",),
-                       (key,), "medium", "feedback")
-    return Finding("OUTCOME_UNKNOWN", ((f"@{key} joined this batch from a live chat without feedback, so its "
-                                       "outcome is unknown."),), (key,), "medium", "feedback")
 
 
 def roster_payload(roster: dict[str, Any]) -> list[dict[str, Any]]:
@@ -225,7 +195,7 @@ def reviewer_findings(cast: Cast, index: int) -> list[Finding]:
     story = cast.story.findings
     # The third reviewer misses the story's last finding.
     kept = [f for j, f in enumerate(story) if not (index == 2 and len(story) > 2 and j == len(story) - 1)]
-    return kept + list(cast.extra)
+    return kept
 
 
 def reviewer_commands(cast: Cast, index: int) -> list[str]:
@@ -391,7 +361,7 @@ def review_script(cast: Cast) -> StageScript:
         "version": 1,
         "summary": cast.text(story.summary),
         "findings": [{"statement": cast.text(f.texts[0]), "traceIds": cast.traces(f.traces),
-                      "confidence": f.confidence} for f in cast.findings],
+                      "confidence": f.confidence} for f in story.findings],
         "hypotheses": [{"statement": cast.text(s), "traceIds": cast.traces(t), "confidence": c,
                         **({"contradictions": [cast.text(x) for x in contra]} if contra else {})}
                        for s, t, c, contra in story.hypotheses],
@@ -521,22 +491,13 @@ class Director:
         assert run is not None
         batch: list[str] = run["trace_ids"]
         ids = {k: self.ids[k] for k in self.story.batch}
-        missing = [k for k, tid in ids.items() if tid not in batch]
-        if missing:
-            raise RuntimeError(f"run {run_id} did not freeze the prepared sessions {missing}")
-        known = set(ids.values())
-        extra: list[Finding] = []
-        for n, tid in enumerate((t for t in batch if t not in known), 1):
-            key = f"x{n}"
-            ids[key] = tid
-            row = self.hone.db.one("SELECT feedback FROM traces WHERE session_id = ?", (tid,))
-            extra.append(extra_finding(key, (row or {}).get("feedback")))
+        if sorted(ids.values()) != sorted(batch):
+            raise RuntimeError(f"run {run_id} froze {batch}, not the story's sessions {sorted(ids.values())}")
         environment = task_dir / "environment"
         return Cast(
             story=self.story,
             ids=ids,
             batch=batch,
-            extra=tuple(extra),
             rng=random.Random(f"{self.seed}:{self.story.key}:{stage}:{attempt}"),
             roster=json.loads((environment / "config" / "majics.json").read_text(encoding="utf-8")),
         )
@@ -547,8 +508,6 @@ class Director:
         for t, event in script.events:
             await self.clock.sleep(t - last)
             last = t
-            if "durationMs" in event:
-                event = {**event, "durationMs": self.clock.span(event["durationMs"])}
             await self.hone.record_pipeline_event(run_id, event)
         await self.clock.sleep(script.teardown_ms)
 
@@ -566,8 +525,7 @@ class ScriptedExecutor:
     async def run(self, stage: str, task_dir: Path, attempt: int) -> Path:
         jobs_dir = self.dirs.run_dir(self.run_id) / "majics" / f"{stage}-a{attempt}" / "jobs"
         job_dir = jobs_dir / f"{self.run_id}-{stage}-a{attempt}"
-        self.emit("log", icon="read", text=f"{stage} job: launching Harbor",
-                  detail=f"custom agent · {AGENT_IMPORT_PATH}")
+        emit_launch(self.emit, stage)
         cast = self.director.cast(self.run_id, task_dir, stage, attempt)
         script = review_script(cast) if stage == "review" else propose_script(cast, attempt)
         await self.director.play(self.run_id, script)

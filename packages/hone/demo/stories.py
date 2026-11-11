@@ -2,7 +2,7 @@
 
 `@tNN` in any text names a hire's trace and is resolved to its trace id when
 the run plays. Three runs make the history (two commits and one run that
-changes nothing). `live` is the run the booth replays over the last batch.
+changes nothing).
 """
 
 from __future__ import annotations
@@ -25,10 +25,6 @@ PDF_RULE_V2 = ("- Save every letter as `.docx`, then convert that file with `sof
 FORMAT_RULE = ("- Fill placeholders run by run so the template formatting survives. The base salary stays "
                "bold and the response deadline stays bold and underlined. Reopen the saved file and check "
                "both before replying.")
-BLOCK_RULE_V3 = ("- When a block or line does not apply, delete it with its label. That covers a conditional "
-                 "block such as `{{IF_RELOCATION}}…{{END_IF_RELOCATION}}` that is off, and a details row "
-                 "whose amount is 0 (the sign-on bonus or the equity grant). Never leave `£0`, `0 shares`, "
-                 "an empty paragraph or a heading with nothing under it.")
 
 US_DATE_PROBE = (r"(January|February|March|April|May|June|July|August|September|October|November|December) "
                  r"[0-9]{1,2}, 20[0-9]{2}")
@@ -112,12 +108,6 @@ R2_FINAL = Proposal((
          "The fill script collapsed runs and dropped the deadline's bold and underline. The user asked to keep "
          "the template formatting exactly.", ("t07", "t08")),
 ), "Both formatting losses come from how the letter is written, not from the existing rules.")
-
-LIVE_FINAL = Proposal((
-    Edit(BLOCK_RULE, BLOCK_RULE_V3,
-         "Rows with a zero amount are the same 'does not apply' case as an off relocation block, and both "
-         "feedbacks ask for the line to be dropped.", ("t11", "t12")),
-), "Zero value bonus and equity rows are the same gap as the relocation block.")
 
 STORIES: dict[str, Story] = {
     "r1": Story(
@@ -360,77 +350,6 @@ STORIES: dict[str, Story] = {
         commit_body="Both sessions followed the current offer letter rules and the only feedback was positive, "
                     "so there is nothing to change.",
         propose_asks=(),
-    ),
-    "live": Story(
-        key="live",
-        batch=("t11", "t12", "t13"),
-        summary="Dates, file names, PDF conversion and formatting follow the current rules in the prepared "
-                "sessions. Two letters print rows whose amount is zero ('Sign-on Bonus: £0' and 'Equity Grant: "
-                "0 shares'), and both carry feedback asking for the row to be dropped. The existing conditional "
-                "block rule covers only `{{IF_…}}` blocks.",
-        verdicts=(
-            "One repeated signal. Zero value rows should disappear like an off conditional block.",
-            "Actionable. Two traces, two feedbacks, same mechanism.",
-            "The current rules hold. Widen the conditional block rule to zero amounts.",
-        ),
-        findings=(
-            Finding("STATE_MISMATCH", (
-                ("@t11's letter prints 'Sign-on Bonus: £0' because the approval lists the bonus as £0. The "
-                "feedback says 'If there's no bonus, just leave the line out.'"),
-                "@t11 fills the bonus row with £0, and the user wants the row gone.",
-            ), ("t11",), "high", "£0|SIGNING_BONUS"),
-            Finding("STATE_MISMATCH", (
-                ("@t12 prints 'Equity Grant: 0 shares'. The feedback says 'Same thing with equity. '0 shares' "
-                "looks odd, drop the line when there's none.'"),
-                "@t12 keeps a 0 shares equity row, and the feedback asks to drop it.",
-            ), ("t12",), "high", "0 shares|EQUITY_SHARES"),
-            Finding(None, (
-                ("Dates, names, PDF conversion and run by run formatting follow the current rules in @t11, @t12 "
-                "and @t13. @t13's feedback says 'Perfect, that's exactly it'."),
-                "Current rules are followed in @t11 to @t13, and @t13 is approved.",
-            ), ("t11", "t12", "t13"), "high", "soffice|Offer_[A-Z]"),
-        ),
-        hypotheses=(
-            (("Widening the conditional block rule to rows with a zero amount removes both lines without adding a "
-             "new rule."), ("t11", "t12"), "high", ()),
-            ("The agent should ask before dropping any line.", ("t11",), "low",
-             ("Both feedbacks ask for the line to be dropped outright.",)),
-        ),
-        directions=("Widen the conditional block rule to details rows whose amount is 0 (bonus, equity).",),
-        unresolved=(),
-        waste=("@t12 printed the full letter twice while checking formatting.",
-               "@t11 dumped the template again although it was unchanged."),
-        weak_claim="The agent should ask before leaving any template line out (@t11). Confidence: low.",
-        review_asks=(
-            Ask(1, "You suggest asking before dropping lines. Does any feedback ask to be consulted?",
-                "No. Both @t11 and @t12 ask for the line to be dropped outright. Asking would add a turn the user "
-                "did not want, so I withdraw it."),
-            Ask(0, "Falsify this. Is the zero value problem the same mechanism as the old empty relocation block?",
-                "Same mechanism, different trigger. The relocation rule covers `{{IF_…}}` blocks only. The bonus "
-                "and equity rows are plain table rows, so the agent filled them with 0. Widening the existing "
-                "rule covers both."),
-        ),
-        proposals=(
-            LIVE_FINAL,
-            Proposal((Edit("", "- Leave out the Sign-on Bonus and Equity Grant rows when their value is 0.",
-                           "Both zero value rows drew feedback.", ("t11", "t12")),),
-                     "A separate rule for zero value rows."),
-            Proposal((Edit("", "- Before leaving any template line out, ask the user.",
-                           "Dropping lines silently surprised the user.", ("t11",)),),
-                     "Ask before removing template content."),
-        ),
-        final=LIVE_FINAL,
-        commit_title="fix: drop zero value bonus and equity lines from offer letters",
-        commit_body="The rule for blocks that do not apply now also covers amounts of 0, so letters leave out the "
-                    "sign-on bonus or equity row instead of printing £0 or 0 shares. Dates, file names and "
-                    "formatting rules are unchanged.",
-        propose_asks=(
-            Ask(1, "You add a separate zero value rule next to the conditional block rule. Would widening the "
-                   "existing rule say the same thing with one bullet?",
-                "Yes. One rule for 'does not apply' is clearer than two that overlap. Widen the existing bullet."),
-            Ask(2, "Your edit asks before removing lines. Which feedback supports asking?",
-                "None. Both say to drop the line. I withdraw it."),
-        ),
     ),
 }
 

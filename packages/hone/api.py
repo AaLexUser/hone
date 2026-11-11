@@ -156,6 +156,8 @@ def run_detail(run_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="run not found")
     out = _run_camel(r)
     out["hasReport"] = hone.dirs.report_path(run_id).exists()
+    # Set when the run replayed an approved run-cache entry. The page never shows it.
+    out["replayOf"] = r["replay"]
     return out
 
 
@@ -326,17 +328,61 @@ async def pipeline_event(run_id: str, payload: dict[str, Any]) -> dict[str, Any]
     return {"ok": True}
 
 
+# -------------------------------------------------------------- run cache
+
+def _cache_summary(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": entry["id"],
+        "fingerprint": entry["fingerprint"],
+        "sourceRunId": entry["sourceRunId"],
+        "recordedAt": entry["recordedAt"],
+        "durationMs": entry["durationMs"],
+        "outcome": entry["outcome"],
+        "title": entry["title"],
+        "review": entry["review"],
+        "local": hone.run_cache.is_local(entry["id"]),
+    }
+
+
+@app.get("/api/run-cache", dependencies=[Depends(require_write)])
+def run_cache_list() -> list[dict[str, Any]]:
+    """Recorded real runs, newest first. Only approved entries replay."""
+    return [_cache_summary(e) for e in hone.run_cache.entries()]
+
+
+@app.get("/api/run-cache/{entry_id}", dependencies=[Depends(require_write)])
+def run_cache_entry(entry_id: str) -> dict[str, Any]:
+    """The whole entry, as it is saved under packages/hone/demo/run-cache/ to ship it."""
+    entry = hone.run_cache.get(entry_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="no such run-cache entry")
+    return dict(entry)
+
+
+@app.post("/api/run-cache/{entry_id}/review", dependencies=[Depends(require_write)])
+async def run_cache_review(entry_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """Body {"status": "approved" | "rejected" | "candidate", "notes": ["..."]}.
+    Approving needs the reviewers' notes, see docs/run-review.md."""
+    status = payload.get("status")
+    notes = payload.get("notes") or []
+    if status not in ("approved", "rejected", "candidate"):
+        raise HTTPException(status_code=422, detail="status must be approved, rejected or candidate")
+    if not isinstance(notes, list) or not all(isinstance(n, str) for n in notes):
+        raise HTTPException(status_code=422, detail="notes must be a list of strings")
+    try:
+        entry = hone.run_cache.set_review(entry_id, status, notes)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="no such run-cache entry") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _cache_summary(entry)
+
+
 # ------------------------------------------------------------------- demo
 
 @app.get("/api/demo")
 def demo_status() -> dict[str, Any]:
-    return demo.status() if demo is not None else {"enabled": False, "replayReady": False}
-
-
-def _demo() -> DemoMode:
-    if demo is None:
-        raise HTTPException(status_code=404, detail="demo mode is off (start Hone with HONE_DEMO=1)")
-    return demo
+    return {"enabled": demo is not None}
 
 
 @app.post("/api/demo/reset", dependencies=[Depends(require_write)])
@@ -347,7 +393,8 @@ async def demo_reset(request: Request) -> Response:
     into Hone's copy of the sessions."""
     from .demo.mode import DemoError
 
-    mode = _demo()
+    if demo is None:
+        raise HTTPException(status_code=404, detail="demo mode is off (start Hone with HONE_DEMO=1)")
     raw = await request.body()
     try:
         body = json.loads(raw) if raw.strip() else {}
@@ -355,22 +402,10 @@ async def demo_reset(request: Request) -> Response:
         raise HTTPException(status_code=422, detail="the body must be JSON") from exc
     workspace = body.get("workspace") if isinstance(body, dict) else None
     try:
-        manifest = await mode.reset(workspace if isinstance(workspace, str) and workspace else None)
+        manifest = await demo.reset(workspace if isinstance(workspace, str) and workspace else None)
     except DemoError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
     return Response(manifest, media_type="application/json")
-
-
-@app.post("/api/demo/replay", dependencies=[Depends(require_write)])
-async def demo_replay() -> dict[str, Any]:
-    """Play the prepared run, about a minute long, through Hone's run loop."""
-    from .demo.mode import DemoError
-
-    mode = _demo()
-    try:
-        return mode.replay()
-    except (DemoError, RuntimeError) as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 # -------------------------------------------------------------------- SSE

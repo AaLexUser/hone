@@ -24,8 +24,9 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
    The Hone chip in the chat header shows the AGENTS.md version and how full the next batch is.
 2. Feedback. The presenter opens the result in the chat, points at what is wrong, presses thumbs down and writes a plain sentence.
    A toast confirms that the session reached Hone.
-3. Optimization. A real run takes 13 to 24 minutes, so the booth plays a prepared run through Hone's own code in about a minute.
-   The run page shows the reviewers, the judge questioning them, the proposers and the verifier.
+3. Optimization. The presenter presses Start optimization. A real run takes about ten minutes.
+   When Hone holds an approved recording of a real run on exactly this batch, it replays that run through its own code in about a minute and a half instead.
+   The run page shows the reviewers, the judge questioning them, the proposers and the verifier either way.
 4. Commit. The Versions page shows the new AGENTS.md version with its diff.
 5. For visitors who stay, earlier runs show the cross examination at work.
    Hone held back an edit no feedback supported, refused to turn a one off request into a rule, and changed nothing when nothing was wrong.
@@ -36,7 +37,7 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 - A new message in a prepared chat resumes the same Pi session, and the live agent answered from the letter.
 - A new chat with `Inbox/Hiring approval Amara Osei.pdf` and `Inbox/Offer letter template.docx` dragged into the composer produced `Offer_Osei_Amara.docx` and `.pdf`.
   The live letter printed `Sign-on Bonus £0` and `Equity Grant 0 shares`, so the visitor's complaint matches the prepared run.
-- Thumbs down reached Hone and filled the batch to 4 of 4. Play prepared run on the Hone page inside t3code finished in 67 seconds with the visitor's session in its batch and made a new current version.
+- Thumbs down reached Hone and filled the batch to 4 of 4.
 - Reset demo restored both apps to the prepared state, removed the visitor's chat and files, and cleared an unsent draft.
 
 ## Still open before the booth
@@ -44,7 +45,7 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 - A full real optimization run has not been seen end to end, because Docker builds fail behind the container's proxy.
   The chip's optimizing state and its AGENTS.md updated toast are unverified. Run one real optimization on the laptop before the trip.
 - PDF preview inside t3code could not be checked under headless Chromium here. DOCX preview works. Check a PDF in the laptop's Chrome.
-- If the conference Wi-Fi fails, the live agent cannot reach its model. Show the prepared chats and the prepared run, and keep the recorded loop as a backup.
+- If the conference Wi-Fi fails, the live agent cannot reach its model. Show the prepared chats and a replayed run, which needs no network, and keep the recorded loop as a backup.
 - Rotate the OpenCode key after the conference.
 
 ## Laptop checklist
@@ -77,10 +78,8 @@ Enabled with `HONE_DEMO=1`. Nothing changes when it is off.
 - `POST /api/demo/reset` (write token) restores the prepared state for today's date and returns the manifest below.
   Hone builds the prepared data dir once per day in a child process and caches it, and a reset copies the cache over the live data dir and reopens it.
   Open dashboards reload on a `demo_reset` bus event.
-- `POST /api/demo/replay` (write token) plays the prepared run through Hone's own run loop, about a minute long.
-  Only that run uses the scripted executor. Start optimization keeps the real MAJICS pipeline.
-  The prepared run freezes the whole unanalyzed batch, so a visitor's live session joins it.
-- `GET /api/demo` returns `{enabled, replayReady}`. The dashboard shows a Play prepared run button while `replayReady` is true.
+- A reset keeps the run cache (`<data dir>/run-cache/`), so recorded runs of the prepared batch survive it.
+- `GET /api/demo` returns `{enabled}`.
 - Building the prepared state runs `pdftotext` and LibreOffice (`soffice`), so the laptop needs poppler and LibreOffice, which the live agent needs anyway.
   `uv run python -m hone.demo build --out <dir>` writes the same state into a folder for inspection.
 
@@ -96,6 +95,37 @@ Paths inside `jsonl` use the placeholder `{{WORKSPACE}}` for the project folder.
 Reset takes an optional JSON body `{"workspace": "<absolute project folder>"}`. Hone then puts that folder in place of the placeholder in its own copy of the sessions, so its trace pages show the real paths.
 `chats` is in chronological order. A chat with two user turns is one session.
 
+### Run cache
+Start optimization looks up the frozen batch in the run cache before it starts Harbor (`packages/hone/runcache.py`).
+- Every real run that ends with a commit or with no changes is stored as a candidate entry under the fingerprint of its input.
+- A candidate replays only after two reviewers pass it as `docs/run-review.md` describes. Their notes and the date are kept with the entry.
+- On a hit, Hone replays the recorded driver events and artifacts through its own run loop, compressed to about a minute and a half, then verifies and commits the proposal as for any run.
+  If the recorded proposal no longer applies to the current AGENTS.md, the run is real.
+- Nothing on the page says that a run was replayed. `GET /api/runs/<id>` has `replayOf` with the entry id, the source run id, the recording date and the review.
+- The input is a batch of exact traces. A visitor's live session in the batch, or a changed feedback, makes the run real.
+
+The fingerprint is the SHA-256 of one canonical JSON document with these parts.
+- Each batch trace in batch order, its session JSONL and its feedback.
+- The base AGENTS.md text.
+- The experience log as the sandbox sees it, without timestamps and commit hashes.
+- The MAJICS configuration, which is the providers, models, seats and reasoning levels, the retry and timeout limits, and the six prompts.
+
+Before hashing, every value that differs between two copies of the same input becomes a numbered placeholder.
+These are UUIDs, trace ids, ISO times and dates, millisecond timestamps, dates written out in English, Python `date(...)` literals, and each session's working folder.
+The prepared batch built for 14 November, 17 November and 1 December has one fingerprint.
+On a hit, each recorded value maps to the current one in every replayed event and artifact, and the recorded run id maps to the new one.
+
+Entries live in two places.
+- `<data dir>/run-cache/`, written by Hone. It survives restarts and demo resets.
+- `packages/hone/demo/run-cache/`, shipped with the code and read only. A fresh booth stack replays these from the first start. A local entry with the same id wins.
+
+The dev endpoints need the write token.
+- `GET /api/run-cache` lists entries, newest first, with their review status.
+- `GET /api/run-cache/<id>` returns one entry. Save the body as `packages/hone/demo/run-cache/<id>.json` to ship it.
+- `POST /api/run-cache/<id>/review` with `{"status": "approved", "notes": ["...", "..."]}` records the verdict. `rejected` and `candidate` work the same way. Approving needs notes.
+
+A shipped entry replays only on a stack with the same MAJICS configuration and the same prepared scenario, because both are part of the fingerprint.
+
 ### Demo mode in t3code (patch 0003)
 Enabled when the server starts with `HONE_DEMO=1`.
 - A demo seeder resets on server start and on a Reset demo button in the sidebar.
@@ -108,6 +138,6 @@ Enabled when the server starts with `HONE_DEMO=1`.
 ### Booth checks
 1. After a reset, t3code shows the prepared chats. Each opens with its tool calls, replies, output documents and feedback.
 2. Dragging the template and the new approval into a new chat runs the live agent, which writes the letter. Thumbs down reaches Hone and fills the batch.
-3. Play prepared run animates the run, and the new version appears in Versions.
+3. Start optimization on the prepared batch replays the approved recording in about a minute and a half, and the new version appears in Versions.
 4. Reset demo brings both apps back to the prepared state with no command line. Restarting t3code does the same.
-5. Start optimization still runs the real pipeline.
+5. Start optimization on any other batch runs the real pipeline.

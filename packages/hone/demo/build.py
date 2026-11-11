@@ -3,7 +3,7 @@
 The output dir holds three things built from the same hire table.
 
 - `data/` is a Hone data dir with the sessions, feedback and three runs, and
-  `data/demo.json` maps each hire to its trace id for the replay.
+  `data/demo.json` maps each hire to its trace id.
 - `project/` is the project folder. Office inputs sit in `Inbox/`, the letters
   the chats produced sit at the top level.
 - `manifest.json` is what `POST /api/demo/reset` returns.
