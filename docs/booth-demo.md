@@ -52,7 +52,7 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 
 1. Install LibreOffice with `soffice` on PATH, poppler for `pdftotext`, and python-docx for the agent's Python.
 2. Build t3code with patches 0001 to 0003 as `clients/t3code/README.md` describes, and link the Pi extension.
-3. Start Hone with `HONE_DEMO=1` and its own empty `HONE_DATA_DIR`, bound to 127.0.0.1. Hone refuses a demo reset on a folder with real history. The first start builds today's prepared state in about 20 seconds.
+3. Start Hone with `HONE_DEMO=1` and its own empty `HONE_DATA_DIR`, bound to 127.0.0.1. Hone refuses a demo reset on a folder with real history. Set `HONE_DEMO_DATE=2026-11-14` so the prepared state matches the recorded runs. The first start builds the prepared state in about 20 seconds.
 4. Start the t3code server with `HONE_DEMO=1`, `HONE_URL`, `HONE_TOKEN`, `HONE_DASHBOARD_URL` and `HONE_DEMO_DIR` set to a new empty folder. It seeds the chats on start.
 5. Pair the browser once, open the Offer letters project, and run one full visitor loop, then press Reset demo.
 
@@ -75,7 +75,7 @@ The agent most likely writes zero value rows for that hire, which is the complai
 
 ### Demo mode in Hone
 Enabled with `HONE_DEMO=1`. Nothing changes when it is off.
-- `POST /api/demo/reset` (write token) restores the prepared state for today's date and returns the manifest below.
+- `POST /api/demo/reset` (write token) restores the prepared state for today's date, or for `HONE_DEMO_DATE` when it is set, and returns the manifest below.
   Hone builds the prepared data dir once per day in a child process and caches it, and a reset copies the cache over the live data dir and reopens it.
   Open dashboards reload on a `demo_reset` bus event.
 - A reset keeps the run cache (`<data dir>/run-cache/`), so recorded runs of the prepared batch survive it.
@@ -97,34 +97,42 @@ Reset takes an optional JSON body `{"workspace": "<absolute project folder>"}`. 
 
 ### Run cache
 Start optimization looks up the frozen batch in the run cache before it starts Harbor (`packages/hone/runcache.py`).
-- Every real run that ends with a commit or with no changes is stored as a candidate entry under the fingerprint of its input.
+The cache is on only in demo mode (`HONE_DEMO=1`). Otherwise every run is real and nothing is recorded.
+- Every real run that ends with a commit or with no changes is stored as a candidate entry under the fingerprint of its input, with the verdict of each attempt.
 - A candidate replays only after two reviewers pass it as `docs/run-review.md` describes. Their notes and the date are kept with the entry.
 - On a hit, Hone replays the recorded driver events and artifacts through its own run loop, compressed to about a minute and a half, then verifies and commits the proposal as for any run.
-  If the recorded proposal no longer applies to the current AGENTS.md, the run is real.
+  Before it picks an entry, Hone runs the current verifier over every recorded attempt. If any attempt would get a verdict other than the recorded one, the run is real.
+- A cache file that cannot be read or has the wrong shape is skipped with a log line. If the lookup fails anyway, the run is real and is not recorded.
 - Nothing on the page says that a run was replayed. `GET /api/runs/<id>` has `replayOf` with the entry id, the source run id, the recording date and the review.
 - The input is a batch of exact traces. A visitor's live session in the batch, or a changed feedback, makes the run real.
 
 The fingerprint is the SHA-256 of one canonical JSON document with these parts.
 - Each batch trace in batch order, its session JSONL and its feedback.
-- The base AGENTS.md text.
-- The experience log as the sandbox sees it, without timestamps and commit hashes.
-- The MAJICS configuration, which is the providers, models, seats and reasoning levels, the retry and timeout limits, and the six prompts.
+- The base AGENTS.md text and its version.
+- The experience log as the sandbox sees it.
+- The MAJICS configuration, which is the providers, models, seats and reasoning levels, and the retry and timeout limits.
+- A hash of the code that shapes a run, which is `packages/hone/majics/` with the prompts and the driver, and the verifier in `packages/hone/patch.py`. A change there makes every older recording miss.
 
 Before hashing, every value that differs between two copies of the same input becomes a numbered placeholder.
-These are UUIDs, trace ids, ISO times and dates, millisecond timestamps, dates written out in English, Python `date(...)` literals, and each session's working folder.
-The prepared batch built for 14 November, 17 November and 1 December has one fingerprint.
-On a hit, each recorded value maps to the current one in every replayed event and artifact, and the recorded run id maps to the new one.
+These are UUIDs, trace ids, commit hashes, each session's working folder, ISO times and dates, millisecond timestamps under a `timestamp` or `at` key, Python `date(...)` literals, and dates written out in English.
+Each date format is its own kind, so `17 November 2026` never matches `November 17, 2026`.
+A date's placeholder keeps its offset in days from the first date in the document, and a time keeps its time of day. A batch therefore matches only when all of its dates move by the same number of days.
+On a hit, each recorded value maps to the current one, as a whole token, in every replayed event and artifact, and the recorded run id maps to the new one.
+
+The prepared scenario does not move by whole days from one booth day to the next.
+Start dates fall on the following Monday, and the base AGENTS.md names a fixed example date, so the scenarios built for 14 November, 17 November and 1 December have three fingerprints.
+Record on the scenario of the booth day. `HONE_DEMO_DATE=2026-11-14` makes Hone build the prepared state for that day whatever the clock says. Set it on the stack that records and on the booth stack.
 
 Entries live in two places.
 - `<data dir>/run-cache/`, written by Hone. It survives restarts and demo resets.
 - `packages/hone/demo/run-cache/`, shipped with the code and read only. A fresh booth stack replays these from the first start. A local entry with the same id wins.
 
-The dev endpoints need the write token.
+The dev endpoints need demo mode and the write token.
 - `GET /api/run-cache` lists entries, newest first, with their review status.
 - `GET /api/run-cache/<id>` returns one entry. Save the body as `packages/hone/demo/run-cache/<id>.json` to ship it.
 - `POST /api/run-cache/<id>/review` with `{"status": "approved", "notes": ["...", "..."]}` records the verdict. `rejected` and `candidate` work the same way. Approving needs notes.
 
-A shipped entry replays only on a stack with the same MAJICS configuration and the same prepared scenario, because both are part of the fingerprint.
+A shipped entry replays only on a stack with the same MAJICS configuration, the same MAJICS and verifier code, and the same scenario day, because all three are part of the fingerprint.
 
 ### Demo mode in t3code (patch 0003)
 Enabled when the server starts with `HONE_DEMO=1`.

@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from .events import tail_sse
 from .config import HoneConfig
 from .gitstore import GitError
+from .runcache import RunCache
 from .service import Hone
 from .settings import load_settings
 
@@ -330,7 +331,13 @@ async def pipeline_event(run_id: str, payload: dict[str, Any]) -> dict[str, Any]
 
 # -------------------------------------------------------------- run cache
 
-def _cache_summary(entry: dict[str, Any]) -> dict[str, Any]:
+def _run_cache() -> RunCache:
+    if hone.run_cache is None:
+        raise HTTPException(status_code=404, detail="the run cache is on only in demo mode (HONE_DEMO=1)")
+    return hone.run_cache
+
+
+def _cache_summary(cache: RunCache, entry: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": entry["id"],
         "fingerprint": entry["fingerprint"],
@@ -340,20 +347,21 @@ def _cache_summary(entry: dict[str, Any]) -> dict[str, Any]:
         "outcome": entry["outcome"],
         "title": entry["title"],
         "review": entry["review"],
-        "local": hone.run_cache.is_local(entry["id"]),
+        "local": cache.is_local(entry["id"]),
     }
 
 
 @app.get("/api/run-cache", dependencies=[Depends(require_write)])
 def run_cache_list() -> list[dict[str, Any]]:
     """Recorded real runs, newest first. Only approved entries replay."""
-    return [_cache_summary(e) for e in hone.run_cache.entries()]
+    cache = _run_cache()
+    return [_cache_summary(cache, e) for e in cache.entries()]
 
 
 @app.get("/api/run-cache/{entry_id}", dependencies=[Depends(require_write)])
 def run_cache_entry(entry_id: str) -> dict[str, Any]:
     """The whole entry, as it is saved under packages/hone/demo/run-cache/ to ship it."""
-    entry = hone.run_cache.get(entry_id)
+    entry = _run_cache().get(entry_id)
     if entry is None:
         raise HTTPException(status_code=404, detail="no such run-cache entry")
     return dict(entry)
@@ -363,6 +371,7 @@ def run_cache_entry(entry_id: str) -> dict[str, Any]:
 async def run_cache_review(entry_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     """Body {"status": "approved" | "rejected" | "candidate", "notes": ["..."]}.
     Approving needs the reviewers' notes, see docs/run-review.md."""
+    cache = _run_cache()
     status = payload.get("status")
     notes = payload.get("notes") or []
     if status not in ("approved", "rejected", "candidate"):
@@ -370,12 +379,12 @@ async def run_cache_review(entry_id: str, payload: dict[str, Any]) -> dict[str, 
     if not isinstance(notes, list) or not all(isinstance(n, str) for n in notes):
         raise HTTPException(status_code=422, detail="notes must be a list of strings")
     try:
-        entry = hone.run_cache.set_review(entry_id, status, notes)
+        entry = cache.set_review(entry_id, status, notes)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="no such run-cache entry") from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return _cache_summary(entry)
+    return _cache_summary(cache, entry)
 
 
 # ------------------------------------------------------------------- demo

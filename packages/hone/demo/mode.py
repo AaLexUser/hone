@@ -64,8 +64,9 @@ class DemoMode:
         return hashlib.sha256(dumped.encode()).hexdigest()[:12]
 
     async def _prepared(self) -> Path:
-        """Today's prepared state, built on first use and cached for the day."""
-        today = dt.datetime.now().astimezone().date()
+        """Today's prepared state, or the one for the configured demo date,
+        built on first use and cached for the day."""
+        today = self.hone.s.service.demo_date or dt.datetime.now().astimezone().date()
         target = self.cache / f"{today.isoformat()}-{_scenario_version()}-{self._settings_version()}"
         if (target / "manifest.json").exists():
             return target

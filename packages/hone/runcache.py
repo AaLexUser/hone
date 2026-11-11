@@ -1,18 +1,21 @@
 """Recorded real runs, replayed when the same input comes back.
 
-Every real MAJICS run that finishes (a commit or no changes) is stored as a
-candidate entry under the fingerprint of its input. After two reviewers pass
-it (docs/run-review.md), it is approved, and from then on Start optimization
-on the same input replays it through Hone's own run loop instead of starting
-Harbor. Only the stage executor is replaced. The verifier, the commit and the
-experience log run as for any run.
+In demo mode (HONE_DEMO=1) every real MAJICS run that finishes (a commit or
+no changes) is stored as a candidate entry under the fingerprint of its input.
+After two reviewers pass it (docs/run-review.md), it is approved, and from
+then on Start optimization on the same input replays it through Hone's own run
+loop instead of starting Harbor. Only the stage executor is replaced. The
+verifier, the commit and the experience log run as for any run. Outside demo
+mode nothing is recorded or replayed.
 
 The fingerprint is the SHA-256 of one canonical JSON document, see
 `run_input`. Values that differ between two copies of the same input (ids,
-timestamps, dates, the project folder) become numbered placeholders, and the
-distinct values in order of first appearance are kept with the entry. A hit
-on another day maps each recorded value to the current one in everything it
-replays.
+commit hashes, timestamps, dates, the project folder) become numbered
+placeholders, and the distinct values in order of first appearance are kept
+with the entry. Each date format is its own kind, and a date's placeholder
+holds its day offset from the first dated value, so only a batch whose dates
+all move by the same number of days matches. A hit maps each recorded value to
+the current one, as a whole token, in everything it replays.
 
 Entries live in `<data dir>/run-cache/`, which a demo reset keeps, and in
 `SHIPPED_DIR` in the source tree, read only. A local entry wins over a
@@ -25,6 +28,7 @@ import asyncio
 import datetime as dt
 import hashlib
 import json
+import logging
 import re
 import secrets
 from collections.abc import Callable
@@ -32,7 +36,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
-from . import logedits, patch
+from . import logedits
 
 if TYPE_CHECKING:
     from .config import HoneConfig
@@ -40,13 +44,20 @@ if TYPE_CHECKING:
     from .service import Hone
     from .store import DataDirs
 
+log = logging.getLogger("hone.runcache")
+
 RUN_CACHE_DIR = "run-cache"
 SHIPPED_DIR = Path(__file__).parent / "demo" / "run-cache"
-ENTRY_VERSION = 1
+ENTRY_VERSION = 2
 # A replay plays in about this long, however long the recorded run took.
 REPLAY_TARGET_MS = 90_000
 # Events Hone writes itself. A replay's run loop writes them again.
 HONE_KINDS = frozenset({"log", "status"})
+# The code that decides what a stage is asked, what it returns and what the
+# host accepts from it, relative to SOURCE_ROOT. A change to it is a new input.
+SOURCE_ROOT = Path(__file__).parent
+SOURCE = ("majics", "patch.py")
+_ENTRY_ID = re.compile(r"[\w-]+", re.ASCII)
 
 Status = Literal["candidate", "approved", "rejected"]
 
@@ -76,6 +87,7 @@ class Entry(TypedDict):
     outcome: str                     # succeeded or no-changes
     title: str
     stages: list[Segment]
+    verdicts: list[str | None]       # per attempt, the rejection reason, None for the accepted one
     review: Review
 
 
@@ -84,19 +96,74 @@ class Entry(TypedDict):
 # --------------------------------------------------------------------------- #
 
 _MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
-# Order matters, the first alternative that matches at a position wins.
-_VARIABLE = [
-    ("uuid", r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"),
-    ("trace", r"ses_[0-9a-f]{8}"),
-    ("time", r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?"),
-    ("date", r"\d{4}-\d{2}-\d{2}"),
-    ("date", r"date\(\d{4}, \d{1,2}, \d{1,2}\)"),     # a Python date literal in a script
-    ("ms", r"(?<!\d)1\d{12}(?!\d)"),
-    ("date", rf"\d{{1,2}} (?:{_MONTHS})(?: \d{{4}})?"),
-    ("date", rf"(?:{_MONTHS}) \d{{1,2}}(?:, \d{{4}})?"),
-]
-# Log entries name the commits of their day, and git hashes change with the date.
-_HISTORY_DROP = ("at", "commit", "baseVersion")
+_MONTH_NUMBER = {name: i for i, name in enumerate(_MONTHS.split("|"), 1)}
+# A token never continues a word or a number. `\n` and `\t` escapes in JSON text are not part of a word.
+_START = r"(?:(?<![0-9A-Za-z])|(?<=\\[nrt]))"
+_END = r"(?![0-9A-Za-z])"
+# Millisecond timestamps only as the value of these keys, in JSON or in JSON inside a JSON string.
+_MS_AFTER = "|".join(f"(?<={re.escape(q + key + q + sep)})"
+                     for key in ("timestamp", "at") for q in ('"', '\\"') for sep in (":", ": "))
+
+# A date kind reads its text as (day, what follows the day), given the anchor
+# day for a date written without a year.
+DayReader = Callable[[str, "dt.date | None"], "tuple[dt.date, str] | None"]
+
+
+def _iso_day(text: str, near: dt.date | None) -> tuple[dt.date, str]:
+    return dt.date.fromisoformat(text[:10]), text[10:]
+
+
+def _python_day(text: str, near: dt.date | None) -> tuple[dt.date, str]:
+    year, month, day = (int(n) for n in re.findall(r"\d+", text))
+    return dt.date(year, month, day), ""
+
+
+def _written_day(text: str, near: dt.date | None) -> tuple[dt.date, str] | None:
+    month = _MONTH_NUMBER[re.search(_MONTHS, text).group(0)]  # type: ignore[union-attr]
+    day, *year = (int(n) for n in re.findall(r"\d+", text))
+    if year:
+        return dt.date(year[0], month, day), ""
+    if near is None:
+        return None
+    candidates = []
+    for y in (near.year - 1, near.year, near.year + 1):
+        try:
+            candidates.append(dt.date(y, month, day))
+        except ValueError:
+            pass
+    return min(candidates, key=lambda c: abs((c - near).days)), ""
+
+
+def _epoch_ms_day(text: str, near: dt.date | None) -> tuple[dt.date, str]:
+    t = dt.datetime.fromtimestamp(int(text) / 1000, dt.UTC)
+    return t.date(), f"T{t:%H:%M:%S}.{t.microsecond // 1000:03d}Z"
+
+
+@dataclass(frozen=True)
+class Kind:
+    name: str
+    pattern: str
+    day: DayReader | None = None     # set for the kinds that write a date
+
+
+# At one position the first kind that matches wins.
+KINDS = (
+    Kind("uuid", r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"),
+    Kind("trace", r"ses_[0-9a-f]{8}"),
+    Kind("isotime", r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?", _iso_day),
+    Kind("isodate", r"\d{4}-\d{2}-\d{2}", _iso_day),
+    Kind("pydate", r"date\(\d{4}, \d{1,2}, \d{1,2}\)", _python_day),       # a Python date literal
+    Kind("epochms", rf"(?:{_MS_AFTER})\d{{13}}", _epoch_ms_day),
+    Kind("dmy", rf"\d{{1,2}} (?:{_MONTHS}) \d{{4}}", _written_day),           # 17 November 2026
+    Kind("mdy", rf"(?:{_MONTHS}) \d{{1,2}}, \d{{4}}", _written_day),          # November 17, 2026
+    Kind("dm", rf"\d{{1,2}} (?:{_MONTHS})", _written_day),                    # 17 November
+    Kind("md", rf"(?:{_MONTHS}) \d{{1,2}}", _written_day),                    # November 17
+)
+_DAY_READERS = {k.name: k.day for k in KINDS if k.day is not None}
+
+
+def _token_alternative(name: str, pattern: str) -> str:
+    return f"(?P<{name}>{_START}(?:{pattern}){_END})"
 
 
 @dataclass(frozen=True)
@@ -105,20 +172,52 @@ class RunInput:
     tokens: tuple[str, ...]
 
 
-def canonicalize(text: str, literals: list[str]) -> RunInput:
-    """Replace each variable value with `⟨kind#n⟩`, n counting distinct values."""
-    parts = [f"(?P<cwd{i}>{re.escape(lit)})" for i, lit in enumerate(literals)]
-    parts += [f"(?P<{kind}{i}>{rx})" for i, (kind, rx) in enumerate(_VARIABLE)]
+def canonicalize(text: str, literals: list[tuple[str, str]]) -> RunInput:
+    """Replace each variable value with `⟨kind#n⟩`, n counting distinct values.
+    `literals` are (kind, value) pairs to treat as variable values too. A date
+    becomes `⟨kind#n+d⟩`, with d its day offset from the first date with a
+    year, and anything written after the day (a time of day) kept."""
+    ordered = sorted(literals, key=lambda kv: len(kv[1]), reverse=True)
+    parts = [_token_alternative(f"{kind}{i}", re.escape(value)) for i, (kind, value) in enumerate(ordered)]
+    parts += [_token_alternative(k.name, k.pattern) for k in KINDS]
     pattern = re.compile("|".join(parts))
+
+    def read_day(kind: str, value: str, near: dt.date | None) -> tuple[dt.date, str] | None:
+        try:
+            return _DAY_READERS[kind](value, near)
+        except ValueError:  # not a real day, such as 31 February
+            return None
+
+    anchor = next((read[0] for m in pattern.finditer(text) if m.lastgroup in _DAY_READERS
+                   for read in [read_day(m.lastgroup, m.group(0), None)] if read is not None), None)
     seen: dict[str, int] = {}
 
     def placeholder(m: re.Match[str]) -> str:
-        kind = re.sub(r"\d+$", "", m.lastgroup or "")
-        n = seen.setdefault(m.group(0), len(seen))
-        return f"⟨{kind}#{n}⟩"
+        kind, value = re.sub(r"\d+$", "", m.lastgroup or ""), m.group(0)
+        if kind not in _DAY_READERS:
+            return f"⟨{kind}#{seen.setdefault(value, len(seen))}⟩"
+        read = read_day(kind, value, anchor)
+        if read is None or anchor is None:
+            return value
+        day, rest = read
+        return f"⟨{kind}#{seen.setdefault(value, len(seen))}{(day - anchor).days:+d}{rest}⟩"
 
     canonical = pattern.sub(placeholder, text)
     return RunInput(hashlib.sha256(canonical.encode("utf-8")).hexdigest(), tuple(seen))
+
+
+def source_digest(root: Path) -> str:
+    """SHA-256 over the files of SOURCE under `root`, with their paths."""
+    digest = hashlib.sha256()
+    for name in SOURCE:
+        top = root / name
+        files = (sorted(p for p in top.rglob("*") if p.is_file() and "__pycache__" not in p.parts)
+                 if top.is_dir() else [top])
+        for path in files:
+            body = path.read_bytes()
+            digest.update(f"{path.relative_to(root).as_posix()}\0{len(body)}\0".encode())
+            digest.update(body)
+    return digest.hexdigest()
 
 
 def _session_cwds(body: str) -> list[str]:
@@ -135,11 +234,10 @@ def _session_cwds(body: str) -> list[str]:
 
 def run_input(hone: Hone, run: dict[str, Any]) -> RunInput:
     """What decides a run's result, in canonical form: the batch traces with
-    their feedback in batch order, the base AGENTS.md, the experience log the
-    sandbox reads, and the MAJICS configuration (providers, models, seats,
-    reasoning, retry and timeout limits, and the prompts)."""
-    from .majics.assets import PROMPT_FILES
-
+    their feedback in batch order, the base AGENTS.md and its version, the
+    experience log the sandbox reads, the MAJICS configuration (providers,
+    models, seats, reasoning, retry and timeout limits), and the source of the
+    MAJICS package and the verifier, prompts and driver included."""
     traces = []
     cwds: list[str] = []
     for tid in run["trace_ids"]:
@@ -149,20 +247,48 @@ def run_input(hone: Hone, run: dict[str, Any]) -> RunInput:
         traces.append({"id": tid, "session": body, "feedback": row.get("feedback")})
         cwds += _session_cwds(body)
     history = logedits.sandbox_copy(hone.log_edits_payload())
-    history = {**history, "entries": [{k: v for k, v in e.items() if k not in _HISTORY_DROP}
-                                      for e in history["entries"]]}
+    # Commit hashes change with the day the history was built.
+    commits = {run["base_version_id"]} | {e.get(k) for e in history["entries"] for k in ("commit", "baseVersion")}
     document = {
         "version": ENTRY_VERSION,
+        "source": source_digest(SOURCE_ROOT),
         "agentsMd": hone.git.file_at(run["base_version_id"]),
+        "baseVersion": run["base_version_id"],
         "traces": traces,
         "history": history,
         "majics": hone.s.majics.model_dump(mode="json"),
         "optimization": hone.s.optimization.model_dump(mode="json"),
-        "prompts": PROMPT_FILES,
     }
     text = json.dumps(document, ensure_ascii=False, sort_keys=True)
-    # Longest first, so a folder inside another folder is not matched first.
-    return canonicalize(text, sorted(set(cwds), key=len, reverse=True))
+    literals = [("cwd", c) for c in set(cwds)] + [("commit", c) for c in commits if isinstance(c, str) and c]
+    return canonicalize(text, literals)
+
+
+def _parse_entry(raw: Any) -> Entry | None:
+    """`raw` as an entry of this version, or None when any part has the wrong shape."""
+    def strings(v: Any) -> bool:
+        return isinstance(v, list) and all(isinstance(x, str) for x in v)
+
+    def segment(s: Any) -> bool:
+        return (isinstance(s, dict) and isinstance(s.get("stage"), str) and isinstance(s.get("attempt"), int)
+                and isinstance(s.get("endMs"), int) and isinstance(s.get("events"), list)
+                and all(isinstance(e, list) and len(e) == 2 and isinstance(e[0], (int, float))
+                        and isinstance(e[1], dict) for e in s["events"])
+                and isinstance(s.get("artifacts"), dict)
+                and all(isinstance(v, str) for v in s["artifacts"].values()))
+
+    if not isinstance(raw, dict) or raw.get("version") != ENTRY_VERSION:
+        return None
+    review = raw.get("review")
+    ok = (isinstance(raw.get("id"), str) and _ENTRY_ID.fullmatch(raw["id"]) is not None
+          and all(isinstance(raw.get(k), str) for k in ("fingerprint", "sourceRunId", "recordedAt", "outcome", "title"))
+          and strings(raw.get("tokens")) and isinstance(raw.get("durationMs"), int)
+          and isinstance(raw.get("stages"), list) and all(segment(s) for s in raw["stages"])
+          and isinstance(raw.get("verdicts"), list)
+          and all(v is None or isinstance(v, str) for v in raw["verdicts"])
+          and isinstance(review, dict) and review.get("status") in ("candidate", "approved", "rejected")
+          and strings(review.get("notes")) and (review.get("at") is None or isinstance(review.get("at"), str)))
+    return raw if ok else None  # type: ignore[return-value]
 
 
 # --------------------------------------------------------------------------- #
@@ -183,11 +309,14 @@ class RunCache:
         out: dict[str, Entry] = {}
         for path in sorted(d.glob("*.json")) if d.is_dir() else []:
             try:
-                entry = json.loads(path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
+                entry = _parse_entry(json.loads(path.read_text(encoding="utf-8")))
+            except (OSError, ValueError) as exc:
+                log.warning("skipping run-cache file %s: %s", path, exc)
                 continue
-            if isinstance(entry, dict) and entry.get("version") == ENTRY_VERSION:
-                out[entry["id"]] = entry  # type: ignore[assignment]
+            if entry is None or entry["id"] != path.stem:
+                log.warning("skipping run-cache file %s: not a version %d entry named by its id", path, ENTRY_VERSION)
+                continue
+            out[entry["id"]] = entry
         return out
 
     def entries(self) -> list[Entry]:
@@ -201,6 +330,8 @@ class RunCache:
         return (self.local / f"{entry_id}.json").exists()
 
     def store(self, entry: Entry) -> None:
+        if not _ENTRY_ID.fullmatch(entry["id"]):
+            raise ValueError(f"run-cache entry id {entry['id']!r} is not a file name")
         self.local.mkdir(parents=True, exist_ok=True)
         tmp = self.local / f".{entry['id']}.json.tmp"
         tmp.write_text(json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -219,13 +350,15 @@ class RunCache:
         return entry
 
     def replay_for(self, hone: Hone, run: dict[str, Any], inp: RunInput) -> Replay | None:
-        """The newest approved entry for this input whose proposal still applies."""
+        """The newest approved entry for this input that, replayed under the
+        current verifier, reaches the verdicts it reached when it was recorded."""
         approved = [e for e in self.entries()
                     if e["fingerprint"] == inp.fingerprint and e["review"]["status"] == "approved"
                     and len(e["tokens"]) == len(inp.tokens)]
+        base_file = hone.git.file_at(run["base_version_id"]).splitlines()
         for entry in sorted(approved, key=lambda e: e["review"]["at"] or "", reverse=True):
             replay = Replay(hone, entry, inp, run["id"])
-            if replay.applies(hone.git.file_at(run["base_version_id"]).splitlines(), run["trace_ids"]):
+            if replay.matches(base_file, run["trace_ids"], hone.s.optimization.max_attempts):
                 return replay
         return None
 
@@ -244,6 +377,7 @@ class Recorder:
         self.run_id = run_id
         self.input = inp
         self.segments: list[Segment] = []
+        self.verdicts: list[str | None] = []   # the service's attempt loop appends one per attempt
 
     def executor(self, settings: HoneConfig, dirs: DataDirs, run_id: str,
                  emit: Callable[..., Any]) -> StageExecutor:
@@ -265,6 +399,7 @@ class Recorder:
             "outcome": outcome,
             "title": title,
             "stages": self.segments,
+            "verdicts": self.verdicts,
             "review": {"status": "candidate", "notes": [], "at": None},
         }
 
@@ -308,8 +443,8 @@ class Replay:
         self.run_id = run_id
         pairs = {**dict(zip(entry["tokens"], inp.tokens, strict=True)), entry["sourceRunId"]: run_id}
         self.mapping = {old: new for old, new in pairs.items() if old != new}
-        self._pattern = (re.compile("|".join(re.escape(k) for k in sorted(self.mapping, key=len, reverse=True)))
-                         if self.mapping else None)
+        alternatives = "|".join(re.escape(k) for k in sorted(self.mapping, key=len, reverse=True))
+        self._pattern = re.compile(f"{_START}(?:{alternatives}){_END}") if self.mapping else None
         self.speed = max(1.0, entry["durationMs"] / REPLAY_TARGET_MS)
 
     def text(self, value: str) -> str:
@@ -330,27 +465,16 @@ class Replay:
                 return seg
         raise RuntimeError(f"recorded run {self.entry['sourceRunId']} has no {stage} attempt {attempt}")
 
-    def applies(self, base_file: list[str], trace_ids: list[str]) -> bool:
-        """The recorded final proposal, mapped, still verifies on this base."""
-        proposals = [s for s in self.entry["stages"] if s["stage"] == "propose" and "proposal.json" in s["artifacts"]]
-        if not proposals:
-            return False
-        try:
-            proposal = json.loads(self.text(proposals[-1]["artifacts"]["proposal.json"]))
-        except json.JSONDecodeError:
-            return False
-        edits = proposal.get("edits") if isinstance(proposal, dict) else None
-        if not isinstance(edits, list):
-            return False
-        if not edits:
-            return True
-        try:
-            patch.verify_commit_message({"commit": {"title": proposal.get("commit_title") or "",
-                                                    "body": proposal.get("commit_body") or ""}})
-            patch.apply_proposal_edits(edits, base_file, trace_ids)
-        except patch.PatchError:
-            return False
-        return True
+    def matches(self, base_file: list[str], trace_ids: list[str], max_attempts: int) -> bool:
+        """Each recorded attempt, mapped, gets the verdict it got when it was
+        recorded, so the replay commits what the reviewers saw committed and
+        never asks for a stage that was not recorded."""
+        from .majics.pipeline import attempt_verdicts
+
+        artifacts = {(s["stage"], s["attempt"]): {name: self.text(t) for name, t in s["artifacts"].items()}
+                     for s in self.entry["stages"]}
+        replayed = attempt_verdicts(artifacts, self.run_id, base_file, trace_ids, max_attempts)
+        return bool(self.entry["verdicts"]) and replayed == self.value(self.entry["verdicts"])
 
     def note(self) -> dict[str, Any]:
         """The machine readable record of where this run came from."""

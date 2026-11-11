@@ -84,7 +84,9 @@ class Hone:
         self.dirs = DataDirs(self.s.service.data_dir)
         self.git = GitRepo(self.dirs.repo)
         self.db = Db(self.s.service.data_dir / "app.sqlite")
-        self.run_cache = runcache.RunCache(self.s.service.data_dir / runcache.RUN_CACHE_DIR)
+        # Recorded runs replay only in demo mode. Elsewhere every run is real and unrecorded.
+        self.run_cache = (runcache.RunCache(self.s.service.data_dir / runcache.RUN_CACHE_DIR)
+                          if self.s.service.demo else None)
         self._run_task: asyncio.Task | None = None
         self._live: dict[str, dict[str, Any]] = {}
         self._bootstrap()
@@ -454,9 +456,9 @@ class Hone:
         overrides the configured one, `executor_factory` replaces the Harbor
         executor for this run only.
 
-        Without `executor_factory` the run is real. An approved run-cache
-        entry for the same input replays instead, and any other real run is
-        recorded as a candidate entry when it finishes."""
+        Without `executor_factory` the run is real. In demo mode an approved
+        run-cache entry for the same input replays instead, and any other real
+        run is recorded as a candidate entry when it finishes."""
         if self.active_run():
             raise RuntimeError("one optimizer run at a time")
         batch_size = batch_size or self.db.get_config("batch_size")
@@ -480,14 +482,18 @@ class Hone:
         }
         recorder: runcache.Recorder | None = None
         replay: runcache.Replay | None = None
-        if executor_factory is None:
-            inp = runcache.run_input(self, run)
-            replay = self.run_cache.replay_for(self, run, inp)
-            if replay is not None:
-                executor_factory = replay.executor
+        if executor_factory is None and self.run_cache is not None:
+            try:
+                inp = runcache.run_input(self, run)
+                replay = self.run_cache.replay_for(self, run, inp)
+            except Exception:  # a broken cache must never stop a real run
+                logging.getLogger("hone.runcache").exception("run cache lookup failed, %s runs unrecorded", run_id)
             else:
-                recorder = runcache.Recorder(self, run_id, inp)
-                executor_factory = recorder.executor
+                if replay is not None:
+                    executor_factory = replay.executor
+                else:
+                    recorder = runcache.Recorder(self, run_id, inp)
+                    executor_factory = recorder.executor
         self.db.insert_run(run)
         if replay is not None:
             self.dirs.replay_path(run_id).write_text(json.dumps(replay.note(), indent=2) + "\n", encoding="utf-8")
@@ -705,6 +711,8 @@ class Hone:
                     outcome = await pipeline.run(attempt, rejection)
                 except PipelineFailure as exc:
                     rejection = str(exc)
+                    if recorder is not None:
+                        recorder.verdicts.append(rejection)
                     self.emit(
                         run_id,
                         "log",
@@ -714,6 +722,8 @@ class Hone:
                         "warn" if attempt < attempts_limit else "error",
                     )
                     continue
+                if recorder is not None:
+                    recorder.verdicts.append(None if outcome["ok"] else outcome["reason"])
                 if outcome["ok"]:
                     success = outcome
                     break
@@ -788,7 +798,7 @@ class Hone:
             title = (success["result"].get("commit") or {}).get("title") or success["result"].get("signal", "")
             try:
                 self.run_cache.store(recorder.entry(done, done["status"], title))
-            except OSError:  # the run itself is complete, only its recording is lost
+            except (OSError, ValueError):  # the run itself is complete, only its recording is lost
                 logging.getLogger("hone.runcache").exception("storing run %s in the run cache failed", run_id)
         self.bus.publish({"type": "run_completed", "runId": run_id})
         self._live.pop(run_id, None)

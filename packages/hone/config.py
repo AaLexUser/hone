@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import re
@@ -450,8 +451,11 @@ class ServiceConfig(FrozenConfigModel):
     announce_host: str = "host.docker.internal"
     ui_dir: Path = Path("apps/web/dist")
     expose_write_token: bool = True
-    # Booth demo mode: the reset and replay endpoints and their dashboard button.
+    # Booth demo mode: the reset endpoint, and recording and replaying runs.
     demo: bool = False
+    # The day the demo scenario is built for, today when unset. A recorded run
+    # replays only on a scenario built for a day with the same date gaps.
+    demo_date: dt.date | None = None
 
 
 class TargetConfig(FrozenConfigModel):
