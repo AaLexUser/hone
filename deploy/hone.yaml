@@ -2,9 +2,10 @@ version: 1
 
 # Hone's configuration for the booth stack. docker-compose.yml mounts this file
 # into the hone container and points HONE_CONFIG at it. As in the paper, each
-# MAJICS panel mixes three model families (DeepSeek, LongCat and MiniMax), and
-# both judges use a fourth family (GLM). LongCat replaced MiMo, whose seat kept
-# hitting transport retries. All four come from OpenCode Go with the key
+# MAJICS panel mixes three model families (Hy3, LongCat and MiniMax), and both
+# judges use a fourth family (GLM). LongCat replaced MiMo, whose seat kept
+# hitting transport retries, and Hy3 replaced DeepSeek, whose endpoint kept
+# answering 429 overloaded. DeepSeek stays defined as the agent's model. All four come from OpenCode Go with the key
 # from OPENCODE_API_KEY in .env. The agent under optimization keeps the Pi
 # agent's model in t3code. Each model's thinking map and compat flags are
 # copied from Pi's model catalog.
@@ -54,6 +55,28 @@ majics:
     # The seats use the OpenCode Go models with the largest request allowance
     # per five hours in each family, so one key lasts through the booth while
     # the panels still span three families and the judges a fourth.
+    hy3:
+      provider: opencode-go
+      id: hy3
+      name: Hy3
+      reasoning: true
+      input: [text]
+      context_window: 256000
+      max_tokens: 128000
+      thinking_level_map:
+        "off": none
+        minimal: null
+        low: low
+        medium: null
+        high: high
+        xhigh: null
+        max: null
+      compat:
+        supportsStore: false
+        supportsDeveloperRole: false
+        supportsStrictMode: true
+        maxTokensField: max_tokens
+
     longcat-2.0:
       provider: opencode-go
       id: longcat-2.0
@@ -119,7 +142,7 @@ majics:
     panel:
       - model: longcat-2.0
         reasoning: medium
-      - model: deepseek-v4.1-flash
+      - model: hy3
         reasoning: low
       - model: minimax-m3.1-flash
         reasoning: high
@@ -129,7 +152,7 @@ majics:
 
   propose:
     panel:
-      - model: deepseek-v4.1-flash
+      - model: hy3
         reasoning: low
       - model: minimax-m3.1-flash
         reasoning: high
