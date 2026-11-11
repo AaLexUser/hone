@@ -61,6 +61,10 @@ class DataDirs:
     def events_path(self, run_id: str) -> Path:
         return self.run_dir(run_id) / "events.jsonl"
 
+    def replay_path(self, run_id: str) -> Path:
+        """Where a run replayed from the run cache notes its source."""
+        return self.run_dir(run_id) / "replay.json"
+
     def result_path(self, run_id: str) -> Path:
         return self.run_dir(run_id) / "result.json"
 

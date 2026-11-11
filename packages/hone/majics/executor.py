@@ -14,7 +14,7 @@ from harbor.models.trial.config import AgentConfig, EnvironmentConfig, TaskConfi
 
 from ..config import HoneConfig
 from ..store import DataDirs
-from .runtime import AGENT_IMPORT_PATH, BUILD_ALLOWED_HOSTS, SERVICE_TOKEN_ENV
+from .runtime import AGENT_IMPORT_PATH, BUILD_ALLOWED_HOSTS, SERVICE_TOKEN_ENV, emit_launch
 
 
 @contextmanager
@@ -71,12 +71,7 @@ class HarborMajicsExecutor:
 
     async def run(self, stage: str, task_dir: Path, attempt: int) -> Path:
         config = self.job_config(stage, task_dir, attempt)
-        self.emit(
-            "log",
-            icon="read",
-            text=f"{stage} job: launching Harbor",
-            detail=f"custom agent · {AGENT_IMPORT_PATH}",
-        )
+        emit_launch(self.emit, stage)
         runtime_env = {
             **self.s.majics.credential_env(),
             SERVICE_TOKEN_ENV: self.s.service.token,

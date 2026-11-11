@@ -14,11 +14,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from . import ids, logedits, patch
+from . import ids, logedits, patch, runcache
 from .config import HoneConfig
 from .db import Db
 from .events import Bus, append_event, read_events
@@ -83,6 +84,7 @@ class Hone:
         self.dirs = DataDirs(self.s.service.data_dir)
         self.git = GitRepo(self.dirs.repo)
         self.db = Db(self.s.service.data_dir / "app.sqlite")
+        self.run_cache = runcache.RunCache(self.s.service.data_dir / runcache.RUN_CACHE_DIR)
         self._run_task: asyncio.Task | None = None
         self._live: dict[str, dict[str, Any]] = {}
         self._bootstrap()
@@ -291,7 +293,9 @@ class Hone:
         if not r:
             return None
         result = self._read_result(run_id)
-        return {**r, "changes": (result or {}).get("changes", []), "result": result}
+        replay_path = self.dirs.replay_path(run_id)
+        replay = json.loads(replay_path.read_text(encoding="utf-8")) if replay_path.exists() else None
+        return {**r, "changes": (result or {}).get("changes", []), "result": result, "replay": replay}
 
     def runs_payload(self) -> list[dict[str, Any]]:
         out = []
@@ -448,7 +452,11 @@ class Hone:
     ) -> dict[str, Any]:
         """Freeze the oldest unanalyzed traces and optimize them. `batch_size`
         overrides the configured one, `executor_factory` replaces the Harbor
-        executor for this run only."""
+        executor for this run only.
+
+        Without `executor_factory` the run is real. An approved run-cache
+        entry for the same input replays instead, and any other real run is
+        recorded as a candidate entry when it finishes."""
         if self.active_run():
             raise RuntimeError("one optimizer run at a time")
         batch_size = batch_size or self.db.get_config("batch_size")
@@ -459,19 +467,30 @@ class Hone:
         run_id = ids.new_run_id()
         started = _now_ms()
         trace_ids = [t["session_id"] for t in batch]
-        self.db.insert_run(
-            {
-                "id": run_id,
-                "status": "running",
-                "trigger": trigger,
-                "started_at": started,
-                "model": self.s.pipeline_label,
-                "attempts": 1,
-                "trace_ids": trace_ids,
-                "base_version_id": self.current_id,
-                "result_version_id": None,
-            }
-        )
+        run = {
+            "id": run_id,
+            "status": "running",
+            "trigger": trigger,
+            "started_at": started,
+            "model": self.s.pipeline_label,
+            "attempts": 1,
+            "trace_ids": trace_ids,
+            "base_version_id": self.current_id,
+            "result_version_id": None,
+        }
+        recorder: runcache.Recorder | None = None
+        replay: runcache.Replay | None = None
+        if executor_factory is None:
+            inp = runcache.run_input(self, run)
+            replay = self.run_cache.replay_for(self, run, inp)
+            if replay is not None:
+                executor_factory = replay.executor
+            else:
+                recorder = runcache.Recorder(self, run_id, inp)
+                executor_factory = recorder.executor
+        self.db.insert_run(run)
+        if replay is not None:
+            self.dirs.replay_path(run_id).write_text(json.dumps(replay.note(), indent=2) + "\n", encoding="utf-8")
         # Freeze the batch: these traces belong to this run from now on.
         for sid in trace_ids:
             self.db.execute("UPDATE traces SET analyzed_by = ? WHERE session_id = ?", (run_id, sid))
@@ -491,7 +510,7 @@ class Hone:
             "commit": None,
         }
         self._run_task = asyncio.get_running_loop().create_task(
-            self._drive_run(run_id, trigger, set_current, executor_factory)
+            self._drive_run(run_id, trigger, set_current, executor_factory, recorder)
         )
         return {"id": run_id, "status": "running"}
 
@@ -665,7 +684,8 @@ class Hone:
     # ------------------------------------------------------------- the loop
 
     async def _drive_run(
-        self, run_id: str, trigger: str, set_current: bool, executor_factory: ExecutorFactory | None
+        self, run_id: str, trigger: str, set_current: bool, executor_factory: ExecutorFactory,
+        recorder: runcache.Recorder | None,
     ) -> None:
         from .majics import MajicsPipeline, PipelineFailure  # heavy deps, only when optimizing
 
@@ -762,6 +782,14 @@ class Hone:
                      f"AGENTS.md was left at {run['base_version_id']}.",
             )
         self.db.mark_traces_analyzed(trace_ids, run_id)
+        if recorder is not None and success is not None:
+            done = self.db.run(run_id)
+            assert done is not None
+            title = (success["result"].get("commit") or {}).get("title") or success["result"].get("signal", "")
+            try:
+                self.run_cache.store(recorder.entry(done, done["status"], title))
+            except OSError:  # the run itself is complete, only its recording is lost
+                logging.getLogger("hone.runcache").exception("storing run %s in the run cache failed", run_id)
         self.bus.publish({"type": "run_completed", "runId": run_id})
         self._live.pop(run_id, None)
         self._run_task = None

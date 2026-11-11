@@ -31,6 +31,7 @@ from ..config import HoneConfig
 from ..store import DataDirs
 from .executor import HarborMajicsExecutor
 from .report import ReviewError, render_review, validate_review
+from .runtime import collect_artifacts
 from .task import MajicsTaskBuilder
 
 
@@ -70,23 +71,6 @@ class MajicsPipeline:
         ev = {"kind": kind, **{k: v for k, v in extra.items() if v is not None}}
         self.hone.emit(self.run_id, kind, None, "", extra=ev)
 
-    def _collect(self, job_dir: Path) -> dict[str, str]:
-        """The flat artifacts the task collected out of the sandbox."""
-        if not job_dir.exists():
-            return {}
-        artifacts_dir = None
-        for c in sorted(job_dir.glob("task__*/artifacts")):
-            if c.is_dir():
-                artifacts_dir = c
-                break
-        if artifacts_dir is None:
-            return {}
-        out: dict[str, str] = {}
-        for f in artifacts_dir.iterdir():
-            if f.is_file():
-                out[f.name] = f.read_text(encoding="utf-8", errors="replace")
-        return out
-
     def _stage_failure(self, stage: str, attempt: int, artifacts: dict[str, str]) -> PipelineFailure:
         err = artifacts.get("driver-error.txt", "").strip()
         if err:
@@ -120,7 +104,7 @@ class MajicsPipeline:
         if self.review_json is None:
             task = self.task_builder.materialize("review", attempt, None, None)
             job_dir = await self.executor.run("review", task, attempt)
-            artifacts = self._collect(job_dir)
+            artifacts = collect_artifacts(job_dir)
             review_text = artifacts.get("review.json")
             if not review_text:
                 raise self._stage_failure("review", attempt, artifacts)
@@ -138,7 +122,7 @@ class MajicsPipeline:
             "propose", attempt, rejection, self.review_json
         )
         job_dir = await self.executor.run("propose", task, attempt)
-        artifacts = self._collect(job_dir)
+        artifacts = collect_artifacts(job_dir)
         proposal_text = artifacts.get("proposal.json")
         if not proposal_text:
             raise self._stage_failure("propose", attempt, artifacts)
