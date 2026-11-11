@@ -91,6 +91,8 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 - A fact the user states in feedback is evidence, never an unresolved claim. Check the folder listings and earlier outputs in the traces before you doubt it.
 - Before you list a preference as open, check the current AGENTS.md. A trace that breaks an existing rule is a finding about that rule.
 - When a follow-up answer times out on a material question, ask another worker the same question. When an answer settles a point, write the settled point into the review.
+- Give each finding the cause its traces show. When the agent printed the problem in its own output and kept it, the cause is the instruction it followed, not a missing check. A direction that adds a check must name a session where the agent never saw the problem.
+- Put every disagreement a direction rests on to the panel before you write the direction. Never call a case untested or unresolved without checking every trace, and never list as unresolved what you make a direction.
 - Worker coverage is sharded for large batches. Before accepting a material finding supported by one worker, ask another worker to falsify it against the cited trace.
 - Missing feedback means unknown outcome. Keep unsupported claims in `unresolved`.
 - Users attach feedback after a session ends, by design. A worker report that calls this a delivery defect is wrong, drop that claim.
@@ -185,6 +187,8 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 - When one proposer leaves out an edit that another keeps, ask both in the same `ask_panel` call, the one who keeps it to defend it and the one who left it out to give their reason, then keep the edit only if it still meets the recurrence rule.
 - When a proposer defends a clause with evidence, put that defense to the others before you drop the clause. Never settle a split by counting votes, and never by a proposer changing their mind. The recurrence rule settles it.
 - An edit's evidence lists only traces where something went wrong or that feedback names. A trace where the agent did it right supports no rule.
+- A clause the feedback does not ask for, such as telling the user what changed, needs its own evidence. A review direction alone is not evidence.
+- The rule to ask both sides covers every clause, not only whole edits. When proposers split on a clause, ask before you keep or drop it.
 - State both positions neutrally in a question. Never argue one side.
 - Compare each edit with the current rules. An edit must not contradict a rule it does not replace.
 - Do not ask the panel what you can check yourself, such as whether an anchor matches.

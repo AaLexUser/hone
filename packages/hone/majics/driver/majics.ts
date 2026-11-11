@@ -193,6 +193,8 @@ const EMPTY_OUTPUT_RETRIES = 3;
 const INTERRUPTED_TURN_RETRIES = 2;
 const MODEL_TURN_TIMEOUT_MS = 5 * 60 * 1000;
 const ASK_PANEL_FOLLOW_UP_TIMEOUT_MS = (CONFIG.followUpTimeoutS ?? 60) * 1000;
+const TURN_TIME_LIMIT_PROMPT =
+  "Your previous turn reached its time limit. Stop researching. Finish the task now from the work already in this session, and if the task requires a final tool call, make that call now.";
 const INTERRUPTED_TURN_RETRY_PROMPT =
   "Your previous response was interrupted by a transient stream or network error. Continue from the work already in this session and complete the task now. Do not restart the analysis. If the task requires a final tool call, make that call now.";
 
@@ -414,8 +416,9 @@ async function executeAgent(seat: {
         /stream|disconnect|closed before|network|connection|timeout|ECONN|fetch failed/i.test(outcome.error);
       attempt++
     ) {
-      emit({ kind: "retry", reason: "transient model transport error", attempt: attempt + 1 });
-      outcome = await runPromptTurn(INTERRUPTED_TURN_RETRY_PROMPT, true);
+      const timedOut = outcome.error.includes("model turn timeout");
+      emit({ kind: "retry", reason: timedOut ? "turn time limit reached" : "transient model transport error", attempt: attempt + 1 });
+      outcome = await runPromptTurn(timedOut ? TURN_TIME_LIMIT_PROMPT : INTERRUPTED_TURN_RETRY_PROMPT, true);
     }
     if (outcome.empty && retryEmpty) {
       let retryTurn: { text?: string; empty?: boolean; error?: string } = { empty: true };
@@ -468,7 +471,10 @@ async function rerunAgent(result: AgentResult, question: string): Promise<Follow
   const followUpPrompt =
     `Your ask_panel follow-up has a hard ${ASK_PANEL_FOLLOW_UP_TIMEOUT_MS / 1000}-second deadline. ` +
     "Answer directly from the context you already gathered. Use tools only for a quick check. " +
-    `Do not restart broad research. State uncertainty if the evidence is incomplete.\n\n${question}`;
+    "Do not restart broad research. State uncertainty if the evidence is incomplete. " +
+    "People read this answer on the run page, so write plain sentences. Name sessions by their trace id and " +
+    "messages by what they say. Leave out labels such as STATE_MISMATCH, message or row numbers, file paths, " +
+    `raw markup and em dashes.\n\n${question}`;
   const outcome = await executeAgent({
     modelId: result.modelId,
     reasoning: result.reasoning,
