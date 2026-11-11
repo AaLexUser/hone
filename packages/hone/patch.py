@@ -76,6 +76,9 @@ def apply_proposal_edits(
     original = "\n".join(base_file)
     working = original
     changes: list[Change] = []
+    # Lines inserted after an anchor so far, keyed by that anchor. A later
+    # insert after the same anchor goes below them, so edits read in list order.
+    inserted_below: dict[str, str] = {}
     for i, e in enumerate(edits):
         if not isinstance(e, dict):
             raise PatchError(f"edit {i + 1} is not an object")
@@ -97,6 +100,14 @@ def apply_proposal_edits(
         if old_text == new_text:
             raise PatchError(f"edit {i + 1}: oldText and newText are identical")
 
+        inserted_after_anchor = bool(old_text and new_text.startswith(old_text + "\n"))
+        anchor = old_text
+        if inserted_after_anchor and working.count(inserted_below.get(old_text, "\0")) == 1:
+            block = inserted_below[old_text]
+            old_text, new_text = block, block + new_text[len(anchor):]
+        if inserted_after_anchor:
+            inserted_below[anchor] = new_text
+
         if old_text:
             matches = working.count(old_text)
             if matches == 0:
@@ -112,7 +123,6 @@ def apply_proposal_edits(
             section = _section_at(working.splitlines(), max(0, line - 2))
             working = working + ("\n" if working else "") + new_text
 
-        inserted_after_anchor = bool(old_text and new_text.startswith(old_text + "\n"))
         if not old_text or inserted_after_anchor:
             op = "insert"
             shown_before = None
@@ -138,7 +148,7 @@ def apply_proposal_edits(
                 after=shown_after,
                 rationale=rationale,
                 evidence=list(evidence),
-                anchor=old_text or None,
+                anchor=anchor or None,
             )
         )
     new_file = working.splitlines()
