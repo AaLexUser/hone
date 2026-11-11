@@ -155,12 +155,14 @@ language can be added next to English.
 A live model answers differently every time, so a visitor's chat would never match a recorded
 optimization run. In the booth demo, Pi's binary path points at `apps/server/scripts/hone-pi.ts`.
 It starts the real Pi and passes every message through. When the first message of a new chat,
-the model, the thinking level and every file in the project folder match a recording, it plays
+the model, the thinking level, the file names in the project folder, and the contents of
+`AGENTS.md` and of the files the message links to match a recording, it plays
 the recorded Pi events back at their recorded pace, with each pause cut to 1.5 seconds. It writes
 the files the turn wrote, writes the Pi session file and sends it to Hone with the same request the
 Hone extension sends after a reply. Pi then loads that session, so a follow-up message continues
 it live. Anything that differs runs live. An upload counts by its name and content, not by where
-t3code saved it.
+t3code saved it. Other files count by name only, because a rebuilt demo writes the prepared
+letters again with a new PDF creation date.
 
 A replay leaves `<session file>.hone-replay.json` next to the Pi session file, with the recording
 key, the recording date and the source session. Nothing on the page shows it.

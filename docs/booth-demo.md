@@ -163,7 +163,7 @@ Two recordings make the guided visit quick. Both come from real runs on the comp
 5. Copy the recording from the volume into `clients/t3code/turn-cache/`, for example with `docker compose cp t3code:/home/node/turn-cache/. ../clients/t3code/turn-cache/`.
 6. Set `HONE_TURN_CACHE_RECORD=0`, rebuild t3code and Hone, and walk the guide once more. The chat should replay, and the run should take about a minute and a half.
 
-A changed model, thinking level, AGENTS.md, Inbox file, request text or scenario day makes the turn run live. A changed feedback, roster or MAJICS code makes the run real.
+A changed model, thinking level, AGENTS.md, request text, scenario day, set of project files, or a changed Inbox file the request links to makes the turn run live. A changed feedback, roster or MAJICS code makes the run real.
 
 ### Booth checks
 1. After a reset, t3code shows the prepared chats. Each opens with its tool calls, replies, output documents and feedback.

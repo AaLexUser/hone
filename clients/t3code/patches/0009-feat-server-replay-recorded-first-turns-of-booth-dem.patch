@@ -1,8 +1,7 @@
-From 0d53b4b64802e1ead881bc1231413d165b1e1018 Mon Sep 17 00:00:00 2001
+From 2393def3940c845f97006bd51c06aa12ed3e23f6 Mon Sep 17 00:00:00 2001
 From: Alexey Lapin <a.lapin03@gmail.com>
 Date: Wed, 11 Nov 2026 16:10:22 +0000
-Subject: [PATCH 9/9] feat(server): replay recorded first turns of booth demo
- chats
+Subject: [PATCH] feat(server): replay recorded first turns of booth demo chats
 
 hone-pi starts the real Pi and passes its RPC through. When the first
 message of a new chat, the model, the thinking level and the project
@@ -11,22 +10,26 @@ pace, writes the files the turn wrote and the Pi session file, sends the
 session to Hone as the Hone extension does, and loads it into Pi. Anything
 else runs live. HONE_TURN_CACHE_RECORD=1 records new first turns.
 
+The folder counts by its file names, and by content for AGENTS.md and the
+files the prompt links to. A rebuilt demo writes the prepared letters again
+with a new PDF creation date, which must not stop a replay.
+
 A replay leaves <session file>.hone-replay.json with its source.
 ---
- apps/server/scripts/hone-pi-turn-cache.ts | 201 +++++++++++++
- apps/server/scripts/hone-pi.test.ts       | 163 +++++++++++
+ apps/server/scripts/hone-pi-turn-cache.ts | 220 +++++++++++++++
+ apps/server/scripts/hone-pi.test.ts       | 166 +++++++++++
  apps/server/scripts/hone-pi.ts            | 325 ++++++++++++++++++++++
- 3 files changed, 689 insertions(+)
+ 3 files changed, 711 insertions(+)
  create mode 100644 apps/server/scripts/hone-pi-turn-cache.ts
  create mode 100644 apps/server/scripts/hone-pi.test.ts
  create mode 100755 apps/server/scripts/hone-pi.ts
 
 diff --git a/apps/server/scripts/hone-pi-turn-cache.ts b/apps/server/scripts/hone-pi-turn-cache.ts
 new file mode 100644
-index 00000000..9ef024da
+index 00000000..b3466906
 --- /dev/null
 +++ b/apps/server/scripts/hone-pi-turn-cache.ts
-@@ -0,0 +1,201 @@
+@@ -0,0 +1,220 @@
 +// @effect-diagnostics nodeBuiltinImport:off
 +// The booth demo's agent turn cache. A recording is the first turn of a real Pi chat, its
 +// RPC events, the files it wrote and its session file. A new chat whose first prompt, model and
@@ -127,23 +130,42 @@ index 00000000..9ef024da
 +  return new Map([...snapshot].toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 +}
 +
++/** Project files a prompt links to, as `[name](relative/path)`, with the path decoded. */
++function linkedFiles(message: string): Set<string> {
++  const paths = new Set<string>();
++  for (const match of message.matchAll(/\]\(([^)\s]+)\)/g)) {
++    try {
++      paths.add(decodeURIComponent(match[1]!));
++    } catch {
++      paths.add(match[1]!);
++    }
++  }
++  return paths;
++}
++
 +/**
 + * The cache key. An upload's saved path changes with every upload, so the prompt counts it by
-+ * name and content. The project folder counts whole, because the agent reads it.
++ * name and content. The project folder counts by its file names, and by content for AGENTS.md
++ * and the files the prompt links to. Other files are left out by content, because a rebuilt
++ * demo writes the prepared letters again with a new PDF creation date.
 + */
 +export function turnKey(input: TurnKeyInput): string {
 +  const message = input.message.replace(
 +    ATTACHMENT_PATTERN,
 +    (_match, name: string, saved: string) => `[Attached "${name}" ${fileHash(saved)}]`,
 +  );
++  const folder = folderSnapshot(input.cwd);
++  const counted = linkedFiles(input.message).add("AGENTS.md");
 +  return sha256(
 +    JSON.stringify({
 +      version: TURN_RECORDING_VERSION,
++      key: 2,
 +      message,
 +      images: input.images.map((image) => [image.mimeType, sha256(image.data)]),
 +      model: input.model,
 +      thinkingLevel: input.thinkingLevel,
-+      folder: [...folderSnapshot(input.cwd)],
++      files: [...folder.keys()],
++      contents: [...folder].filter(([file]) => counted.has(file)),
 +    }),
 +  );
 +}
@@ -230,10 +252,10 @@ index 00000000..9ef024da
 +}
 diff --git a/apps/server/scripts/hone-pi.test.ts b/apps/server/scripts/hone-pi.test.ts
 new file mode 100644
-index 00000000..533b1049
+index 00000000..48e7af92
 --- /dev/null
 +++ b/apps/server/scripts/hone-pi.test.ts
-@@ -0,0 +1,163 @@
+@@ -0,0 +1,166 @@
 +// @effect-diagnostics nodeBuiltinImport:off globalDate:off
 +import * as NodeChildProcess from "node:child_process";
 +import * as NodeFS from "node:fs";
@@ -317,10 +339,12 @@ index 00000000..533b1049
 +    const cache = NodePath.join(root, "cache");
 +    NodeFS.mkdirSync(sessions);
 +    NodeFS.writeFileSync(NodePath.join(root, "fake-pi.cjs"), FAKE_PI);
++    // Each project holds a prepared letter whose bytes differ per build, as a PDF's creation date does.
 +    const project = (name: string) => {
 +      const dir = NodePath.join(root, name);
 +      NodeFS.mkdirSync(NodePath.join(dir, "Inbox"), { recursive: true });
 +      NodeFS.writeFileSync(NodePath.join(dir, "Inbox", "approval.txt"), "No bonus");
++      NodeFS.writeFileSync(NodePath.join(dir, "Archive.pdf"), `built for ${name}`);
 +      return dir;
 +    };
 +    const env = {
@@ -337,14 +361,15 @@ index 00000000..533b1049
 +      { mode: 0o755 },
 +    );
 +
++    const prompt = "[approval.txt](Inbox/approval.txt) Write the letter.";
 +    const first = project("first");
-+    await talk(first, { ...env, HONE_TURN_CACHE_RECORD: "1" }, "Write the letter.");
++    await talk(first, { ...env, HONE_TURN_CACHE_RECORD: "1" }, prompt);
 +    expect(NodeFS.readdirSync(cache)).toHaveLength(1);
 +
 +    const second = project("second");
-+    const replayed = await talk(second, env, "Write the letter.");
++    const replayed = await talk(second, env, prompt);
 +    const calls = NodeFS.readFileSync(NodePath.join(sessions, "model-calls.log"), "utf8");
-+    expect(calls.trim().split("\n")).toEqual(["Write the letter."]);
++    expect(calls.trim().split("\n")).toEqual([prompt]);
 +    expect(NodeFS.readFileSync(NodePath.join(second, "letter.txt"), "utf8")).toBe("Dear Amara");
 +    const tool = replayed.find((record) => record.type === "tool_execution_end");
 +    expect(JSON.stringify(tool)).toContain(`${second}/letter.txt`);
@@ -357,7 +382,7 @@ index 00000000..533b1049
 +
 +    const third = project("third");
 +    NodeFS.writeFileSync(NodePath.join(third, "Inbox", "approval.txt"), "A £3,000 bonus");
-+    await talk(third, env, "Write the letter.");
++    await talk(third, env, prompt);
 +    expect(
 +      NodeFS.readFileSync(NodePath.join(sessions, "model-calls.log"), "utf8").trim().split("\n"),
 +    ).toHaveLength(2);
