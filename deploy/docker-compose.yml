@@ -87,6 +87,10 @@ services:
     image: docker:29-dind
     privileged: true
     restart: unless-stopped
+    # Harbor leaves a network per task inside this daemon. Taking them from a
+    # range the host never uses keeps one from shadowing this container's own
+    # route out, which cut the sandboxes off from the model provider.
+    command: ["--default-address-pool", "base=10.213.0.0/16,size=24"]
     environment:
       DOCKER_TLS_CERTDIR: /certs
     volumes:
