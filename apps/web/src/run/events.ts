@@ -21,6 +21,11 @@ export interface AskQuery {
   question: string
 }
 
+export interface AskAnswer {
+  role: string
+  text: string
+}
+
 export interface DraftEdit {
   oldText: string
   newText: string
@@ -38,7 +43,17 @@ export type RunEvent =
   | { kind: 'tool_result'; at: number; agent: string; name: string; detail?: string }
   | { kind: 'message'; at: number; agent: string; text: string }
   | { kind: 'retry'; at: number; agent: string; reason: string }
-  | { kind: 'ask_panel'; at: number; agent: string; stage: Stage; durationMs: number; asked: number; timedOut: string[] }
+  | {
+      kind: 'ask_panel'
+      at: number
+      agent: string
+      stage: Stage
+      durationMs: number
+      asked: number
+      timedOut: string[]
+      /** Each answer exactly as the judge received it, in the order of its questions. Older runs did not record them. */
+      answers: AskAnswer[]
+    }
   | { kind: 'proposal'; at: number; agent: string; count: number; note?: string; edits: DraftEdit[] }
   | { kind: 'report'; at: number; title?: string }
   | { kind: 'commit'; at: number; title: string }
@@ -73,6 +88,13 @@ function askQuery(v: unknown): AskQuery | null {
   const role = str(r.role)
   const question = str(r.question)
   return role && question ? { role, question } : null
+}
+
+function askAnswer(v: unknown): AskAnswer | null {
+  if (!v || typeof v !== 'object') return null
+  const r = v as Raw
+  const role = str(r.role)
+  return role ? { role, text: str(r.text) ?? '' } : null
 }
 
 function draftEdit(v: unknown): DraftEdit | null {
@@ -137,6 +159,7 @@ export function parseRunEvent(data: string): RunEvent | null {
         durationMs: num(r.durationMs) ?? 0,
         asked: num(r.workersAsked) ?? 0,
         timedOut: strs(r.timedOutRoles),
+        answers: Array.isArray(r.answers) ? r.answers.map(askAnswer).filter((a) => a !== null) : [],
       }
     }
     case 'proposal': {

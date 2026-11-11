@@ -168,7 +168,17 @@ export function activityRows(m: RunModel): Row[] {
         break
       }
       case 'ask_panel':
-        if (ask) ask.timedOut = ev.timedOut
+        if (ask) {
+          ask.timedOut = ev.timedOut
+          // The recorded answer is what the judge read, so it replaces the seat's last message.
+          const unread = [...ask.turns]
+          for (const a of ev.answers) {
+            const turn = unread.find((t) => t.seat.key === a.role)
+            if (!turn) continue
+            unread.splice(unread.indexOf(turn), 1)
+            if (turn.answer) turn.answer.text = a.text
+          }
+        }
         break
       case 'tool_result':
         if (ev.name === 'ask_panel' && ask) {

@@ -38,6 +38,14 @@ function checkCrossExam(raw, events, terminal) {
       if (terminal && t.question) assert.ok(t.answer, `the question to ${t.seat.key} got an answer row`)
     }
   }
+  // Where the driver recorded what the judge read, the answer row shows exactly that text.
+  for (const ev of events.filter((e) => e.kind === 'ask_panel' && e.answers.length)) {
+    const a = asks.find((x) => x.end !== null && x.end >= ev.at && x.at <= ev.at)
+    assert.ok(a, 'a recorded answer belongs to a question row')
+    for (const r of ev.answers) {
+      assert.ok(a.turns.some((t) => t.seat.key === r.role && t.answer?.text === r.text), `${r.role}'s recorded answer shows under its question`)
+    }
+  }
   const unasked = parse(raw.map((l) => {
     const r = JSON.parse(l)
     delete r.queries
