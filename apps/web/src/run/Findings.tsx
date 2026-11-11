@@ -126,13 +126,17 @@ function More({ review }: { review: Review }) {
             <span className="mt-1.5">
               <Confidence level={h.confidence} />
             </span>
-            <Inline text={h.statement} />
+            <span className="min-w-0">
+              <Inline text={h.statement} />
+            </span>
           </li>
         ))}
         {review.unresolved.map((u, i) => (
           <li key={`u${i}`} className="flex gap-2">
             <span className="text-ink-3">?</span>
-            <Inline text={u} />
+            <span className="min-w-0">
+              <Inline text={u} />
+            </span>
           </li>
         ))}
       </ul>
