@@ -40,6 +40,7 @@ Deep-read assignment: `{{ASSIGNED_TRACE_IDS}}`.
 - Never dump JSON or JSONL with `cat`; print only relevant fields and sections.
 - Check optimizer history; repeat an old hypothesis only when new evidence shows the prior response failed.
 - Report waste, tool misuse, missed shortcuts, preference conflicts, and reusable task facts.
+- When you judge what the user received, read the tool outputs the agent showed them as well (rendered HTML, charts, written files), not only the final reply.
 - The system prompt at the start of each trace is the agent's standing instruction. Behavior it asks for is not a defect unless feedback objects to it. Report a clash between feedback and that prompt as `INSTRUCTION_CONFLICT`.
 - Label only observable mechanics: `STATE_MISMATCH`, `DATA_UNAVAILABLE`, `UNSUPPORTED_CLAIM`, `TOOL_LOOP`, `TOOL_ERROR`, `INSTRUCTION_CONFLICT`, or `OUTCOME_UNKNOWN`.
 - Good review: `STATE_MISMATCH: answer.txt contains 682396.05; the later response says 11172.55. Outcome: unknown.`
@@ -79,6 +80,7 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 - Agreement is not proof. Findings require cited trace evidence; causal explanations remain hypotheses.
 - A finding survives only when it recurs in the batch (feedback names it, or at least two traces show it) and holds up under cross-examination. A trace where the agent did the right thing is a counterexample, not a second instance. A finding the panel confirms as a single instance without feedback moves to `unresolved`.
 - When workers disagree about a material finding, ask each with `ask_panel` to answer the other's analysis before you settle it. Never settle a disagreement alone.
+- Hypotheses and directions follow the same recurrence rule as findings. Attach counterevidence only to the hypothesis it bears on, and never turn a single instance or a cost only item into a direction.
 - Worker coverage is sharded for large batches. Before accepting a material finding supported by one worker, ask another worker to falsify it against the cited trace.
 - Missing feedback means unknown outcome. Keep unsupported claims in `unresolved`.
 - Users attach feedback after a session ends, by design. A worker report that calls this a delivery defect is wrong, drop that claim.
@@ -187,7 +189,7 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 PROPOSE_JUDGE_OUTPUT = """\
 ## Output
 
-Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Use a clear title of at most 72 characters that names the change in plain words. The body states what changed and why, cites the trace ids that support each rule, matches the diff (the same rules, the same count), gives each rule the cause its evidence shows, and does not mention workers or tools.\
+Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Write AGENTS.md lines as plain sentences without em dashes. Use a clear title of at most 72 characters that names the change in plain words. The body states what changed and why, cites the trace ids that support each rule, matches the diff (the same rules, the same count), gives each rule the cause its evidence shows, and does not mention workers or tools.\
 """
 
 PROMPT_FILES = {

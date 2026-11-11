@@ -668,6 +668,16 @@ const batch: string[] = JSON.parse(fs.readFileSync(path.join(WORK, "batch.json")
 
 /* --------------------------------------------------------- submit_review */
 
+/** Text a visitor reads on the run page must be whole: no sentence cut at an open bracket, no JSON escapes left in. */
+function brokenText(text: string): string | null {
+  if (text.includes('\\"')) return 'contains escaped quotes (\\"), write plain quotes';
+  for (const [open, close] of [["(", ")"], ["[", "]"]] as const) {
+    if (text.split(open).length !== text.split(close).length) return `is cut off or has an unmatched "${open}", finish the sentence`;
+  }
+  if (/[(\[,:]\s*$/.test(text)) return "ends mid sentence, finish it";
+  return null;
+}
+
 function submitReviewTool(capture: Capture): ToolDefinition {
   const confidence = Type.Union([
     Type.Literal("low"),
@@ -703,8 +713,12 @@ function submitReviewTool(capture: Capture): ToolDefinition {
         isError: true,
       });
       if (!params.summary.trim()) return fail("summary is empty");
+      const summaryProblem = brokenText(params.summary);
+      if (summaryProblem) return fail(`the summary ${summaryProblem}`);
       for (const item of [...params.findings, ...params.hypotheses]) {
         if (!item.statement.trim()) return fail("an item statement is empty");
+        const problem = brokenText(item.statement);
+        if (problem) return fail(`this statement ${problem}: ${item.statement.slice(-80)}`);
         if (!item.traceIds.length) return fail(`item has no trace ids: ${item.statement.slice(0, 80)}`);
         const unknown = item.traceIds.filter((traceId) => !batch.includes(traceId));
         if (unknown.length) return fail(`unknown trace ids: ${unknown.join(", ")}`);
