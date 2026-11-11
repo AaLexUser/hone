@@ -522,10 +522,51 @@ async function runPanel(
   return results as AgentResult[];
 }
 
+/* --------------------------------------------------------- tool arguments */
+
+/**
+ * Some models send an array argument as its JSON text. Pi's validator coerces
+ * such a string into a one-item array of that text, and a list of objects then
+ * fails validation. Decode those strings wherever the schema expects an array,
+ * before validation, as Pi's own edit tool does for its `edits` argument.
+ */
+function decodeJsonArrays(schema: any, value: unknown): unknown {
+  if (schema?.type === "array") {
+    if (typeof value === "string") {
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) value = parsed;
+      } catch {
+        /* not JSON, so validation reports it */
+      }
+    }
+    return Array.isArray(value) ? value.map((item) => decodeJsonArrays(schema.items, item)) : value;
+  }
+  if (schema?.type === "object" && value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, v]) => [key, decodeJsonArrays(schema.properties?.[key], v)]),
+    );
+  }
+  return value;
+}
+
 /* --------------------------------------------------------------- ask_panel */
 
 function makeAskPanelTool(panel: AgentResult[]): ToolDefinition {
   const valid = panel.map((r) => r.roleKey).join(", ");
+  const parameters = Type.Object({
+    queries: Type.Array(
+      Type.Object({
+        role: Type.String({ description: `Which author to re-query. One of: ${valid}` }),
+        question: Type.String({
+          description:
+            "The follow-up for that author — e.g. another author's point to react to, or a disputed " +
+            "claim to defend or concede. It still remembers its own earlier analysis.",
+        }),
+      }),
+      { minItems: 1, description: "Every follow-up to ask. Send all reviewers in a SINGLE call." },
+    ),
+  });
   return defineTool({
     name: "ask_panel",
     label: "ask panel",
@@ -534,19 +575,8 @@ function makeAskPanelTool(panel: AgentResult[]): ToolDefinition {
       "pressure a disputed point). Pass every follow-up in one call. Different authors run in " +
       `parallel; repeated queries to one author run sequentially. Each follow-up has a ${ASK_PANEL_FOLLOW_UP_TIMEOUT_MS / 1000}s ` +
       `deadline; completed answers are returned when another author times out. Valid roles: ${valid}.`,
-    parameters: Type.Object({
-      queries: Type.Array(
-        Type.Object({
-          role: Type.String({ description: `Which author to re-query. One of: ${valid}` }),
-          question: Type.String({
-            description:
-              "The follow-up for that author — e.g. another author's point to react to, or a disputed " +
-              "claim to defend or concede. It still remembers its own earlier analysis.",
-          }),
-        }),
-        { minItems: 1, description: "Every follow-up to ask. Send all reviewers in a SINGLE call." },
-      ),
-    }),
+    parameters,
+    prepareArguments: (args) => decodeJsonArrays(parameters, args) as any,
     async execute(_toolCallId: string, params: { queries: { role: string; question: string }[] }) {
       const startedAt = Date.now();
       const answers: string[] = new Array(params.queries.length);
@@ -621,23 +651,25 @@ function submitReviewTool(capture: Capture): ToolDefinition {
     traceIds: Type.Array(Type.String(), { description: "Trace ids that support this item." }),
     confidence,
   };
+  // review.json's version is the driver's to stamp, not a constant the judge has to echo back.
+  const parameters = Type.Object({
+    summary: Type.String(),
+    findings: Type.Array(Type.Object(cited)),
+    hypotheses: Type.Array(Type.Object({
+      ...cited,
+      contradictions: Type.Optional(Type.Array(Type.String())),
+    })),
+    directions: Type.Array(Type.String()),
+    unresolved: Type.Array(Type.String()),
+  });
   return defineTool({
     name: "submit_review",
     label: "Submit judged review",
     description:
       "Submit the single fused review after reading all worker reports and completing any needed cross-examination.",
-    parameters: Type.Object({
-      version: Type.Literal(1),
-      summary: Type.String(),
-      findings: Type.Array(Type.Object(cited)),
-      hypotheses: Type.Array(Type.Object({
-        ...cited,
-        contradictions: Type.Optional(Type.Array(Type.String())),
-      })),
-      directions: Type.Array(Type.String()),
-      unresolved: Type.Array(Type.String()),
-    }),
-    async execute(_toolCallId: string, params: Review) {
+    parameters,
+    prepareArguments: (args) => decodeJsonArrays(parameters, args) as any,
+    async execute(_toolCallId: string, params: Omit<Review, "version">) {
       const fail = (text: string) => ({
         content: [{ type: "text" as const, text: `submit_review failed: ${text}` }],
       });
@@ -648,7 +680,7 @@ function submitReviewTool(capture: Capture): ToolDefinition {
         const unknown = item.traceIds.filter((traceId) => !batch.includes(traceId));
         if (unknown.length) return fail(`unknown trace ids: ${unknown.join(", ")}`);
       }
-      capture.review = params;
+      capture.review = { ...params, version: 1 };
       return {
         content: [{
           type: "text" as const,
@@ -687,15 +719,17 @@ function submitProposalTool({ judge, capture, agentsMd }: {
     properties.commit_title = Type.String({ description: "Clear commit title, <= 72 characters." });
     properties.commit_body = Type.String({ description: "1-4 sentences: what changed and why." });
   }
+  const parameters = Type.Object(properties, {
+    required: judge ? ["edits", "commit_title", "commit_body"] : ["edits"],
+  });
   return defineTool({
     name: "submit_proposal",
     label: "Submit proposal",
     description: judge
       ? "Submit the fused final proposal. This is your final answer — call exactly once, after cross-examination."
       : "Submit the final edit proposal for AGENTS.md. Call exactly once.",
-    parameters: Type.Object(properties, {
-      required: judge ? ["edits", "commit_title", "commit_body"] : ["edits"],
-    }),
+    parameters,
+    prepareArguments: (args) => decodeJsonArrays(parameters, args) as any,
     async execute(_toolCallId: string, params: any) {
       const fail = (text: string) => ({ content: [{ type: "text" as const, text: `submit_proposal failed: ${text}` }] });
       if (!Array.isArray(params.edits)) return fail("edits must be an array");
