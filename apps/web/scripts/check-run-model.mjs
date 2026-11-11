@@ -15,6 +15,7 @@ const { attemptStories, crossExam, laneGroups, nowLine, seatStatus, stageState, 
 )
 const { graphLayout } = await jiti.import(path.join(here, '../src/run/graph/layout.ts'))
 const { activityRows } = await jiti.import(path.join(here, '../src/run/activity.ts'))
+const { headline, OLD_MESSAGE_CAP } = await jiti.import(path.join(here, '../src/run/prose.ts'))
 
 const dirs = process.argv.slice(2)
 if (!dirs.length) {
@@ -55,6 +56,21 @@ function checkCrossExam(raw, events, terminal) {
   assert.ok(old.every((a) => a.turns.every((t) => t.question === null)), 'a run without queries shows no questions')
   assert.deepEqual(answerIds(old), answerIds(asks), 'a run without queries nests the same answers')
   return asks.reduce((n, a) => n + a.turns.filter((t) => t.question).length, 0)
+}
+
+/** A collapsed row reads as plain text, and a message an older driver cut ends at a full sentence. */
+function checkProse(raw, events) {
+  const rows = activityRows(fold(events)).flatMap((r) => (r.type === 'ask' ? r.turns.flatMap((t) => (t.answer ? [t.answer] : [])) : [r]))
+  for (const r of rows.filter((x) => x.type === 'work' && x.text)) {
+    const line = headline(r.text)
+    assert.ok(line && !/\*\*|^#|:$/.test(line), `${r.seat.key}'s row reads as plain text, got ${JSON.stringify(line)}`)
+  }
+  const cut = raw.map((l) => JSON.parse(l)).filter((r) => r.kind === 'message' && r.text.length === OLD_MESSAGE_CAP)
+  for (const r of cut) {
+    const shown = events.find((e) => e.kind === 'message' && e.at === r.at && e.agent === r.agent)
+    assert.match(shown.text, /[.!?"'”’)\]]\n\n…$/, `${r.agent}'s cut message ends at a full sentence with an ellipsis`)
+  }
+  return cut.length
 }
 
 /** Panel sizes from hone.yaml: the `- model:` entries under each stage's `panel:`. */
@@ -172,6 +188,7 @@ for (const dir of dirs) {
       }
 
       const questions = checkCrossExam(raw, events, isTerminal(m.outcome))
+      const trimmed = checkProse(raw, events)
 
       EXPECT[run]?.(m)
       checked++
@@ -184,6 +201,7 @@ for (const dir of dirs) {
         `verify=${verifyState(m)}`,
         `follow-up answers=${ce.join('/')}`,
         `questions=${questions}`,
+        `trimmed messages=${trimmed}`,
       )
     } catch (err) {
       console.error(`FAIL ${where}: ${err.message}`)

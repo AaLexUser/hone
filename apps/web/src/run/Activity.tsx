@@ -2,11 +2,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { Check, ChevronRight, CircleAlert, Clock3, FileText, GitCommitHorizontal, Layers, ListTree, PanelRightOpen, RotateCw, Wrench, X } from 'lucide-react'
 import type { RunModel, Seat } from './model'
-import { activityRows, gist, toolGist } from './activity'
+import { activityRows, toolGist } from './activity'
 import type { AskRow, Row, WorkRow } from './activity'
 import { laneGroups, groupSeats, monogram, plainError } from './derive'
 import { SeatChip } from './SeatChip'
-import { Inline } from './Inline'
+import { Inline, Prose } from './Inline'
+import { headline } from './prose'
 
 /**
  * The paper's Activity region, compressed: agents are monogram chips, each
@@ -231,7 +232,7 @@ function TimeBar({ row, now }: { row: WorkRow; now: number }) {
 
 function WorkView({ row, now, onOpenAgent, nested = false }: { row: WorkRow; now: number; onOpenAgent: (key: string) => void; nested?: boolean }) {
   const [open, setOpen] = useState(false)
-  const text = row.text ? gist(row.text) : null
+  const text = row.text ? headline(row.text) : null
   const last = row.tools.at(-1)
   return (
     <div className={nested ? 'pl-9' : ''}>
@@ -275,7 +276,7 @@ function WorkView({ row, now, onOpenAgent, nested = false }: { row: WorkRow; now
       </button>
       {open && (
         <div className="mx-4 mb-2 ml-[52px] flex flex-col gap-2 border-l border-line pl-3">
-          {row.text && <p className="text-body whitespace-pre-wrap text-ink-2">{row.text.replace(/^#+\s*/gm, '')}</p>}
+          {row.text && <Prose text={row.text} />}
           {row.span.error && <p className="font-mono text-meta break-words text-red">{row.span.error}</p>}
           {row.tools.length > 0 && (
             <ol className="flex flex-col gap-0.5 text-body text-ink-2">

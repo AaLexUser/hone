@@ -4,6 +4,7 @@ import type { DraftEdit, RunEvent, RunEventKind } from './events'
 import type { RunModel } from './model'
 import { busyMs, fmtDuration, laneStatus, seatLabel, stageName } from './derive'
 import { StatusDot } from './StatusDot'
+import { Prose } from './Inline'
 
 export type DrawerTarget = { type: 'agent'; key: string } | { type: 'events' }
 
@@ -145,16 +146,8 @@ function TrajectoryItem({ item }: { item: Item }) {
       return <ToolGroup calls={item.calls} />
     case 'message':
       return (
-        <div className="rounded-md bg-panel-2 px-3 py-2 text-body whitespace-pre-wrap text-ink">
-          {item.text.split('\n').map((line, i) =>
-            line.startsWith('#') ? (
-              <div key={i} className="font-semibold">
-                {line.replace(/^#+\s*/, '')}
-              </div>
-            ) : (
-              <div key={i}>{line || ' '}</div>
-            ),
-          )}
+        <div className="rounded-md bg-panel-2 px-3 py-2">
+          <Prose text={item.text} />
         </div>
       )
     case 'retry':

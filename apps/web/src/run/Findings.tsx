@@ -1,6 +1,7 @@
 import { ArrowUpRight, CircleHelp, ScrollText } from 'lucide-react'
 import type { Review } from '../data'
 import { Inline } from './Inline'
+import { findingLead } from './prose'
 import { Confidence, Panel, RefChip, SessionChips, Skeleton } from './bits'
 import { reveal, sameFocus } from './links'
 import type { LinkApi } from './links'
@@ -50,6 +51,7 @@ export function Findings({
           <ol>
             {review.findings.map((f, i) => {
               const on = lit.findings.has(i)
+              const lead = findingLead(f.statement)
               const edits = links.links.findingEdits[i] ?? []
               return (
                 <li
@@ -69,6 +71,11 @@ export function Findings({
                       title="Pin this finding"
                     />
                     <Confidence level={f.confidence} />
+                    {lead && (
+                      <abbr title={lead.prefix} className="text-meta font-medium text-ink-2 no-underline">
+                        {lead.label}
+                      </abbr>
+                    )}
                     {edits.length > 0 && (
                       <span className="ml-auto flex items-center gap-1 text-meta text-ink-3">
                         →
@@ -88,7 +95,7 @@ export function Findings({
                     )}
                   </div>
                   <p className="mt-1.5 text-body text-ink">
-                    <Inline text={f.statement} />
+                    <Inline text={lead?.body ?? f.statement} />
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     <SessionChips ids={f.traceIds} lit={lit.sessions} />

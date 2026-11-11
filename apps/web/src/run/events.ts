@@ -1,4 +1,5 @@
 import type { RunOutcome } from '../data'
+import { uncut } from './prose'
 
 /**
  * The run's event stream (`/api/runs/:id/events`, one events.jsonl line per
@@ -145,7 +146,7 @@ export function parseRunEvent(data: string): RunEvent | null {
     case 'tool_result':
       return agent ? { kind: 'tool_result', at, agent, name: str(r.name) ?? 'tool', detail: str(r.detail) } : null
     case 'message':
-      return agent ? { kind: 'message', at, agent, text: str(r.text) ?? '' } : null
+      return agent ? { kind: 'message', at, agent, text: uncut(str(r.text) ?? '') } : null
     case 'retry':
       return agent ? { kind: 'retry', at, agent, reason: str(r.reason) ?? 'retry' } : null
     case 'analytics': {

@@ -55,16 +55,6 @@ export type Milestone =
 
 export type Row = WorkRow | AskRow | Milestone
 
-/** The first line of an agent message that says something, without markdown headings. */
-export function gist(text: string): string {
-  return (
-    text
-      .split('\n')
-      .map((l) => l.trim())
-      .find((l) => l && !l.startsWith('#')) ?? ''
-  )
-}
-
 const NAMED: Record<string, string> = {
   submit_review: 'submit the review',
   submit_proposal: 'submit the proposal',
