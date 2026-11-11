@@ -199,16 +199,23 @@ const INTERRUPTED_TURN_RETRY_PROMPT =
 
 const eventsEndpoint = `/api/runs/${HONE.runId}/pipeline-event`;
 
-async function postEvent(event: ProgressEvent): Promise<void> {
-  try {
-    await fetch(HONE.url + eventsEndpoint, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${HONE_TOKEN}` },
-      body: JSON.stringify(event),
-    });
-  } catch {
-    /* best-effort: the run must survive the dashboard being down */
-  }
+let posted: Promise<void> = Promise.resolve();
+
+/** Posts one at a time: the service stamps and stores events in arrival order, and the run page reads that order. */
+function postEvent(event: ProgressEvent): Promise<void> {
+  const body = JSON.stringify(event);
+  posted = posted.then(async () => {
+    try {
+      await fetch(HONE.url + eventsEndpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${HONE_TOKEN}` },
+        body,
+      });
+    } catch {
+      /* best-effort: the run must survive the dashboard being down */
+    }
+  });
+  return posted;
 }
 
 function agentSink(roleKey: string, modelId: string, role: string, stage: string) {
@@ -242,18 +249,25 @@ function attachActivityLog(session: AgentSession, emit: (e: ProgressEvent) => vo
       start(event.toolCallId, event.toolName, event.args);
     } else if (event.type === "tool_execution_end") {
       end(event.toolCallId);
-    } else if (event.type === "message_update") {
-      const e = event.assistantMessageEvent;
-      if (e.type === "text_end") {
-        const text = session.getLastAssistantText?.() ?? "";
-        if (text) emit({ kind: "message", text: text.slice(0, 4000) });
-      }
+    } else if (event.type === "message_end" && event.message?.role === "assistant") {
+      // The session commits a message to its history only at message_end, so read the text off the event.
+      const text = assistantText(event.message);
+      if (text) emit({ kind: "message", text: text.slice(0, 4000) });
     }
   });
   return () => {
     unsubscribe();
     for (const key of [...open.keys()]) end(key);
   };
+}
+
+/** An assistant message's visible text, joined the way AgentSession.getLastAssistantText joins it. */
+function assistantText(message: { content?: unknown }): string {
+  const parts = Array.isArray(message.content) ? message.content : [];
+  return parts
+    .map((c: any) => (c?.type === "text" && typeof c.text === "string" ? c.text : ""))
+    .join("")
+    .trim();
 }
 
 function summarizeArgs(args: unknown): string | undefined {
@@ -536,6 +550,7 @@ function makeAskPanelTool(panel: AgentResult[]): ToolDefinition {
     async execute(_toolCallId: string, params: { queries: { role: string; question: string }[] }) {
       const startedAt = Date.now();
       const answers: string[] = new Array(params.queries.length);
+      const replies: { role: string; text: string }[] = params.queries.map((q) => ({ role: q.role, text: "" }));
       const timedOutRoles = new Set<string>();
       let timedOutQueries = 0;
       const byRole = new Map<string, { index: number; question: string }[]>();
@@ -559,6 +574,7 @@ function makeAskPanelTool(panel: AgentResult[]): ToolDefinition {
               timedOutRoles.add(target.roleKey);
               timedOutQueries++;
             }
+            replies[q.index].text = answer.text;
             answers[q.index] = `### ${target.roleKey} (${target.modelId})\n${answer.text}`;
           }
         }),
@@ -576,6 +592,8 @@ function makeAskPanelTool(panel: AgentResult[]): ToolDefinition {
         timedOutRoles: [...timedOutRoles],
         queriesAsked: params.queries.length,
         queriesTimedOut: timedOutQueries,
+        // Each answer exactly as the judge receives it, in query order.
+        answers: replies,
         timeoutMs: ASK_PANEL_FOLLOW_UP_TIMEOUT_MS,
         durationMs: Date.now() - startedAt,
         text: `ask_panel: ${timedOutRoles.size} worker timeout(s)`,
