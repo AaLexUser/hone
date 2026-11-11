@@ -2,8 +2,9 @@ version: 1
 
 # Hone's configuration for the booth stack. docker-compose.yml mounts this file
 # into the hone container and points HONE_CONFIG at it. As in the paper, each
-# MAJICS panel mixes three model families (DeepSeek, MiMo and MiniMax), and both
-# judges use a fourth family (GLM). All four come from OpenCode Go with the key
+# MAJICS panel mixes three model families (DeepSeek, LongCat and MiniMax), and
+# both judges use a fourth family (GLM). LongCat replaced MiMo, whose seat kept
+# hitting transport retries. All four come from OpenCode Go with the key
 # from OPENCODE_API_KEY in .env. The agent under optimization keeps the Pi
 # agent's model in t3code. Each model's thinking map and compat flags are
 # copied from Pi's model catalog.
@@ -53,13 +54,13 @@ majics:
     # The seats use the OpenCode Go models with the largest request allowance
     # per five hours in each family, so one key lasts through the booth while
     # the panels still span three families and the judges a fourth.
-    mimo-v2.6-flash:
+    longcat-2.0:
       provider: opencode-go
-      id: mimo-v2.6-flash
-      name: MiMo V2.6 Flash
+      id: longcat-2.0
+      name: LongCat 2.0
       reasoning: true
       input: [text]
-      context_window: 1048576
+      context_window: 1000000
       max_tokens: 131072
       compat:
         supportsStore: false
@@ -116,8 +117,8 @@ majics:
   # still answers in time.
   review:
     panel:
-      - model: mimo-v2.6-flash
-        reasoning: low
+      - model: longcat-2.0
+        reasoning: medium
       - model: deepseek-v4.1-flash
         reasoning: low
       - model: minimax-m3.1-flash
@@ -132,8 +133,8 @@ majics:
         reasoning: low
       - model: minimax-m3.1-flash
         reasoning: high
-      - model: mimo-v2.6-flash
-        reasoning: low
+      - model: longcat-2.0
+        reasoning: medium
     judge:
       model: glm-5.3-flash
       reasoning: high
