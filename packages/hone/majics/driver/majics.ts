@@ -715,9 +715,10 @@ function buildJudgePrompt(panel: AgentResult[], task: string, output: string, co
   const texts = contributions ?? panel.map((p) => p.text);
   const analyses = panel.map((p, i) => `### ${p.roleKey} (${p.modelId})\n${texts[i]}`).join("\n\n");
   const roles = panel.map((p) => p.roleKey).join(", ");
+  // A replacer function keeps `$'` and `$&` in model-written text literal, as in `tr -d $'\r'`.
   return `${task}\n\n${output}`
     .replaceAll("{{PANEL_ROLES}}", roles)
-    .replaceAll("{{PANEL_REPORTS}}", analyses);
+    .replaceAll("{{PANEL_REPORTS}}", () => analyses);
 }
 
 /* ------------------------------------------------------------------ stages */
@@ -801,8 +802,8 @@ function proposalText(result: AgentResult): string {
   const lines = [`${edits.length} edit(s). ${p.note ?? ""}`.trim()];
   edits.forEach((e, i) => {
     lines.push(
-      `${i + 1}. oldText: ${JSON.stringify((e.oldText ?? "").slice(0, 400))}`,
-      `   newText: ${JSON.stringify((e.newText ?? "").slice(0, 600))}`,
+      `${i + 1}. oldText: ${JSON.stringify(e.oldText ?? "")}`,
+      `   newText: ${JSON.stringify(e.newText ?? "")}`,
       `   rationale: ${e.rationale}`,
       `   evidence: ${(e.evidence ?? []).join(", ")}`,
     );
@@ -819,7 +820,9 @@ async function proposeStage(): Promise<Proposal> {
   const rejection = CONFIG.rejection
     ? `## Previous attempt rejected — fix it\n\nThe proposal you are replacing was rejected by the verifier:\n\n\`\`\`\n${CONFIG.rejection}\n\`\`\`\n\nIf an oldText anchor was ambiguous or missing, copy it exactly from the CURRENT /app/workspace/agents.md; the file may have changed.\n\n`
     : "";
-  const prompt = promptFile("proposer.txt").replaceAll("{{REVIEW}}", review).replaceAll("{{REJECTION}}", rejection);
+  const prompt = promptFile("proposer.txt")
+    .replaceAll("{{REVIEW}}", () => review)
+    .replaceAll("{{REJECTION}}", () => rejection);
 
   const panelSeats = CONFIG.proposeModels.map((spec, i) => {
     const capture: { proposal?: Proposal } = {};
