@@ -40,6 +40,7 @@ Deep-read assignment: `{{ASSIGNED_TRACE_IDS}}`.
 - Never dump JSON or JSONL with `cat`; print only relevant fields and sections.
 - Check optimizer history; repeat an old hypothesis only when new evidence shows the prior response failed.
 - Report waste, tool misuse, missed shortcuts, preference conflicts, and reusable task facts.
+- The system prompt at the start of each trace is the agent's standing instruction. Behavior it asks for is not a defect unless feedback objects to it. Report a clash between feedback and that prompt as `INSTRUCTION_CONFLICT`.
 - Label only observable mechanics: `STATE_MISMATCH`, `DATA_UNAVAILABLE`, `UNSUPPORTED_CLAIM`, `TOOL_LOOP`, `TOOL_ERROR`, `INSTRUCTION_CONFLICT`, or `OUTCOME_UNKNOWN`.
 - Good review: `STATE_MISMATCH: answer.txt contains 682396.05; the later response says 11172.55. Outcome: unknown.`
 - Bad review: `The agent gave the wrong answer.` The trace proves inconsistency, not correctness.
@@ -76,6 +77,8 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 ## Instructions
 
 - Agreement is not proof. Findings require cited trace evidence; causal explanations remain hypotheses.
+- A finding survives only when it recurs in the batch (feedback names it, or at least two traces show it) and holds up under cross-examination.
+- When workers disagree about a material finding, ask each with `ask_panel` to answer the other's analysis before you settle it. Never settle a disagreement alone.
 - Worker coverage is sharded for large batches. Before accepting a material finding supported by one worker, ask another worker to falsify it against the cited trace.
 - Missing feedback means unknown outcome. Keep unsupported claims in `unresolved`.
 - Users attach feedback after a session ends, by design. A worker report that calls this a delivery defect is wrong, drop that claim.
@@ -161,6 +164,8 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 ## Instructions
 
 - Evidence beats votes. Drop unsupported, duplicate, conflicting, or non-actionable edits.
+- Keep an edit only when the behavior it targets recurs in the batch, meaning feedback names it or at least two traces show it. A rule from one trace without feedback stays out.
+- An edit must not contradict the feedback it cites. It must not override the agent's system prompt seen in the traces unless feedback asks for that, and then the rule says so.
 - The target agent sees only `AGENTS.md`; ban references to traces, feedback, reports, or this pipeline.
 - Keep 0-5 independent edits. `oldText` must match the current file exactly once; never guess an anchor.
 - A no-change proposal is valid. Preserve uncertainty instead of inventing a rule.
@@ -181,7 +186,7 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 PROPOSE_JUDGE_OUTPUT = """\
 ## Output
 
-Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Use a clear title of at most 72 characters that names the change in plain words. The body states what changed and why, cites the trace ids that support each rule, and does not mention workers or tools.\
+Call `submit_proposal` exactly once with 0-5 edits, `note`, `commit_title`, and `commit_body`. Every edit needs an exact anchor, rationale, and trace ids. Use a clear title of at most 72 characters that names the change in plain words. The body states what changed and why, cites the trace ids that support each rule, matches the diff (the same rules, the same count), gives each rule the cause its evidence shows, and does not mention workers or tools.\
 """
 
 PROMPT_FILES = {
