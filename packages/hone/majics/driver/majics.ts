@@ -252,7 +252,7 @@ function attachActivityLog(session: AgentSession, emit: (e: ProgressEvent) => vo
     } else if (event.type === "message_end" && event.message?.role === "assistant") {
       // The session commits a message to its history only at message_end, so read the text off the event.
       const text = assistantText(event.message);
-      if (text) emit({ kind: "message", text: text.slice(0, 4000) });
+      if (text) emit({ kind: "message", text });
     }
   });
   return () => {
@@ -283,13 +283,13 @@ function summarizeArgs(args: unknown): string | undefined {
   return oneLine.length > 120 ? oneLine.slice(0, 119) + "…" : oneLine;
 }
 
-/** The judge's ask_panel questions as the activity feed shows them, each capped like a message. */
+/** The judge's ask_panel questions as the activity feed shows them. */
 function askedQueries(args: unknown): { role: string; question: string }[] {
   const queries = (args as { queries?: unknown } | null)?.queries;
   if (!Array.isArray(queries)) return [];
   return queries.map((q) => ({
     role: typeof q?.role === "string" ? q.role : "",
-    question: typeof q?.question === "string" ? q.question.slice(0, 4000) : "",
+    question: typeof q?.question === "string" ? q.question : "",
   }));
 }
 
