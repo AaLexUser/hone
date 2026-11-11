@@ -3,14 +3,15 @@ version: 1
 # Hone's configuration for the booth stack. docker-compose.yml mounts this file
 # into the hone container and points HONE_CONFIG at it. As in the paper, each
 # MAJICS panel mixes three model families (MiniMax, DeepSeek and Qwen), and both
-# judges use a fourth family (GLM). Every reviewer turn must finish within the
-# driver's five minute turn limit and every follow-up within 120 s. MiMo, LongCat
-# and Kimi ran past the turn limit and Hy3 missed a follow-up, so faster models
-# took their seats. DeepSeek's endpoint answered 429 overloaded for a while on
-# 11 November, then recovered. DeepSeek stays defined as the agent's model. All four come from OpenCode Go with the key
-# from OPENCODE_API_KEY in .env. The agent under optimization keeps the Pi
-# agent's model in t3code. Each model's thinking map and compat flags are
-# copied from Pi's model catalog.
+# judges use a fourth family (GLM). Every worker turn must finish within the
+# driver's five minute turn limit and every follow-up within
+# optimization.follow_up_timeout_s. MiMo, LongCat and Kimi ran past the turn
+# limit and Hy3 missed a follow-up, so faster models took their seats. The
+# judges run the full GLM 5.3, because GLM 5.3 Flash kept rules the paper's
+# recurrence rule rejects. All models come from OpenCode Go with the key from
+# OPENCODE_API_KEY in .env. The agent under optimization keeps the Pi agent's
+# model in t3code. Each model's thinking map and compat flags are copied from
+# Pi's model catalog.
 
 service:
   data_dir: /data
