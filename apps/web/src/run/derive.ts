@@ -239,24 +239,44 @@ function jaccard<T>(a: Set<T>, b: Set<T>): number {
   return shared / (a.size + b.size - shared)
 }
 
+/** The rules an edit adds or removes, one per list item. Text outside a list counts one rule per line. */
+function rules(text: string): string[] {
+  const out: string[] = []
+  for (const line of text.split('\n')) {
+    if (!line.trim() || line.startsWith('#')) continue
+    const continues = /^\s+\S/.test(line) && !/^\s*(?:[-*+]|\d+[.)])\s/.test(line)
+    if (continues && out.length) out[out.length - 1] += ` ${line.trim()}`
+    else out.push(line)
+  }
+  return out
+}
+
 /**
- * Which finding each verified edit acts on. The pipeline does not record the
- * link, so it is inferred: shared evidence sessions plus shared wording
- * between the edit's rationale and text and the finding's statement.
+ * Which findings each verified edit acts on, in the order of the rules it
+ * writes. The pipeline does not record the link, so it is inferred. Each rule
+ * goes to the finding whose statement shares the most wording with it. An edit
+ * with a single rule also counts its rationale and its evidence sessions.
  */
-export function linkEdits(changes: ProposedChange[], findings: ReviewItem[]): number[] {
+export function linkEdits(changes: ProposedChange[], findings: ReviewItem[]): number[][] {
   return changes.map((c) => {
-    const evidence = new Set(c.evidence)
-    const text = words(`${c.rationale} ${c.after ?? ''} ${c.before ?? ''}`)
-    let best = -1
-    let bestScore = 0.05
-    findings.forEach((f, i) => {
-      const score = jaccard(evidence, new Set(f.traceIds)) + 2 * jaccard(text, words(f.statement))
-      if (score > bestScore) {
-        best = i
-        bestScore = score
-      }
-    })
-    return best
+    const units = rules(c.after || c.before || '')
+    const single = units.length <= 1
+    const texts = single ? [`${c.rationale} ${c.after ?? ''} ${c.before ?? ''}`] : units
+    const evidence = new Set(single ? c.evidence : [])
+    const linked: number[] = []
+    for (const text of texts) {
+      const w = words(text)
+      let best = -1
+      let bestScore = 0.05
+      findings.forEach((f, i) => {
+        const score = jaccard(evidence, new Set(f.traceIds)) + 2 * jaccard(w, words(f.statement))
+        if (score > bestScore) {
+          best = i
+          bestScore = score
+        }
+      })
+      if (best >= 0 && !linked.includes(best)) linked.push(best)
+    }
+    return linked
   })
 }

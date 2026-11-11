@@ -95,7 +95,7 @@ export function Changes({
 function EditItem({ i, change, links, muted }: { i: number; change: ProposedChange; links: LinkApi; muted: boolean }) {
   const { lit, pinned, pin, hover } = links
   const on = lit.edits.has(i)
-  const finding = links.links.editFinding[i]
+  const findings = links.links.editFindings[i] ?? []
   const Op = OP[change.op]
   return (
     <article
@@ -114,18 +114,21 @@ function EditItem({ i, change, links, muted }: { i: number; change: ProposedChan
           <Op size={12} strokeWidth={2.5} />
         </span>
         <span className="truncate font-medium text-ink">{change.section}</span>
-        {finding >= 0 && (
+        {findings.length > 0 && (
           <span className="ml-auto flex shrink-0 items-center gap-1 text-meta text-ink-3">
             ←
-            <RefChip
-              label={`F${finding + 1}`}
-              on={sameFocus(pinned, { kind: 'finding', i: finding })}
-              onClick={() => {
-                pin({ kind: 'finding', i: finding })
-                reveal(`finding-${finding}`)
-              }}
-              title={`From finding ${finding + 1}`}
-            />
+            {findings.map((f) => (
+              <RefChip
+                key={f}
+                label={`F${f + 1}`}
+                on={sameFocus(pinned, { kind: 'finding', i: f })}
+                onClick={() => {
+                  pin({ kind: 'finding', i: f })
+                  reveal(`finding-${f}`)
+                }}
+                title={`From finding ${f + 1}`}
+              />
+            ))}
           </span>
         )}
       </div>

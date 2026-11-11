@@ -10,7 +10,7 @@ import { linkEdits } from './derive'
 export type Focus = { kind: 'session'; id: string } | { kind: 'finding'; i: number } | { kind: 'edit'; i: number }
 
 export interface Links {
-  editFinding: number[]
+  editFindings: number[][]
   findingEdits: number[][]
 }
 
@@ -38,7 +38,7 @@ function lit(focus: Focus | null, findings: ReviewItem[], edits: ProposedChange[
   } else if (focus?.kind === 'edit') {
     e.add(focus.i)
     edits[focus.i]?.evidence.forEach((id) => sessions.add(id))
-    if (links.editFinding[focus.i] >= 0) f.add(links.editFinding[focus.i])
+    links.editFindings[focus.i]?.forEach((i) => f.add(i))
   }
   return { sessions, findings: f, edits: e, any: focus !== null }
 }
@@ -47,9 +47,9 @@ export function useLinks(findings: ReviewItem[], edits: ProposedChange[]) {
   const [pinned, setPinned] = useState<Focus | null>(null)
   const [hover, setHover] = useState<Focus | null>(null)
   const links = useMemo<Links>(() => {
-    const editFinding = linkEdits(edits, findings)
-    const findingEdits = findings.map((_, fi) => editFinding.flatMap((f, ei) => (f === fi ? [ei] : [])))
-    return { editFinding, findingEdits }
+    const editFindings = linkEdits(edits, findings)
+    const findingEdits = findings.map((_, fi) => editFindings.flatMap((fs, ei) => (fs.includes(fi) ? [ei] : [])))
+    return { editFindings, findingEdits }
   }, [edits, findings])
   const pin = useCallback((f: Focus) => setPinned((p) => (sameFocus(p, f) ? null : f)), [])
   // A pin holds until it is clicked again; hover only previews while nothing is pinned.
