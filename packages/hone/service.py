@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -917,6 +918,14 @@ def _iter_messages(body: str):
             yield msg["role"], msg.get("content")
 
 
+_MD_LINK = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
+
+
+def _plain_line(line: str) -> str:
+    """A chat line as a title. An attached file arrives as a markdown link and reads as its name."""
+    return " ".join(_MD_LINK.sub(r"\1", line).split())
+
+
 def _summarize_jsonl(body: bytes) -> tuple[str, int, str | None]:
     """Extract first user line, turn count, and the AGENTS.md version header if present."""
     first_line = ""
@@ -939,5 +948,5 @@ def _summarize_jsonl(body: bytes) -> tuple[str, int, str | None]:
                     c.get("text", "") for c in content if isinstance(c, dict) and c.get("type") == "text"
                 )
             if not first_line and text.strip():
-                first_line = text.strip().splitlines()[0][:120]
+                first_line = _plain_line(text.strip().splitlines()[0])[:120]
     return first_line, turns, version
