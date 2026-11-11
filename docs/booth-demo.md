@@ -42,8 +42,10 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 
 ## Still open before the booth
 
-- A full real optimization run has not been seen end to end, because Docker builds fail behind the container's proxy.
-  The chip's optimizing state and its AGENTS.md updated toast are unverified. Run one real optimization on the laptop before the trip.
+- The guided visit is recorded on the compose stack. Run r_71ab passed two independent reviews on 11 November and ships as `packages/hone/demo/run-cache/20261111T222838-r_71ab.json`, with the visitor's turn in `clients/t3code/turn-cache/`.
+  A replay check with only the shipped copies played the visitor's chat in 208 seconds and the optimization in 91 seconds, ending with the same rule in Versions.
+  Both recordings match only on code c5acee2 for MAJICS and the verifier, the roster in `deploy/hone.yaml`, `HONE_DEMO_DATE=2026-11-11` and the same Pi model. Change none of them before the booth, or the visit runs live.
+- Run the guided visit once on the laptop's own stack before the trip to confirm both replays there.
 - PDF preview inside t3code could not be checked under headless Chromium here. DOCX preview works. Check a PDF in the laptop's Chrome.
 - If the conference Wi-Fi fails, the live agent cannot reach its model. Show the prepared chats and a replayed run, which needs no network, and keep the recorded loop as a backup.
 - Rotate the OpenCode key after the conference.
