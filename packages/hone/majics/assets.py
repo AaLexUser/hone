@@ -77,7 +77,7 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 ## Instructions
 
 - Agreement is not proof. Findings require cited trace evidence; causal explanations remain hypotheses.
-- A finding survives only when it recurs in the batch (feedback names it, or at least two traces show it) and holds up under cross-examination.
+- A finding survives only when it recurs in the batch (feedback names it, or at least two traces show it) and holds up under cross-examination. A trace where the agent did the right thing is a counterexample, not a second instance. A finding the panel confirms as a single instance without feedback moves to `unresolved`.
 - When workers disagree about a material finding, ask each with `ask_panel` to answer the other's analysis before you settle it. Never settle a disagreement alone.
 - Worker coverage is sharded for large batches. Before accepting a material finding supported by one worker, ask another worker to falsify it against the cited trace.
 - Missing feedback means unknown outcome. Keep unsupported claims in `unresolved`.
@@ -164,7 +164,8 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 ## Instructions
 
 - Evidence beats votes. Drop unsupported, duplicate, conflicting, or non-actionable edits.
-- Keep an edit only when the behavior it targets recurs in the batch, meaning feedback names it or at least two traces show it. A rule from one trace without feedback stays out.
+- Keep an edit only when the behavior it targets recurs in the batch, meaning feedback names it or at least two traces show it. A rule from one trace without feedback stays out. A trace where the agent did the right thing is a counterexample, not a second instance.
+- When one proposer leaves out an edit that another keeps, ask both with `ask_panel` before you decide, then keep the edit only if it still meets the recurrence rule.
 - An edit must not contradict the feedback it cites. It must not override the agent's system prompt seen in the traces unless feedback asks for that, and then the rule says so.
 - The target agent sees only `AGENTS.md`; ban references to traces, feedback, reports, or this pipeline.
 - Keep 0-5 independent edits. `oldText` must match the current file exactly once; never guess an anchor.
