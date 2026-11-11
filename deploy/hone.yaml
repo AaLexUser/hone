@@ -118,10 +118,10 @@ majics:
         supportsStrictMode: true
         maxTokensField: max_tokens
 
-    glm-5.3-flash:
+    glm-5.3:
       provider: opencode-go
-      id: glm-5.3-flash
-      name: GLM 5.3 Flash
+      id: glm-5.3
+      name: GLM 5.3
       reasoning: true
       input: [text]
       context_window: 1000000
@@ -153,7 +153,7 @@ majics:
       - model: qwen3.8-flash
         reasoning: medium
     judge:
-      model: glm-5.3-flash
+      model: glm-5.3
       reasoning: high
 
   propose:
@@ -165,7 +165,7 @@ majics:
       - model: qwen3.8-flash
         reasoning: medium
     judge:
-      model: glm-5.3-flash
+      model: glm-5.3
       reasoning: high
 
 optimization:
