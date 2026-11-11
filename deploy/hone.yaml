@@ -111,12 +111,15 @@ majics:
         supportsStrictMode: true
         maxTokensField: max_tokens
 
+  # A judge's ask_panel follow-up must answer within the driver's 60 s
+  # deadline, so each panel model runs at the highest reasoning level that
+  # still answers in time.
   review:
     panel:
       - model: mimo-v2.6-flash
-        reasoning: high
+        reasoning: medium
       - model: deepseek-v4.1-flash
-        reasoning: high
+        reasoning: low
       - model: minimax-m3.1-flash
         reasoning: high
     judge:
@@ -126,11 +129,11 @@ majics:
   propose:
     panel:
       - model: deepseek-v4.1-flash
-        reasoning: high
+        reasoning: low
       - model: minimax-m3.1-flash
         reasoning: high
       - model: mimo-v2.6-flash
-        reasoning: high
+        reasoning: medium
     judge:
       model: glm-5.3-flash
       reasoning: high
