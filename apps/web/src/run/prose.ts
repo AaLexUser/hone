@@ -17,6 +17,17 @@ export const MECHANISMS: Record<string, string> = {
 
 const CODE = /[A-Z]{2,}(?:_[A-Z]+)+/g
 
+/** An absolute path on an agent's machine, two or more folders deep, as in /app/workspace/agents.md. */
+export const LOCAL_PATH = /(?<![\w.:/~-])(?:\/[\w@+-]+(?:\.[\w@+-]+)*){2,}\/?/
+
+/** A whole local path, where a name may hold spaces, as in `/home/node/demo/Sales reports`. */
+const WHOLE_PATH = /^(?:\/[\w@+.][\w@+.-]*(?: [\w@+.][\w@+.-]*)*){2,}\/?$/
+
+/** A local path's file or folder name, as in agents.md, or null when the text is not a local path. */
+export function pathName(text: string): string | null {
+  return WHOLE_PATH.test(text) ? text.replace(/\/$/, '').split('/').at(-1)! : null
+}
+
 export const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** A known code's plain label, or the code itself in lower case words. */
@@ -67,25 +78,45 @@ const PROCESS = /^(?:let me|let's|i'll|i will|i'm going to|now,? (?:let|i)|next,
 
 const SKIP = /^(?:#{1,6}\s|-{3,}$|\*{3,}$|```|\|)/
 
+/** A reply that only agrees, as in "all three points check out" or "I accept it". */
+const ACK = /\b(?:i (?:accept|agree|concede)|checks? out|(?:claim|point|challenger|critique|you|you're) (?:is |are )?(?:accurate|right|correct))\b/i
+
+/** What an agreeing reply says it adds, as in "I accept it, with one scope correction." */
+const ADDS = /\bwith (?:one|a|an|two|three|some) ([a-z]+(?: [a-z]+)?)[.!?]?$/i
+
+/** The message's lines a collapsed row may show, as plain text without list markers. */
+function bodyLines(text: string): string[] {
+  const lines = text.split('\n').map((l) => l.trim())
+  const heading = lines.findIndex((l) => /^#{1,6}\s/.test(l))
+  const preamble = heading > 0 && sentences(plainInline(lines.slice(0, heading).join(' '))).some((s) => PROCESS.test(s))
+  const out: string[] = []
+  for (const raw of lines.slice(preamble ? heading : 0)) {
+    if (!raw || SKIP.test(raw)) continue
+    const line = plainInline(raw).replace(/^(?:(?:[-*+]|\d+[.)])\s+)+/, '')
+    const label = /:$/.test(line) || (/^\*\*[^*]+\*\*$/.test(raw) && !/[.!?]["'”’)\]]*$/.test(line))
+    if (line && !label) out.push(line)
+  }
+  return out
+}
+
 /**
  * The first real sentence of an agent message, for its collapsed row: past a
  * process preamble ("I have enough evidence. Let me compile the report."),
  * headings, rules and label lines such as **Short answers** or "Direct answers:",
- * with list markers and bold or italic markers dropped.
+ * with list markers and bold or italic markers dropped. A bare agreement such as
+ * "I accept it, with one scope correction." gives way to the line it announces
+ * ("Scope correction: …"), or else to the next sentence.
  */
 export function headline(text: string): string {
-  const lines = text.split('\n').map((l) => l.trim())
-  const heading = lines.findIndex((l) => /^#{1,6}\s/.test(l))
-  const preamble = heading > 0 && sentences(plainInline(lines.slice(0, heading).join(' '))).some((s) => PROCESS.test(s))
-  for (const raw of lines.slice(preamble ? heading : 0)) {
-    if (!raw || SKIP.test(raw)) continue
-    const line = plainInline(raw).replace(/^(?:(?:[-*+]|\d+[.)])\s+)+/, '')
-    const label = /:$/.test(line) || (/^\*\*[^*]+\*\*$/.test(raw) && !/[.!?]$/.test(line))
-    if (!line || label) continue
-    const first = sentences(line).find((s) => !PROCESS.test(s))
-    if (first) return first
+  const lines = bodyLines(text)
+  const said = lines.flatMap((l) => sentences(l).filter((s) => !PROCESS.test(s)))
+  const [first, next] = said
+  if (first && next && ACK.test(first) && !first.includes(':')) {
+    const adds = ADDS.exec(first)?.[1].toLowerCase()
+    const announced = adds && lines.find((l) => /^[^:]{1,40}:\s/.test(l) && l.slice(0, l.indexOf(':')).toLowerCase().includes(adds))
+    return announced ? sentences(announced)[0] : next
   }
-  return plainInline(lines.find((l) => l && !SKIP.test(l)) ?? '')
+  return first ?? plainInline(text.split('\n').map((l) => l.trim()).find((l) => l && !SKIP.test(l)) ?? '')
 }
 
 /** The length the driver once cut every agent message to. */

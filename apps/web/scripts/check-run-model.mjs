@@ -16,6 +16,15 @@ const { attemptStories, crossExam, laneGroups, nowLine, seatStatus, stageState, 
 const { graphLayout } = await jiti.import(path.join(here, '../src/run/graph/layout.ts'))
 const { activityRows } = await jiti.import(path.join(here, '../src/run/activity.ts'))
 const { headline, OLD_MESSAGE_CAP } = await jiti.import(path.join(here, '../src/run/prose.ts'))
+const { Inline } = await createJiti(import.meta.url, { jsx: { runtime: 'automatic' } }).import(path.join(here, '../src/run/Inline.tsx'))
+const { createElement } = await import('react')
+const { renderToStaticMarkup } = await import('react-dom/server')
+
+/** An absolute path two folders deep, as in /app/workspace, which means nothing to a visitor. */
+const LOCAL_PATH = /(?<![\w.:/])\/[\w.-]+\/[\w.-]+/
+
+/** The text a visitor reads where the page renders `text` inline, without what shows on hover. */
+const visible = (text) => renderToStaticMarkup(createElement(Inline, { text })).replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#x27;/g, "'")
 
 const dirs = process.argv.slice(2)
 if (!dirs.length) {
@@ -64,7 +73,10 @@ function checkProse(raw, events) {
   for (const r of rows.filter((x) => x.type === 'work' && x.text)) {
     const line = headline(r.text)
     assert.ok(line && !/\*\*|^#|:$/.test(line), `${r.seat.key}'s row reads as plain text, got ${JSON.stringify(line)}`)
+    assert.doesNotMatch(visible(line), LOCAL_PATH, `${r.seat.key}'s row names files, not local paths`)
   }
+  const questions = activityRows(fold(events)).flatMap((r) => (r.type === 'ask' ? r.turns.flatMap((t) => (t.question ? [t.question] : [])) : []))
+  for (const q of questions) assert.doesNotMatch(visible(q), LOCAL_PATH, 'a question card names files, not local paths')
   const cut = raw.map((l) => JSON.parse(l)).filter((r) => r.kind === 'message' && r.text.length === OLD_MESSAGE_CAP)
   for (const r of cut) {
     const shown = events.find((e) => e.kind === 'message' && e.at === r.at && e.agent === r.agent)
@@ -131,6 +143,15 @@ const EXPECT = {
   r_008f: (m) => {
     assert.equal(m.outcome, 'no-changes')
     assert.equal(verifyState(m), 'skipped')
+  },
+  r_6e03: (m) => {
+    const answers = Object.fromEntries(m.events.filter((e) => e.kind === 'ask_panel').flatMap((e) => e.answers).map((a) => [a.role, headline(a.text)]))
+    assert.match(answers['review-3'], /^Scope correction: Not recurring/, 'an agreeing answer shows the correction it announces')
+    assert.match(answers['review-1'], /^\(a\) Finding 5 should be downgraded/, 'an agreeing answer shows its next sentence')
+    assert.match(answers['review-2'], /^Yes . I accept that as a TOOL_ERROR, with one caveat: the harness/, 'an agreement that carries its point stays')
+    assert.equal(visible('5 chained edits to `/app/workspace/agents.md`'), '5 chained edits to agents.md')
+    assert.equal(visible('Inbox/orders_*.csv in `/home/node/demo/Sales reports`'), 'Inbox/orders_*.csv in Sales reports')
+    assert.equal(visible('see https://example.com/a/b and 10/11'), 'see https://example.com/a/b and 10/11', 'links and dates stay')
   },
   r_1cd0: (m) => {
     if (m.outcome === 'failed') {

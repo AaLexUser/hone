@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { MECHANISMS, capitalize, mechanism } from './prose'
+import { LOCAL_PATH, MECHANISMS, capitalize, mechanism, pathName } from './prose'
 
 const TOKEN = new RegExp(
   [
@@ -9,6 +9,7 @@ const TOKEN = new RegExp(
     `\\b(${Object.keys(MECHANISMS).join('|')})\\b`,
     /\b(review|propose)-(\d+)\b/.source,
     /\b(promptVersion)\b/.source,
+    `(${LOCAL_PATH.source})`,
   ].join('|'),
   'g',
 )
@@ -31,7 +32,7 @@ function inline(text: string): ReactNode[] {
     const k = m.index
     const atStart = /(?:^|[.!?:\n(]\s*)$/.test(text.slice(0, m.index))
     const label = (code: string) => (atStart ? capitalize(mechanism(code)) : mechanism(code))
-    const [, code, bold, italic, known, seatStage, seatN, field] = m
+    const [, code, bold, italic, known, seatStage, seatN, field, path] = m
     if (code !== undefined)
       out.push(
         code in MECHANISMS ? (
@@ -39,8 +40,8 @@ function inline(text: string): ReactNode[] {
             {label(code)}
           </Term>
         ) : (
-          <code key={k} className="rounded-[4px] bg-ink/6 px-1 font-mono text-[0.92em] text-ink">
-            {code}
+          <code key={k} title={pathName(code) ? code : undefined} className="rounded-[4px] bg-ink/6 px-1 font-mono text-[0.92em] text-ink">
+            {pathName(code) ?? code}
           </code>
         ),
       )
@@ -64,6 +65,12 @@ function inline(text: string): ReactNode[] {
           prompt version
         </Term>,
       )
+    else if (path !== undefined)
+      out.push(
+        <Term key={k} code={path}>
+          {pathName(path) ?? path}
+        </Term>,
+      )
   }
   out.push(text.slice(last))
   return out
@@ -71,7 +78,8 @@ function inline(text: string): ReactNode[] {
 
 /**
  * Agent prose on one line: `code`, **bold** and *italic*, with reviewer mechanism
- * codes, seat names and field names in plain words and the original on hover.
+ * codes, seat names and field names in plain words, local paths by their file or
+ * folder name, and the original on hover.
  */
 export function Inline({ text }: { text: string }) {
   return <>{inline(text)}</>
