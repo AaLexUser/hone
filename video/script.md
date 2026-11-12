@@ -29,6 +29,6 @@ The full browser screen is the main picture. Burned in captions do the guiding. 
 ## Facts to keep true
 
 - The benchmark numbers come from Table I of the paper. Pi without Hone scores 56.7 on OfficeQA and 71.0 on SpreadsheetBench. Hone scores 59.7 and 82.3.
-- In the booth stack every MAJICS seat runs DeepSeek V4.1 Flash, so the captions do not claim different models.
+- The booth roster in `deploy/hone.yaml` mixes model families in each panel, so a caption may say different models.
 - The time lapse badge shows the run's real duration from its run page.
 - UI labels in captions match the real screens. Start optimization, Versions, AGENTS.md.

@@ -26,7 +26,7 @@ The expense report already recorded in batch one is kept only if its clip reads 
 - A run with no edits makes no commit. It shows No changes on the Runs page, not on Versions. A clean batch is not guaranteed to end with no change.
 - A request scoped to one client can legitimately become a client specific line. Captions describe what the run did.
 - Captions quote or paraphrase the real activity log only. The judge's questions in the brainstorm files are predictions.
-- Every seat in the booth stack runs DeepSeek V4.1 Flash, so captions never say "different models".
+- The booth roster in `deploy/hone.yaml` mixes model families in each panel, so captions may say different models.
 - Hone does not know people. Names live only in chat titles and captions.
 - Each scenario gets its own Hone data directory with batch size 4, so batches and `log_edits.json` never mix across clips.
 - Cap each scenario at two takes before its fallback. Delete each scenario's Hone volume once its clip is cut.
