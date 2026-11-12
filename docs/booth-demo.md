@@ -43,7 +43,9 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 ## Still open before the booth
 
 - The visitor's turn is recorded in `clients/t3code/turn-cache/` and stays valid while the model, the request and the project files stay the same.
-  The approved optimization recording r_71ab no longer matches, because the seat turn limit became `optimization.turn_timeout_s` (480 seconds for the booth) after it was recorded. Record the run again on the current code and have it reviewed.
+  The approved optimization recording is run r_89a9, shipped as `packages/hone/demo/run-cache/20261112T053232-r_89a9.json`. One reviewer passed it on all six points, the other failed point 4 because the rule's condition also reads on a blank field, and the author approved it on 12 November because the condition follows the feedback's own words.
+  A replay check with only the shipped copies played the visitor's chat in 208 seconds and the optimization in 91 seconds, ending with the same rule in Versions.
+  Both recordings match only on the current MAJICS and verifier code, the roster in `deploy/hone.yaml`, `HONE_DEMO_DATE=2026-11-11` and the same Pi model. Change none of them before the booth, or the visit runs live.
 - Run the guided visit once on the laptop's own stack before the trip to confirm both replays there.
 - PDF preview inside t3code could not be checked under headless Chromium here. DOCX preview works. Check a PDF in the laptop's Chrome.
 - If the conference Wi-Fi fails, the live agent cannot reach its model. Show the prepared chats and a replayed run, which needs no network, and keep the recorded loop as a backup.
