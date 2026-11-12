@@ -47,6 +47,11 @@
       "sub": "Client proposals, with feedback that disagrees"
     },
     {
+      "dir": "10-badges",
+      "title": "Every name on one *line*",
+      "sub": "Workshop name badges from a registration list"
+    },
+    {
       "dir": "6-versions",
       "title": "Every change is a *version*",
       "sub": "AGENTS.md history, kept in Git"
