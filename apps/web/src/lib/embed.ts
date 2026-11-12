@@ -34,6 +34,32 @@ export function tellRunStarted(runId: string) {
     .catch(() => tellParent({ type: 'run-started', runId, quick: false }))
 }
 
+/**
+ * Scrolls the outlined element into view once it exists, because the judge's
+ * question appears partway through a run, often below the fold.
+ */
+let stopReveal: (() => void) | null = null
+function revealWhenShown(name: string) {
+  stopReveal?.()
+  const reveal = () => {
+    if (document.documentElement.dataset.guideHighlight !== name) return true
+    const el = document.querySelector(`[data-guide="${CSS.escape(name)}"]`)
+    if (!el) return false
+    const box = el.getBoundingClientRect()
+    if (box.top < 0 || box.bottom > window.innerHeight) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    return true
+  }
+  if (reveal()) return
+  const observer = new MutationObserver(() => {
+    if (reveal()) stopReveal?.()
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+  stopReveal = () => {
+    observer.disconnect()
+    stopReveal = null
+  }
+}
+
 if (parentOrigin !== null) {
   // The guide outlines the element it asks the visitor to use, marked with data-guide.
   window.addEventListener('message', (event) => {
@@ -41,8 +67,10 @@ if (parentOrigin !== null) {
     const data = event.data as { source?: unknown; highlight?: unknown } | null
     if (data?.source !== 'hone-guide') return
     const root = document.documentElement
-    if (typeof data.highlight === 'string') root.dataset.guideHighlight = data.highlight
-    else delete root.dataset.guideHighlight
+    if (typeof data.highlight === 'string') {
+      root.dataset.guideHighlight = data.highlight
+      revealWhenShown(data.highlight)
+    } else delete root.dataset.guideHighlight
   })
   // Touches inside the frame never reach the parent, which counts idle time.
   let last = 0
