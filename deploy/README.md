@@ -39,7 +39,8 @@ On its first start, t3code writes its settings from `t3code/settings.json` and `
 
 Guide mode lets visitors try the demo alone. `clients/t3code/README.md` describes it.
 
-- Put the booth loop MP4 at `deploy/booth-video/loop.mp4`. Caddy serves the folder at `/booth-video/` behind the booth login, and git ignores it.
+- Put the booth loop MP4 at `deploy/booth-video/loop.mp4` and its chapter list `hone-loop.chapters.json` from the same build at `deploy/booth-video/loop.chapters.json`. Caddy serves the folder at `/booth-video/` behind the booth login, and git ignores it.
+- Open `/loop` to play the loop on demand, with a seek bar, the playing time and a chapter list. Space pauses, the arrows skip 10 seconds, page up and page down jump between chapters, and F is full screen.
 - `HONE_GUIDE_PIN`, `HONE_GUIDE_IDLE_VIDEO_SECONDS` and `HONE_GUIDE_IDLE_RESET_SECONDS` in `.env` set the exit PIN and the two idle times. `HONE_GUIDE_VIDEO_URL` defaults to `/booth-video/loop.mp4`.
 - On every start the entrypoint points Pi's binary path at the turn cache wrapper. It replays recordings from `clients/t3code/turn-cache/`, which the image holds, and from the `turn-cache` volume. `HONE_TURN_CACHE_RECORD=1` records new ones in the volume. `docs/booth-demo.md` says how to record the guided visit.
 

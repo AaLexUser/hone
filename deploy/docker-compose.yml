@@ -17,6 +17,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./booth-video:/srv/booth-video:ro
+      - ./booth-player:/srv/booth-player:ro
       - caddy-data:/data
       - caddy-config:/config
     networks: [backend, outbound]

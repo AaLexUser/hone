@@ -17,6 +17,14 @@
 		file_server
 	}
 
+	# The booth loop with a player, for showing it on demand. It plays /booth-video/loop.mp4.
+	@loop path /loop /loop/
+	handle @loop {
+		root * /srv/booth-player
+		rewrite * /index.html
+		file_server
+	}
+
 	# t3code signs in every request that carries the shared secret.
 	handle {
 		reverse_proxy t3code:3773 {

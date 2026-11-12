@@ -58,6 +58,7 @@ The demo runs on the author's laptop. No TV is booked, so everything is shown on
 3. Start Hone with `HONE_DEMO=1` and its own empty `HONE_DATA_DIR`, bound to 127.0.0.1. Hone refuses a demo reset on a folder with real history. Set `HONE_DEMO_DATE=2026-11-11` so the prepared state matches the recorded runs. The first start builds the prepared state in about 20 seconds.
 4. Start the t3code server with `HONE_DEMO=1`, `HONE_URL`, `HONE_TOKEN`, `HONE_DASHBOARD_URL` and `HONE_DEMO_DIR` set to a new empty folder. It seeds the chats on start.
 5. Pair the browser once, open the Offer letters project, and run one full visitor loop, then press Reset demo.
+6. Copy the rendered loop and its chapters to `deploy/booth-video/loop.mp4` and `deploy/booth-video/loop.chapters.json`. Guide mode plays the loop after idle time, and `/loop` plays it on demand with a seek bar, the playing time and a chapter list.
 
 ## Design
 
