@@ -1,4 +1,4 @@
-From 743ef16e04d7c2a05dbe47c927cc3f5f6aa40254 Mon Sep 17 00:00:00 2001
+From 3e84f7017ff5f7f195ee827515d752a5abf0bc0e Mon Sep 17 00:00:00 2001
 From: Alexey Lapin <a.lapin03@gmail.com>
 Date: Thu, 12 Nov 2026 12:30:45 +0000
 Subject: [PATCH] fix(web): keep the booth idle video steady
@@ -13,18 +13,18 @@ The video now fades in over the app when its first frame plays. Taps,
 mouse moves and key presses neither end it nor count as activity, so the
 idle reset keeps counting while it plays. Only a press or a key held for
 1.5 seconds ends it. The hint says "Hold any key to try Hone yourself",
-since the booth laptop may have no touch screen. The first press or key
-shows a "Keep holding" ring in the middle of the screen that fills while
-the visitor holds, and stays up for a moment after an early release. The video takes focus, so
+since the booth laptop may have no touch screen. While the visitor holds,
+the hint reads "Keep holding" and a small ring at its left fills, so
+nothing covers the middle of the video. The video takes focus, so
 held keys never type into the chat below. A video that never starts
 closes after ten seconds, so a stalled load cannot hide the app.
 
 The idle time before the video now defaults to 30 seconds instead of 90.
 ---
  apps/server/src/hone/Hone.ts                  |   2 +-
- .../src/components/hone/guide/GuideLayer.tsx  | 179 +++++++++++++-----
+ .../src/components/hone/guide/GuideLayer.tsx  | 156 +++++++++++++-----
  .../src/components/hone/guide/guideText.ts    |   5 +-
- 3 files changed, 141 insertions(+), 45 deletions(-)
+ 3 files changed, 119 insertions(+), 44 deletions(-)
 
 diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
 index 55e44faf..01f98442 100644
@@ -40,7 +40,7 @@ index 55e44faf..01f98442 100644
    guidePin: Config.Redacted("HONE_GUIDE_PIN").pipe(Config.option),
  });
 diff --git a/apps/web/src/components/hone/guide/GuideLayer.tsx b/apps/web/src/components/hone/guide/GuideLayer.tsx
-index 816c5fd1..44ae1055 100644
+index 816c5fd1..189e611b 100644
 --- a/apps/web/src/components/hone/guide/GuideLayer.tsx
 +++ b/apps/web/src/components/hone/guide/GuideLayer.tsx
 @@ -3,7 +3,7 @@ import type { HoneGuideConfig } from "@t3tools/contracts";
@@ -167,34 +167,34 @@ index 816c5fd1..44ae1055 100644
  }
  
  /** Where the target is on screen, followed as the layout moves. */
-@@ -476,35 +479,93 @@ function ClosingCard(props: {
+@@ -476,35 +479,82 @@ function ClosingCard(props: {
    );
  }
  
 -const VIDEO_DISMISS_HOLD_MS = 2000;
 +/** How long a press or a key is held to end the booth video. */
 +const VIDEO_HOLD_MS = 1500;
-+/** How long the hold ring stays up after a press that let go too soon. */
-+const HOLD_HINT_MS = 2500;
 +/** A video that has not started by then closes, so a stalled load cannot hide the app. */
 +const VIDEO_START_TIMEOUT_MS = 10_000;
-+const RING_RADIUS = 48;
++const RING_RADIUS = 7;
 +const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
  
 +/**
 + * The booth video fades in over the app once its first frame plays, so the screen never flashes
 + * black while it loads. A tap, a move or a key press does not end it. Only a press or a key held
-+ * for VIDEO_HOLD_MS does. The first touch or key shows a ring in the middle of the screen, out
-+ * from under the finger, that fills while the visitor holds.
++ * for VIDEO_HOLD_MS does. The hint at the bottom has a small ring that fills while the visitor
++ * holds, and its text says to keep holding.
 + */
  function BoothVideo({ src, onDismiss }: { readonly src: string; readonly onDismiss: () => void }) {
--  const [holding, setHolding] = useState(false);
--  const timer = useRef<number | null>(null);
 +  const [shown, setShown] = useState(false);
-+  /** The hold ring, filling while held and left up for a moment after an early release. */
-+  const [hold, setHold] = useState<"filling" | "shown" | null>(null);
+   const [holding, setHolding] = useState(false);
 +  const overlay = useRef<HTMLDivElement>(null);
-+  const timers = useRef<{ done: number | null; hide: number | null }>({ done: null, hide: null });
+   const timer = useRef<number | null>(null);
+-  const cancelHold = () => {
+-    if (timer.current !== null) window.clearTimeout(timer.current);
+-    timer.current = null;
+-    setHolding(false);
+-  };
 +  const dismiss = useRef(onDismiss);
 +  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the timers below call the latest dismiss without restarting
 +  useEffect(() => {
@@ -203,10 +203,8 @@ index 816c5fd1..44ae1055 100644
 +  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- takes focus, so keys held to end the video do not type into the chat below
 +  useEffect(() => {
 +    overlay.current?.focus();
-+    const pending = timers.current;
 +    return () => {
-+      if (pending.done !== null) window.clearTimeout(pending.done);
-+      if (pending.hide !== null) window.clearTimeout(pending.hide);
++      if (timer.current !== null) window.clearTimeout(timer.current);
 +    };
 +  }, []);
 +  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- closes a video that never starts, since the overlay holds the screen meanwhile
@@ -216,36 +214,23 @@ index 816c5fd1..44ae1055 100644
 +    return () => window.clearTimeout(giveUp);
 +  }, [shown]);
 +
-+  const startHold = () => {
-+    if (!shown || timers.current.done !== null) return;
-+    if (timers.current.hide !== null) window.clearTimeout(timers.current.hide);
-+    timers.current.hide = null;
-+    setHold("filling");
-+    timers.current.done = window.setTimeout(() => {
-+      timers.current.done = null;
+   const startHold = () => {
+-    cancelHold();
++    if (!shown || timer.current !== null) return;
+     setHolding(true);
+     timer.current = window.setTimeout(() => {
+       timer.current = null;
+-      onDismiss();
+-    }, VIDEO_DISMISS_HOLD_MS);
 +      dismiss.current();
 +    }, VIDEO_HOLD_MS);
 +  };
-   const cancelHold = () => {
--    if (timer.current !== null) window.clearTimeout(timer.current);
--    timer.current = null;
--    setHolding(false);
-+    if (timers.current.done === null) return;
-+    window.clearTimeout(timers.current.done);
-+    timers.current.done = null;
-+    setHold("shown");
-+    timers.current.hide = window.setTimeout(() => {
-+      timers.current.hide = null;
-+      setHold(null);
-+    }, HOLD_HINT_MS);
-   };
--  const startHold = () => {
--    cancelHold();
--    setHolding(true);
--    timer.current = window.setTimeout(() => {
--      timer.current = null;
--      onDismiss();
--    }, VIDEO_DISMISS_HOLD_MS);
++  const cancelHold = () => {
++    if (timer.current === null) return;
++    window.clearTimeout(timer.current);
++    timer.current = null;
++    setHolding(false);
++  };
 +  const onKey = (event: KeyboardEvent<HTMLDivElement>) => {
 +    event.preventDefault();
 +    event.stopPropagation();
@@ -275,7 +260,7 @@ index 816c5fd1..44ae1055 100644
      >
        <video
          src={src}
-@@ -513,19 +574,51 @@ function BoothVideo({ src, onDismiss }: { readonly src: string; readonly onDismi
+@@ -513,19 +563,41 @@ function BoothVideo({ src, onDismiss }: { readonly src: string; readonly onDismi
          loop
          playsInline
          className="size-full object-contain"
@@ -284,65 +269,58 @@ index 816c5fd1..44ae1055 100644
        />
 -      <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80">
 -        {guideText.videoHint}
-+      <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center">
-+        <span className="rounded-full bg-black/60 px-4 py-2 text-sm text-white">
-+          {guideText.videoHint}
++      <p className="pointer-events-none absolute inset-x-0 bottom-8 flex justify-center">
++        <span
++          data-guide-hold={holding ? "filling" : undefined}
++          className="flex items-center gap-2 rounded-full bg-black/75 py-2 ps-3 pe-4 text-sm text-white"
++        >
++          <svg aria-hidden width={18} height={18} viewBox="0 0 18 18" className="-rotate-90">
++            <circle
++              cx={9}
++              cy={9}
++              r={RING_RADIUS}
++              fill="none"
++              className="stroke-white/30"
++              strokeWidth={2.5}
++            />
++            <circle
++              cx={9}
++              cy={9}
++              r={RING_RADIUS}
++              fill="none"
++              className="stroke-primary"
++              strokeWidth={2.5}
++              strokeLinecap="round"
++              strokeDasharray={RING_LENGTH}
++              strokeDashoffset={holding ? 0 : RING_LENGTH}
++              style={
++                holding ? { transition: `stroke-dashoffset ${VIDEO_HOLD_MS}ms linear` } : undefined
++              }
++            />
++          </svg>
++          {holding ? guideText.videoHold : guideText.videoHint}
 +        </span>
        </p>
 -      <span
-+      <div
-         aria-hidden
-+        data-guide-hold={hold ?? undefined}
-         className={cn(
+-        aria-hidden
+-        className={cn(
 -          "absolute inset-x-0 bottom-0 h-1 bg-white",
 -          holding ? "w-full transition-[width] ease-linear" : "w-0",
-+          "pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 transition-opacity duration-200",
-+          hold ? "opacity-100" : "opacity-0",
-         )}
+-        )}
 -        style={holding ? { transitionDuration: `${VIDEO_DISMISS_HOLD_MS}ms` } : undefined}
 -      />
-+      >
-+        <svg width={112} height={112} viewBox="0 0 112 112" className="-rotate-90 drop-shadow-lg">
-+          <circle
-+            cx={56}
-+            cy={56}
-+            r={RING_RADIUS}
-+            className="fill-black/85 stroke-white/30"
-+            strokeWidth={6}
-+          />
-+          <circle
-+            cx={56}
-+            cy={56}
-+            r={RING_RADIUS}
-+            fill="none"
-+            className="stroke-white"
-+            strokeWidth={6}
-+            strokeLinecap="round"
-+            strokeDasharray={RING_LENGTH}
-+            strokeDashoffset={hold === "filling" ? 0 : RING_LENGTH}
-+            style={
-+              hold === "filling"
-+                ? { transition: `stroke-dashoffset ${VIDEO_HOLD_MS}ms linear` }
-+                : undefined
-+            }
-+          />
-+        </svg>
-+        <span className="rounded-full bg-black/70 px-4 py-1.5 text-base text-white">
-+          {guideText.videoHold}
-+        </span>
-+      </div>
      </div>
    );
  }
 diff --git a/apps/web/src/components/hone/guide/guideText.ts b/apps/web/src/components/hone/guide/guideText.ts
-index 1b3f7dc3..86e64424 100644
+index 1b3f7dc3..b6a5345d 100644
 --- a/apps/web/src/components/hone/guide/guideText.ts
 +++ b/apps/web/src/components/hone/guide/guideText.ts
 @@ -23,6 +23,8 @@ export interface GuideStrings {
    readonly skip: string;
    readonly watchVideo: string;
    readonly videoHint: string;
-+  /** Beside the ring that fills while the visitor holds to end the video. */
++  /** Replaces the video hint while the visitor holds to end the video. */
 +  readonly videoHold: string;
    readonly resetting: string;
    readonly codeLabel: string;
