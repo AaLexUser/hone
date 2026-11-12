@@ -148,26 +148,36 @@ Enabled when the server starts with `HONE_DEMO=1`.
 - The input files are dragged from the existing Files panel into the composer.
 - A Hone button next to Settings, Usage and Pull requests opens the Hone dashboard inside t3code.
 
-### Guide mode (patches 0008, 0009 and 0012 to 0014)
+### Guide mode (patches 0008, 0009 and 0012 to 0016)
 Guide mode lets a visitor walk through the demo alone, with no presenter. `clients/t3code/README.md` lists the steps and settings.
 - The presenter turns it on with the Guide button in the sidebar. Leaving it takes a two second hold and the PIN in `HONE_GUIDE_PIN`.
 - Start over in every step card, and next to the Guide button in the sidebar, asks the visitor first, then resets the demo the way Reset demo does and shows the welcome card.
 - After `HONE_GUIDE_IDLE_VIDEO_SECONDS` without a touch (30 by default) the booth video fades in with the hint "Hold any key to try Hone yourself". Taps, mouse moves and key presses neither end it nor count as activity. A press or any key held for 1.5 seconds ends it, and while the visitor holds the hint reads Keep holding and a small ring in it fills. After `HONE_GUIDE_IDLE_RESET_SECONDS` (300 by default) the guide resets the demo and shows the welcome card, also while the video plays.
 - The guide writes the visitor's request and feedback word for word as the recorded chat and run had them. The agent turn cache then replays the recorded chat, Hone gets the same trace, and Start optimization finds the approved run in the run cache.
 - The visitor's chat replays in about two minutes, and the optimization in about a minute and a half.
+- After Versions the guide has the visitor try again. A new chat sends the same request with the same two files, the agent works on the new AGENTS.md, and the letter has no £0 bonus and no 0 shares row. The guide offers this only when `hone.guideRetry` finds a recording that replays that chat, or when `HONE_TURN_CACHE_RECORD=1`. Otherwise it goes from Versions to the closing card. The second chat replays in under two minutes.
 
 ### Recording the guided visit
-Two recordings make the guided visit quick. Both come from real runs on the compose stack, on the scenario of the booth day.
-1. Build the stack with every patch. Set `HONE_TURN_CACHE_RECORD=1` in `deploy/.env` and run `docker compose up -d --build t3code`. The restart resets the demo.
-2. Open the site, press Guide in the sidebar and follow the guide to the end. Send the request as written and the feedback as written.
-   The real Pi agent answers, and `hone-pi` records the turn in the `turn-cache` volume.
-   Start optimization runs the real MAJICS pipeline on the three prepared sessions and the new one, and Hone keeps it as a candidate run.
-3. Check that the letter prints the £0 bonus and 0 shares rows the feedback names. If it does not, delete the new file in the `turn-cache` volume, reset the demo and repeat step 2.
-4. Have two reviewers pass the run as `docs/run-review.md` describes, record the verdict with `POST /api/run-cache/<id>/review`, and save `GET /api/run-cache/<id>` as `packages/hone/demo/run-cache/<id>.json`.
-5. Copy the recording from the volume into `clients/t3code/turn-cache/`, for example with `docker compose cp t3code:/home/node/turn-cache/. ../clients/t3code/turn-cache/`.
-6. Set `HONE_TURN_CACHE_RECORD=0`, rebuild t3code and Hone, and walk the guide once more. The chat should replay, and the run should take about a minute and a half.
+Three recordings make the guided visit quick. All come from real runs on the compose stack, on the scenario of the booth day.
+- `clients/t3code/turn-cache/2680b0c4….json` is the visitor's first chat, recorded live on 11 November 2026.
+- `packages/hone/demo/run-cache/20261112T053232-r_89a9.json` is the approved optimization run.
+- `clients/t3code/turn-cache/af86a42e….json` is the second chat after the run, recorded live on 12 November 2026 at 15:21 UTC on hone-demo-dev with `opencode-go/deepseek-v4.1-flash` at thinking level high. Its letter has Base Salary only, with no Sign-on Bonus and no Equity Grant row.
 
-A changed model, thinking level, AGENTS.md, request text, scenario day, set of project files, or a changed Inbox file the request links to makes the turn run live. A changed feedback, roster or MAJICS code makes the run real.
+To record the second chat again, for example after a change to AGENTS.md, the request or the model, only that chat runs live. The first chat replays from its recording and the run from the run cache, both with no model call, so they leave the same AGENTS.md and the same project files as at the booth. The run cache entry stays valid, because the second chat comes after the run.
+1. Build the stack with every patch. Set a working `OPENCODE_API_KEY` and `HONE_TURN_CACHE_RECORD=1` in `deploy/.env` and run `docker compose up -d --build t3code`. The restart resets the demo.
+2. Open the site, press Guide in the sidebar and follow the guide to the end, Try it again included. Send each request and the feedback as the guide writes them.
+   `hone-pi` replays the first chat and does not record it again, since its recording matches. Recording mode opens the Try it again steps. The second chat is the one live model call, and `hone-pi` records it as one new file in the `turn-cache` volume.
+3. Open the new letter and check it has no Sign-on Bonus and no Equity Grant row. If it does, delete the new file in the volume, reset the demo and repeat step 2.
+4. Copy the new file from the volume into `clients/t3code/turn-cache/`, for example with `docker compose cp t3code:/home/node/turn-cache/<key>.json ../clients/t3code/turn-cache/`, and delete the old recording of the second chat.
+5. Set `HONE_TURN_CACHE_RECORD=0`, rebuild t3code, reset the demo and walk the guide once more. Try it again should show, and both chats should replay.
+
+To record the first chat and the run from scratch, as on 11 November, set `HONE_TURN_CACHE_RECORD=1` with the shipped recordings of both chats moved away, and follow the guide to Versions.
+1. The real Pi agent answers the first request, `hone-pi` records it, and Start optimization runs the real MAJICS pipeline, which Hone keeps as a candidate run.
+2. Check that the letter prints the £0 bonus and 0 shares rows the feedback names. If it does not, delete the new file in the `turn-cache` volume, reset the demo and repeat.
+3. Have two reviewers pass the run as `docs/run-review.md` describes, record the verdict with `POST /api/run-cache/<id>/review`, and save `GET /api/run-cache/<id>` as `packages/hone/demo/run-cache/<id>.json`.
+4. Copy the recording into `clients/t3code/turn-cache/`, then record the second chat as above, since a new run can write a different AGENTS.md.
+
+A changed model, thinking level, AGENTS.md, request text, scenario day, set of project files, or a changed Inbox file the request links to makes a chat run live, and makes the guide skip Try it again. A changed feedback, roster or MAJICS code makes the run real.
 
 ### Booth checks
 1. After a reset, t3code shows the prepared chats. Each opens with its tool calls, replies, output documents and feedback.

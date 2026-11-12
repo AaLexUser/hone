@@ -1,0 +1,1029 @@
+From 3e7ad0be34ede5f71d82418ea203f7e1ce780536 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Thu, 12 Nov 2026 15:04:49 +0000
+Subject: [PATCH] feat: let the booth guide try the request again after the run
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+After See the new rule, the guide can take the visitor back to the case
+the agent got wrong. They open a new chat, send the same request with
+the same two Inbox files, watch the agent work on the new AGENTS.md and
+open the letter, which now has no £0 bonus and no 0 shares rows.
+
+The guide only offers these steps when that second chat can complete
+without a model call the booth may not have. Once Versions shows, it
+asks the new hone.guideRetry RPC, which answers yes when a turn cache
+recording of the request replays from the project as the next chat will
+find it, with the AGENTS.md that Hone's Pi extension syncs in when Pi
+starts, or when
+HONE_TURN_CACHE_RECORD=1 records the visit. Otherwise the guide goes to
+the closing card as before, and the progress counts only the steps it
+shows.
+---
+ apps/server/scripts/hone-pi-turn-cache.ts     |  61 +++++++++-
+ apps/server/scripts/hone-pi.test.ts           |  76 ++++++++++++-
+ apps/server/scripts/hone-pi.ts                |   6 +-
+ apps/server/src/auth/RpcAuthorization.ts      |   1 +
+ apps/server/src/hone/Hone.ts                  |   6 +
+ apps/server/src/hone/HoneDemo.ts              |  53 ++++++++-
+ .../src/observability/RpcInstrumentation.ts   |   1 +
+ apps/server/src/ws.ts                         |   1 +
+ .../src/components/hone/guide/GuideLayer.tsx  | 105 +++++++++++++-----
+ .../components/hone/guide/guideSteps.test.ts  |  74 +++++++++---
+ .../src/components/hone/guide/guideSteps.ts   |  65 ++++++++++-
+ .../src/components/hone/guide/guideStore.ts   |  26 ++++-
+ .../src/components/hone/guide/guideText.ts    |  27 +++++
+ apps/web/src/state/hone.ts                    |   4 +
+ packages/contracts/src/hone.ts                |  11 ++
+ packages/contracts/src/rpc.ts                 |  10 ++
+ 16 files changed, 472 insertions(+), 55 deletions(-)
+
+diff --git a/apps/server/scripts/hone-pi-turn-cache.ts b/apps/server/scripts/hone-pi-turn-cache.ts
+index 8a32f420..7a22cee2 100644
+--- a/apps/server/scripts/hone-pi-turn-cache.ts
++++ b/apps/server/scripts/hone-pi-turn-cache.ts
+@@ -20,6 +20,11 @@ export interface TurnKeyInput {
+   readonly model: PiModelChoice | null;
+   readonly thinkingLevel: string | null;
+   readonly cwd: string;
++  /**
++   * AGENTS.md as the next Pi start will find it. Hone's Pi extension writes the current version
++   * into the folder when Pi starts, so a check made before that passes it here.
++   */
++  readonly agentsMd?: string;
+ }
+ 
+ /** A file t3code saved for an upload, named in the prompt as `[Attached file "name" is saved at: path]`. */
+@@ -131,7 +136,11 @@ function turnKeyFor(
+     ATTACHMENT_PATTERN,
+     (_match, name: string, saved: string) => `[Attached "${name}" ${fileHash(saved)}]`,
+   );
+-  const folder = folderSnapshot(input.cwd);
++  let folder = folderSnapshot(input.cwd);
++  if (input.agentsMd !== undefined) {
++    folder.set("AGENTS.md", sha256(input.agentsMd));
++    folder = new Map([...folder].toSorted(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
++  }
+   const counted = linkedFiles(input.message).add("AGENTS.md");
+   return sha256(
+     JSON.stringify({
+@@ -236,3 +245,53 @@ export function changedFiles(
+   }
+   return changed;
+ }
++
++/** The directories `HONE_TURN_CACHE_DIR` names, the first one being where new recordings go. */
++export function turnCacheDirs(value: string | undefined): string[] {
++  return (value ?? "").split(NodePath.delimiter).filter(Boolean);
++}
++
++/**
++ * Whether a new chat in `cwd` whose first prompt is `prompt` would replay a recording now. It
++ * looks for a recording of that prompt, on `model` when one is given, whose key the project
++ * folder still produces with the recorded model and thinking level.
++ */
++export function wouldReplay(input: {
++  readonly dirs: ReadonlyArray<string>;
++  readonly cwd: string;
++  readonly prompt: string;
++  readonly model: PiModelChoice | null;
++  readonly agentsMd?: string;
++}): boolean {
++  const prompt = normalizePrompt(input.prompt);
++  for (const dir of input.dirs) {
++    let names: string[];
++    try {
++      names = NodeFS.readdirSync(dir).filter((name) => name.endsWith(".json"));
++    } catch {
++      continue;
++    }
++    for (const name of names) {
++      const recording = readRecording(dir, name.slice(0, -".json".length));
++      if (recording === null || recording.attachments.length > 0) continue;
++      if (normalizePrompt(recording.prompt) !== prompt) continue;
++      const model = recording.source.model;
++      if (
++        input.model !== null &&
++        (model?.provider !== input.model.provider || model.modelId !== input.model.modelId)
++      ) {
++        continue;
++      }
++      const keys = turnKeys({
++        message: recording.prompt,
++        images: [],
++        model,
++        thinkingLevel: recording.source.thinkingLevel,
++        cwd: input.cwd,
++        ...(input.agentsMd === undefined ? {} : { agentsMd: input.agentsMd }),
++      });
++      if (keys.includes(recording.key)) return true;
++    }
++  }
++  return false;
++}
+diff --git a/apps/server/scripts/hone-pi.test.ts b/apps/server/scripts/hone-pi.test.ts
+index 7404829a..59e7e56f 100644
+--- a/apps/server/scripts/hone-pi.test.ts
++++ b/apps/server/scripts/hone-pi.test.ts
+@@ -7,7 +7,14 @@ import * as NodeURL from "node:url";
+ 
+ import { describe, expect, it } from "@effect/vitest";
+ 
+-import { applyReplacements, promptAttachments, turnKey, turnKeys } from "./hone-pi-turn-cache.ts";
++import {
++  applyReplacements,
++  promptAttachments,
++  TURN_RECORDING_VERSION,
++  turnKey,
++  turnKeys,
++  wouldReplay,
++} from "./hone-pi-turn-cache.ts";
+ 
+ const WRAPPER = NodeURL.fileURLToPath(new URL("./hone-pi.ts", import.meta.url));
+ 
+@@ -178,3 +185,70 @@ describe("turnKey", () => {
+     expect(turnKeys(input(canonical))).toHaveLength(2);
+   });
+ });
++
++describe("wouldReplay", () => {
++  it("finds a recording only while the project still produces its key", () => {
++    const root = NodeFS.mkdtempSync(NodePath.join(NodeOS.tmpdir(), "hone-pi-retry-"));
++    const project = NodePath.join(root, "project");
++    const cache = NodePath.join(root, "cache");
++    NodeFS.mkdirSync(project);
++    NodeFS.mkdirSync(cache);
++    NodeFS.writeFileSync(NodePath.join(project, "AGENTS.md"), "Leave out a £0 bonus.");
++    NodeFS.writeFileSync(NodePath.join(project, "Offer.pdf"), "first letter");
++    const prompt = "Prepare the letter.";
++    const model = { provider: "p", modelId: "m" };
++    const key = turnKey({
++      message: prompt,
++      images: [],
++      model,
++      thinkingLevel: "high",
++      cwd: project,
++    });
++    NodeFS.writeFileSync(
++      NodePath.join(cache, `${key}.json`),
++      JSON.stringify({
++        version: TURN_RECORDING_VERSION,
++        key,
++        recordedAt: "2026-11-12T00:00:00.000Z",
++        source: { sessionId: "s", sessionFile: "f", cwd: project, model, thinkingLevel: "high" },
++        prompt,
++        attachments: [],
++        events: [],
++        files: [],
++        session: "",
++      }),
++    );
++    const check = (input: { prompt?: string; model?: typeof model | null }) =>
++      wouldReplay({
++        dirs: [NodePath.join(root, "missing"), cache],
++        cwd: project,
++        prompt: input.prompt ?? prompt,
++        model: input.model === undefined ? model : input.model,
++      });
++
++    expect(check({})).toBe(true);
++    expect(check({ prompt: " Prepare  the letter. " })).toBe(true);
++    expect(check({ model: null })).toBe(true);
++    expect(check({ prompt: "Prepare another letter." })).toBe(false);
++    expect(check({ model: { provider: "p", modelId: "other" } })).toBe(false);
++    // Rewriting a letter keeps the key, a new AGENTS.md or a new file name does not.
++    NodeFS.writeFileSync(NodePath.join(project, "Offer.pdf"), "second letter");
++    expect(check({})).toBe(true);
++    NodeFS.writeFileSync(NodePath.join(project, "AGENTS.md"), "Older rules.");
++    expect(check({})).toBe(false);
++    // Pi's Hone extension writes the current AGENTS.md when the chat starts.
++    expect(
++      wouldReplay({
++        dirs: [cache],
++        cwd: project,
++        prompt,
++        model,
++        agentsMd: "Leave out a £0 bonus.",
++      }),
++    ).toBe(true);
++    NodeFS.writeFileSync(NodePath.join(project, "AGENTS.md"), "Leave out a £0 bonus.");
++    NodeFS.writeFileSync(NodePath.join(project, "Other.pdf"), "x");
++    expect(check({})).toBe(false);
++    NodeFS.rmSync(root, { recursive: true, force: true });
++  });
++});
+diff --git a/apps/server/scripts/hone-pi.ts b/apps/server/scripts/hone-pi.ts
+index 7d9cf71e..dd3da115 100755
+--- a/apps/server/scripts/hone-pi.ts
++++ b/apps/server/scripts/hone-pi.ts
+@@ -18,6 +18,7 @@ import {
+   sessionHasUserMessage,
+   TURN_RECORDING_VERSION,
+   type TurnRecording,
++  turnCacheDirs,
+   turnKeys,
+ } from "./hone-pi-turn-cache.ts";
+ 
+@@ -25,7 +26,7 @@ type PiRecord = Record<string, unknown>;
+ 
+ const args = process.argv.slice(2);
+ // The first folder takes new recordings. A replay looks in each, in order.
+-const cacheDirs = (process.env.HONE_TURN_CACHE_DIR ?? "").split(NodePath.delimiter).filter(Boolean);
++const cacheDirs = turnCacheDirs(process.env.HONE_TURN_CACHE_DIR);
+ const cacheDir = cacheDirs[0] ?? null;
+ const recordTurns = process.env.HONE_TURN_CACHE_RECORD === "1";
+ const maxGapMs = Number(process.env.HONE_TURN_CACHE_MAX_GAP_MS) || 1500;
+@@ -220,8 +221,7 @@ async function replay(recording: TurnRecording, prompt: PiRecord) {
+   let clock = 0;
+   let nextFile = 0;
+   for (const { at, record } of recording.events) {
+-    if (!state.finishNow)
+-      await sleep(Math.min(Math.max(0, (at - clock) / speed), maxGapMs));
++    if (!state.finishNow) await sleep(Math.min(Math.max(0, (at - clock) / speed), maxGapMs));
+     clock = at;
+     for (; nextFile < recording.files.length && recording.files[nextFile]!.at <= at; nextFile++) {
+       const file = recording.files[nextFile]!;
+diff --git a/apps/server/src/auth/RpcAuthorization.ts b/apps/server/src/auth/RpcAuthorization.ts
+index 6718ce4f..5d3d6dea 100644
+--- a/apps/server/src/auth/RpcAuthorization.ts
++++ b/apps/server/src/auth/RpcAuthorization.ts
+@@ -167,6 +167,7 @@ export const RPC_REQUIRED_SCOPES = {
+   [WS_METHODS.honeThreadFeedback]: AuthOrchestrationReadScope,
+   [WS_METHODS.honeDemoReset]: AuthOrchestrationOperateScope,
+   [WS_METHODS.honeGuideUnlock]: AuthOrchestrationReadScope,
++  [WS_METHODS.honeGuideRetry]: AuthOrchestrationReadScope,
+   [WS_METHODS.mcpAppsCallTool]: AuthOrchestrationOperateScope,
+   [WS_METHODS.mcpAppsToolInfo]: AuthOrchestrationReadScope,
+   [WS_METHODS.mcpAppsReadResource]: AuthOrchestrationReadScope,
+diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
+index 01f98442..fcaf5c0d 100644
+--- a/apps/server/src/hone/Hone.ts
++++ b/apps/server/src/hone/Hone.ts
+@@ -34,6 +34,12 @@ const HoneConfig = Config.all({
+   guideIdleVideoSeconds: Config.Int("HONE_GUIDE_IDLE_VIDEO_SECONDS").pipe(Config.withDefault(30)),
+   guideIdleResetSeconds: Config.Int("HONE_GUIDE_IDLE_RESET_SECONDS").pipe(Config.withDefault(300)),
+   guidePin: Config.Redacted("HONE_GUIDE_PIN").pipe(Config.option),
++  // The agent turn cache that apps/server/scripts/hone-pi.ts reads and records into.
++  turnCacheDir: Config.String("HONE_TURN_CACHE_DIR").pipe(Config.withDefault("")),
++  turnCacheRecord: Config.String("HONE_TURN_CACHE_RECORD").pipe(
++    Config.map((value) => value === "1"),
++    Config.withDefault(false),
++  ),
+ });
+ 
+ type HoneConfig = typeof HoneConfig extends Config.Config<infer A> ? A : never;
+diff --git a/apps/server/src/hone/HoneDemo.ts b/apps/server/src/hone/HoneDemo.ts
+index 8708ff2b..a3018faa 100644
+--- a/apps/server/src/hone/HoneDemo.ts
++++ b/apps/server/src/hone/HoneDemo.ts
+@@ -2,6 +2,8 @@ import {
+   CommandId,
+   HoneError,
+   type HoneDemoResetResult,
++  type HoneGuideRetryInput,
++  type HoneGuideRetryResult,
+   type ModelSelection,
+   ProjectId,
+   ProviderInstanceId,
+@@ -22,6 +24,7 @@ import * as Schema from "effect/Schema";
+ import * as Semaphore from "effect/Semaphore";
+ import { FetchHttpClient, HttpClient, HttpClientRequest } from "effect/http";
+ 
++import { turnCacheDirs, wouldReplay } from "../../scripts/hone-pi-turn-cache.ts";
+ import * as ServerConfig from "../config.ts";
+ import * as EventSink from "../orchestration-v2/EventSink.ts";
+ import * as ProjectService from "../project/ProjectService.ts";
+@@ -69,6 +72,8 @@ export class HoneDemo extends Context.Service<
+     readonly reset: Effect.Effect<HoneDemoResetResult, HoneError>;
+     /** Resets once Hone answers, when the server runs with HONE_DEMO=1. */
+     readonly resetAtStartup: Effect.Effect<void>;
++    /** Whether the guide can have the visitor send its request again without a model call. */
++    readonly guideRetry: (input: HoneGuideRetryInput) => Effect.Effect<HoneGuideRetryResult>;
+   }
+ >()("t3/hone/HoneDemo") {}
+ 
+@@ -249,7 +254,53 @@ const make = Effect.gen(function* () {
+     Effect.catch((error) => Effect.logError("Could not seed the Hone demo", { cause: error })),
+   );
+ 
+-  return { reset, resetAtStartup } satisfies HoneDemo["Service"];
++  const guideRetry = Effect.fn("HoneDemo.guideRetry")(
++    function* (input: HoneGuideRetryInput) {
++      const config = yield* readHoneConfig;
++      if (!config.demo) return { available: false };
++      // A recording visit sends the request to the model and keeps the turn.
++      if (config.turnCacheRecord) return { available: true };
++      const cwd = yield* projectFolder;
++      const [provider, ...modelId] = config.demoModel.split("/");
++      const model =
++        config.demoModel === "default" || provider === undefined || modelId.length === 0
++          ? null
++          : { provider, modelId: modelId.join("/") };
++      // Hone's Pi extension writes the current AGENTS.md into the folder when the chat's Pi
++      // starts, so the check reads it from Hone. Offline, Pi keeps the file on disk.
++      const agentsMd = Option.isNone(config.url)
++        ? null
++        : yield* http
++            .execute(
++              HttpClientRequest.get(`${honeBaseUrl(config.url.value)}/agents.md`).pipe(
++                Option.isSome(config.token)
++                  ? HttpClientRequest.bearerToken(config.token.value)
++                  : (request) => request,
++              ),
++            )
++            .pipe(
++              Effect.flatMap((response) =>
++                response.status === 200 ? response.text : Effect.succeed(null),
++              ),
++              Effect.timeout("3 seconds"),
++              Effect.orElseSucceed(() => null),
++            );
++      const dirs = turnCacheDirs(config.turnCacheDir);
++      const available = yield* Effect.sync(() =>
++        wouldReplay({
++          dirs,
++          cwd,
++          prompt: input.prompt,
++          model,
++          ...(agentsMd === null ? {} : { agentsMd }),
++        }),
++      );
++      return { available } satisfies HoneGuideRetryResult;
++    },
++    Effect.orElseSucceed(() => ({ available: false }) satisfies HoneGuideRetryResult),
++  );
++
++  return { reset, resetAtStartup, guideRetry } satisfies HoneDemo["Service"];
+ });
+ 
+ export const layer = Layer.effect(HoneDemo, make).pipe(Layer.provide(FetchHttpClient.layer));
+diff --git a/apps/server/src/observability/RpcInstrumentation.ts b/apps/server/src/observability/RpcInstrumentation.ts
+index 2782eaf5..da985f93 100644
+--- a/apps/server/src/observability/RpcInstrumentation.ts
++++ b/apps/server/src/observability/RpcInstrumentation.ts
+@@ -170,6 +170,7 @@ const RPC_AGGREGATES = {
+   [WS_METHODS.honeThreadFeedback]: "hone",
+   [WS_METHODS.honeDemoReset]: "hone",
+   [WS_METHODS.honeGuideUnlock]: "hone",
++  [WS_METHODS.honeGuideRetry]: "hone",
+   [WS_METHODS.mcpAppsCallTool]: "provider",
+   [WS_METHODS.mcpAppsToolInfo]: "provider",
+   [WS_METHODS.mcpAppsUpdateModelContext]: "provider",
+diff --git a/apps/server/src/ws.ts b/apps/server/src/ws.ts
+index cf7921c0..0f3dfd80 100644
+--- a/apps/server/src/ws.ts
++++ b/apps/server/src/ws.ts
+@@ -2488,6 +2488,7 @@ export const layerWsRpc = (
+         [WS_METHODS.honeThreadFeedback]: (input) => Hone.honeThreadFeedback(input),
+         [WS_METHODS.honeDemoReset]: (_input) => honeDemo.reset,
+         [WS_METHODS.honeGuideUnlock]: (input) => Hone.honeGuideUnlock(input),
++        [WS_METHODS.honeGuideRetry]: (input) => honeDemo.guideRetry(input),
+         [WS_METHODS.serverUpdateProvider]: (input) =>
+           providerMaintenanceRunner.updateProvider(input),
+         [WS_METHODS.providerConsumeResetCredit]:
+diff --git a/apps/web/src/components/hone/guide/GuideLayer.tsx b/apps/web/src/components/hone/guide/GuideLayer.tsx
+index 189e611b..d932b724 100644
+--- a/apps/web/src/components/hone/guide/GuideLayer.tsx
++++ b/apps/web/src/components/hone/guide/GuideLayer.tsx
+@@ -11,13 +11,18 @@ import { cn } from "~/lib/utils";
+ import { useThreadRouteTarget } from "~/hooks/useThreadRouteTarget";
+ import { useRightPanelStore } from "~/rightPanelStore";
+ import { usePrimaryEnvironmentId } from "~/state/environments";
++import { honeEnvironment } from "~/state/hone";
+ import { useEnvironmentThread } from "~/state/threads";
++import { useAtomCommand } from "~/state/use-atom-command";
+ import { useHoneStatus } from "../../chat/HoneControls";
+ import { Button } from "../../ui/button";
+ import { QRCodeSvg } from "../../ui/qr-code";
+ import {
++  countedSteps,
+   GUIDE_STEPS,
++  type GuideChat,
+   type GuideFacts,
++  type GuideRetry,
+   type GuideSignal,
+   type GuideStep,
+   guideFactsKey,
+@@ -35,8 +40,6 @@ const VISITOR_FILES = {
+ };
+ const RUNNING = new Set(["preparing", "queued", "starting", "running"]);
+ const ACTIVITY_EVENTS = ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"] as const;
+-/** Steps between the welcome and closing cards, the ones the progress counts. */
+-const COUNTED_STEPS = GUIDE_STEPS.length - 2;
+ 
+ /** The booth guide. Shown over the chat routes while guide mode is on in the booth demo. */
+ export function GuideLayer() {
+@@ -54,8 +57,10 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+   const runQuick = useGuideStore((state) => state.runQuick);
+   const runFailed = useGuideStore((state) => state.runFailed);
+   const visitorChat = useGuideStore((state) => state.visitorChat);
++  const retryChat = useGuideStore((state) => state.retryChat);
++  const retry = useGuideStore((state) => state.retry);
+   const signalSet = new Set<GuideSignal>(signals);
+-  const facts = useGuideFacts(visitorChat);
++  const facts = useGuideFacts(visitorChat, retryChat, retry);
+   const factsKey = guideFactsKey(facts, signalSet);
+   const current = GUIDE_STEPS[step]!;
+   const resetting = useGuideStore((state) => state.resetting);
+@@ -72,6 +77,7 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+ 
+   useVisitorChatLatch(current);
+   usePrefilledRequest(current);
++  useRetryCheck(current, signalSet.has("versions-open"));
+   useFrameEvents();
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- tells the Hone frame which control to outline for this step
+   useEffect(() => {
+@@ -93,7 +99,9 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+       ? guideText.watchLong
+       : current.id === "start" && runFailed
+         ? guideText.startAgain
+-        : guideText.steps[current.id];
++        : current.id === "done" && retry === "open"
++          ? guideText.doneRetry
++          : guideText.steps[current.id];
+   const rect = useTargetRect(current);
+ 
+   return (
+@@ -115,6 +123,7 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+         <StepCard
+           rect={rect}
+           index={step}
++          total={countedSteps(retry)}
+           text={text}
+           onBack={() => useGuideStore.getState().goTo(step - 1, factsKey)}
+           onSkip={() => useGuideStore.getState().goTo(step + 1, factsKey)}
+@@ -132,24 +141,21 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+   );
+ }
+ 
+-function useGuideFacts(visitorChat: string | null): GuideFacts {
++function useGuideFacts(
++  visitorChat: string | null,
++  retryChat: string | null,
++  retry: GuideRetry,
++): GuideFacts {
+   const pathname = useLocation({ select: (location) => location.pathname });
+   const target = useThreadRouteTarget();
+-  const visitorRef = visitorChat === null ? null : parseScopedThreadKey(visitorChat);
+-  const visitorState = useEnvironmentThread(
+-    visitorRef?.environmentId ?? null,
+-    visitorRef?.threadId ?? null,
+-  );
+-  const projection = Option.getOrNull(visitorState.data);
++  const visitor = useChatProgress(visitorChat);
++  const second = useChatProgress(retryChat);
+   const currentKey = target?.kind === "server" ? scopedThreadKey(target.threadRef) : null;
+   const openFile = useRightPanelStore((state) => {
+     const panel = currentKey === null ? undefined : state.byThreadKey[currentKey];
+     const active = panel?.isOpen === true ? panel.activeSurfaceId : null;
+     return active?.startsWith("file:") ? active.slice("file:".length) : null;
+   });
+-  const sent = projection?.turnItems.some((item) => item.type === "user_message") ?? false;
+-  const replied = projection?.turnItems.some((item) => item.type === "assistant_message") ?? false;
+-  const running = projection?.runs.some((run) => RUNNING.has(run.status)) ?? false;
+   const page: GuideFacts["page"] =
+     pathname === "/hone"
+       ? "hone"
+@@ -162,12 +168,28 @@ function useGuideFacts(visitorChat: string | null): GuideFacts {
+             : "other";
+   return {
+     page,
+-    visitorChat: visitorChat === null ? null : { sent, replied, running },
++    visitorChat: visitor,
+     onVisitorChat: currentKey !== null && currentKey === visitorChat,
++    retryChat: second,
++    onRetryChat: currentKey !== null && currentKey === retryChat,
++    retry,
+     openFile,
+   };
+ }
+ 
++/** Where a chat the visitor started stands, from its scoped key. */
++function useChatProgress(chat: string | null): GuideChat | null {
++  const ref = chat === null ? null : parseScopedThreadKey(chat);
++  const state = useEnvironmentThread(ref?.environmentId ?? null, ref?.threadId ?? null);
++  const projection = Option.getOrNull(state.data);
++  if (chat === null) return null;
++  return {
++    sent: projection?.turnItems.some((item) => item.type === "user_message") ?? false,
++    replied: projection?.turnItems.some((item) => item.type === "assistant_message") ?? false,
++    running: projection?.runs.some((run) => RUNNING.has(run.status)) ?? false,
++  };
++}
++
+ /** A draft becomes a chat when the visitor sends it, which is how the guide knows their chat. */
+ function useVisitorChatLatch(current: GuideStep) {
+   const target = useThreadRouteTarget();
+@@ -177,11 +199,23 @@ function useVisitorChatLatch(current: GuideStep) {
+     const was = previousKind.current;
+     previousKind.current = target?.kind ?? null;
+     if (target?.kind !== "server" || was !== "draft") return;
+-    if (current.id !== "new-chat" && current.id !== "send") return;
+-    useGuideStore.getState().setVisitorChat(scopedThreadKey(target.threadRef));
++    const key = scopedThreadKey(target.threadRef);
++    if (current.id === "new-chat" || current.id === "send") {
++      useGuideStore.getState().setVisitorChat(key);
++    } else if (current.id === "retry-new-chat" || current.id === "retry-send") {
++      useGuideStore.getState().setRetryChat(key);
++    }
+   }, [target, current.id]);
+ }
+ 
++/** The request the visitor sends, word for word the one the recorded chats sent. */
++function guideRequest(): string {
++  return guideText.prompt({
++    approval: serializeComposerFileLink(VISITOR_FILES.approval),
++    template: serializeComposerFileLink(VISITOR_FILES.template),
++  });
++}
++
+ /** Writes the request into the new chat, word for word the one the recorded chat sent. */
+ function usePrefilledRequest(current: GuideStep) {
+   const target = useThreadRouteTarget();
+@@ -189,18 +223,34 @@ function usePrefilledRequest(current: GuideStep) {
+   const draftId = target?.kind === "draft" ? target.draftId : null;
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- fills the visitor's new chat once, when the guide asks them to send it
+   useEffect(() => {
+-    if (current.id !== "send" || draftId === null || filled.current === draftId) return;
++    if (current.id !== "send" && current.id !== "retry-send") return;
++    if (draftId === null || filled.current === draftId) return;
+     filled.current = draftId;
+-    useComposerDraftStore.getState().setPrompt(
+-      draftId,
+-      guideText.prompt({
+-        approval: serializeComposerFileLink(VISITOR_FILES.approval),
+-        template: serializeComposerFileLink(VISITOR_FILES.template),
+-      }),
+-    );
++    useComposerDraftStore.getState().setPrompt(draftId, guideRequest());
+   }, [current.id, draftId]);
+ }
+ 
++/**
++ * Once Versions shows the new rule, asks the server whether the request can go out again without
++ * a model call. Until it answers the guide stays on Versions, and a failed answer closes the retry.
++ */
++function useRetryCheck(current: GuideStep, versionsOpen: boolean) {
++  const environmentId = usePrimaryEnvironmentId();
++  const check = useAtomCommand(honeEnvironment.guideRetry, { reportFailure: false });
++  const asked = useRef(false);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- asks the server once per visit whether the second chat can complete
++  useEffect(() => {
++    if (current.id !== "versions" || !versionsOpen || environmentId === null) return;
++    if (asked.current || useGuideStore.getState().retry !== "unknown") return;
++    asked.current = true;
++    void check({ environmentId, input: { prompt: guideRequest() } }).then((result) => {
++      asked.current = false;
++      const open = result._tag === "Success" && result.value.available;
++      useGuideStore.getState().setRetry(open ? "open" : "closed");
++    });
++  }, [current.id, versionsOpen, environmentId, check]);
++}
++
+ function useFrameEvents() {
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- listens to the Hone frame's messages while the guide is shown
+   useEffect(() => {
+@@ -354,6 +404,7 @@ function cardPosition(rect: DOMRect | null, height: number): CSSProperties {
+ function StepCard(props: {
+   readonly rect: DOMRect | null;
+   readonly index: number;
++  readonly total: number;
+   readonly text: GuideStepText;
+   readonly onBack: () => void;
+   readonly onSkip: () => void;
+@@ -379,11 +430,11 @@ function StepCard(props: {
+       style={{ width: CARD_WIDTH, ...cardPosition(props.rect, height) }}
+     >
+       <div className="flex items-center gap-2 text-muted-foreground text-xs">
+-        <span className="tabular-nums">{guideText.progress(props.index, COUNTED_STEPS)}</span>
++        <span className="tabular-nums">{guideText.progress(props.index, props.total)}</span>
+         <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+           <div
+             className="h-full rounded-full bg-primary transition-[width] duration-300"
+-            style={{ width: `${(props.index / COUNTED_STEPS) * 100}%` }}
++            style={{ width: `${(props.index / props.total) * 100}%` }}
+           />
+         </div>
+       </div>
+diff --git a/apps/web/src/components/hone/guide/guideSteps.test.ts b/apps/web/src/components/hone/guide/guideSteps.test.ts
+index 0c506281..08e4dead 100644
+--- a/apps/web/src/components/hone/guide/guideSteps.test.ts
++++ b/apps/web/src/components/hone/guide/guideSteps.test.ts
+@@ -1,10 +1,24 @@
+ import { describe, expect, it } from "vite-plus/test";
+ 
+-import { GUIDE_STEPS, type GuideFacts, type GuideSignal, settledStep } from "./guideSteps";
++import {
++  countedSteps,
++  GUIDE_STEPS,
++  type GuideFacts,
++  type GuideSignal,
++  settledStep,
++} from "./guideSteps";
+ import { GUIDE_STRINGS } from "./guideText";
+ import { parseHoneFrameData } from "./honeFrame";
+ 
+-const idle: GuideFacts = { page: "draft", visitorChat: null, onVisitorChat: false, openFile: null };
++const idle: GuideFacts = {
++  page: "draft",
++  visitorChat: null,
++  onVisitorChat: false,
++  retryChat: null,
++  onRetryChat: false,
++  retry: "unknown",
++  openFile: null,
++};
+ const at = (id: string) => GUIDE_STEPS.findIndex((step) => step.id === id);
+ const signals = (...names: GuideSignal[]) => new Set(names);
+ 
+@@ -41,17 +55,44 @@ describe("settledStep", () => {
+     ).toBe(at("open-letter"));
+   });
+ 
+-  it("ends on the closing card", () => {
+-    const all = signals(
+-      "started",
+-      "feedback-expanded",
+-      "thumbs-down-open",
+-      "feedback-down-saved",
+-      "run-started",
+-      "run-finished",
+-      "versions-open",
+-    );
+-    expect(settledStep(at("batch"), { ...idle, page: "hone" }, all)).toBe(at("done"));
++  const all = signals(
++    "started",
++    "feedback-expanded",
++    "thumbs-down-open",
++    "feedback-down-saved",
++    "run-started",
++    "run-finished",
++    "versions-open",
++  );
++
++  it("waits on Versions until the server says whether the retry is open", () => {
++    expect(settledStep(at("batch"), { ...idle, page: "hone" }, all)).toBe(at("versions"));
++  });
++
++  it("goes to the closing card when the retry is closed", () => {
++    const closed = { ...idle, page: "hone" as const, retry: "closed" as const };
++    expect(settledStep(at("batch"), closed, all)).toBe(at("done"));
++    expect(countedSteps("closed")).toBe(at("versions"));
++  });
++
++  it("walks the second chat when the retry is open", () => {
++    const open = { ...idle, page: "hone" as const, retry: "open" as const };
++    expect(settledStep(at("batch"), open, all)).toBe(at("retry-new-chat"));
++    const draft = { ...open, page: "draft" as const };
++    expect(settledStep(at("retry-new-chat"), draft, all)).toBe(at("retry-send"));
++    const working = {
++      ...draft,
++      page: "thread" as const,
++      onRetryChat: true,
++      retryChat: { sent: true, replied: false, running: true },
++    };
++    expect(settledStep(at("retry-send"), working, all)).toBe(at("retry-working"));
++    expect(GUIDE_STEPS[at("retry-working")]!.busy?.(working, all)).toBe(true);
++    const replied = { ...working, retryChat: { sent: true, replied: true, running: false } };
++    expect(settledStep(at("retry-working"), replied, all)).toBe(at("retry-letter"));
++    const letter = { ...replied, openFile: "Offer_Osei_Amara.pdf" };
++    expect(settledStep(at("retry-letter"), letter, all)).toBe(at("done"));
++    expect(countedSteps("open")).toBe(at("retry-letter"));
+   });
+ });
+ 
+@@ -65,7 +106,12 @@ describe("guide text", () => {
+   it.each(languages)(
+     "keeps %s sentences free of colons, semicolons and dashes",
+     (_language, strings) => {
+-      const cards = [...Object.values(strings.steps), strings.watchLong, strings.startAgain];
++      const cards = [
++        ...Object.values(strings.steps),
++        strings.watchLong,
++        strings.startAgain,
++        strings.doneRetry,
++      ];
+       const text = cards.flatMap((card) => [card.title, card.body, card.next ?? ""]);
+       for (const line of text) expect(line).not.toMatch(/[:;\u2013\u2014]/);
+     },
+diff --git a/apps/web/src/components/hone/guide/guideSteps.ts b/apps/web/src/components/hone/guide/guideSteps.ts
+index 52656b09..a8703fc4 100644
+--- a/apps/web/src/components/hone/guide/guideSteps.ts
++++ b/apps/web/src/components/hone/guide/guideSteps.ts
+@@ -14,6 +14,10 @@ export type GuideStepId =
+   | "start"
+   | "watch"
+   | "versions"
++  | "retry-new-chat"
++  | "retry-send"
++  | "retry-working"
++  | "retry-letter"
+   | "done";
+ 
+ /** Events that happened during this visit. They stay set until the guide starts over. */
+@@ -26,16 +30,29 @@ export type GuideSignal =
+   | "run-finished"
+   | "versions-open";
+ 
++/** Where a chat the visitor started stands. */
++export interface GuideChat {
++  readonly sent: boolean;
++  readonly replied: boolean;
++  readonly running: boolean;
++}
++
++/**
++ * Whether the visitor can send the request again once the run is done. It is open only when
++ * that chat completes without a model call, from a turn cache recording or a recording visit.
++ */
++export type GuideRetry = "unknown" | "open" | "closed";
++
+ /** What the screen shows right now. */
+ export interface GuideFacts {
+   readonly page: "home" | "thread" | "draft" | "hone" | "other";
+   /** The chat the visitor started in this visit, once it exists. */
+-  readonly visitorChat: {
+-    readonly sent: boolean;
+-    readonly replied: boolean;
+-    readonly running: boolean;
+-  } | null;
++  readonly visitorChat: GuideChat | null;
+   readonly onVisitorChat: boolean;
++  /** The second chat, where the visitor sends the same request after the run. */
++  readonly retryChat: GuideChat | null;
++  readonly onRetryChat: boolean;
++  readonly retry: GuideRetry;
+   /** The file open in the right panel of the shown chat, relative to the project. */
+   readonly openFile: string | null;
+ }
+@@ -51,6 +68,8 @@ export interface GuideStep {
+   readonly done: (facts: GuideFacts, signals: ReadonlySet<GuideSignal>) => boolean;
+   /** Idle time does not count while this holds. A visitor watching work is not idle. */
+   readonly busy?: (facts: GuideFacts, signals: ReadonlySet<GuideSignal>) => boolean;
++  /** A step of the second chat, shown only while the retry is open. */
++  readonly retry?: true;
+ }
+ 
+ /** The letter the visitor's chat writes. */
+@@ -121,7 +140,35 @@ export const GUIDE_STEPS: ReadonlyArray<GuideStep> = [
+   {
+     id: "versions",
+     target: { kind: "frame", highlight: "nav/versions" },
+-    done: (_f, s) => s.has("versions-open"),
++    // The guide asks whether the retry is open once Versions shows, and waits for the answer.
++    done: (f, s) => s.has("versions-open") && f.retry !== "unknown",
++  },
++  {
++    id: "retry-new-chat",
++    retry: true,
++    target: { kind: "page", selector: 'button[aria-label="New thread"]' },
++    done: (f) => f.retry !== "open" || f.page === "draft" || f.retryChat !== null,
++  },
++  {
++    id: "retry-send",
++    retry: true,
++    target: { kind: "page", selector: 'form button[type="submit"][aria-label="Submit message"]' },
++    done: (f) => f.retry !== "open" || f.retryChat?.sent === true,
++  },
++  {
++    id: "retry-working",
++    retry: true,
++    target: null,
++    done: (f) => f.retry !== "open" || (f.retryChat?.replied === true && !f.retryChat.running),
++    busy: (f) => f.retryChat?.running === true,
++  },
++  {
++    id: "retry-letter",
++    retry: true,
++    target: { kind: "page", selector: '[data-item-path="Offer_Osei_Amara.pdf"]' },
++    done: (f) =>
++      f.retry !== "open" ||
++      (f.onRetryChat && f.openFile !== null && OUTPUT_LETTER.test(f.openFile)),
+   },
+   { id: "done", target: null, done: () => false },
+ ];
+@@ -137,6 +184,12 @@ export function settledStep(
+   return at;
+ }
+ 
++/** Steps between the welcome and closing cards, the ones the progress counts. */
++export function countedSteps(retry: GuideRetry): number {
++  const steps = GUIDE_STEPS.filter((step) => retry === "open" || step.retry !== true);
++  return steps.length - 2;
++}
++
+ /** A key that changes whenever anything a step could wait for changes. */
+ export function guideFactsKey(facts: GuideFacts, signals: ReadonlySet<GuideSignal>): string {
+   return JSON.stringify([facts, [...signals].toSorted()]);
+diff --git a/apps/web/src/components/hone/guide/guideStore.ts b/apps/web/src/components/hone/guide/guideStore.ts
+index ad4c8cd4..99f66068 100644
+--- a/apps/web/src/components/hone/guide/guideStore.ts
++++ b/apps/web/src/components/hone/guide/guideStore.ts
+@@ -2,7 +2,7 @@ import { create } from "zustand";
+ import { createJSONStorage, persist } from "zustand/middleware";
+ 
+ import { resolveStorage } from "~/lib/storage";
+-import { GUIDE_STEPS, type GuideSignal } from "./guideSteps";
++import { GUIDE_STEPS, type GuideRetry, type GuideSignal } from "./guideSteps";
+ import { guideText } from "./guideText";
+ 
+ interface GuideState {
+@@ -14,6 +14,10 @@ interface GuideState {
+   readonly heldAt: string | null;
+   /** The scoped key of the chat the visitor started, once it exists. */
+   readonly visitorChat: string | null;
++  /** The scoped key of the second chat, sent after the run, once it exists. */
++  readonly retryChat: string | null;
++  /** Whether the second chat is offered, asked of the server once the run is done. */
++  readonly retry: GuideRetry;
+   /** Whether the visitor's optimization replays a recording, null until it starts. */
+   readonly runQuick: boolean | null;
+   /** The visitor's last optimization stopped with an error. */
+@@ -34,6 +38,8 @@ interface GuideState {
+   readonly goTo: (step: number, heldAt?: string | null) => void;
+   readonly signal: (signal: GuideSignal) => void;
+   readonly setVisitorChat: (key: string) => void;
++  readonly setRetryChat: (key: string) => void;
++  readonly setRetry: (retry: GuideRetry) => void;
+   readonly setRunQuick: (quick: boolean) => void;
+   /** A failed run sends the visitor back to Start optimization. */
+   readonly failRun: () => void;
+@@ -44,6 +50,8 @@ const freshVisit = {
+   signals: [],
+   heldAt: null,
+   visitorChat: null,
++  retryChat: null,
++  retry: "unknown",
+   runQuick: null,
+   runFailed: false,
+ } as const;
+@@ -71,6 +79,8 @@ export const useGuideStore = create<GuideState>()(
+             : state,
+         ),
+       setVisitorChat: (visitorChat) => set({ visitorChat }),
++      setRetryChat: (retryChat) => set({ retryChat }),
++      setRetry: (retry) => set({ retry }),
+       setRunQuick: (runQuick) => set({ runQuick, runFailed: false }),
+       failRun: () =>
+         set((state) => ({
+@@ -90,12 +100,24 @@ export const useGuideStore = create<GuideState>()(
+       storage: createJSONStorage(() =>
+         resolveStorage(typeof window !== "undefined" ? window.localStorage : undefined),
+       ),
+-      partialize: ({ on, step, signals, heldAt, visitorChat, runQuick, runFailed }) => ({
++      partialize: ({
+         on,
+         step,
+         signals,
+         heldAt,
+         visitorChat,
++        retryChat,
++        retry,
++        runQuick,
++        runFailed,
++      }) => ({
++        on,
++        step,
++        signals,
++        heldAt,
++        visitorChat,
++        retryChat,
++        retry,
+         runQuick,
+         runFailed,
+       }),
+diff --git a/apps/web/src/components/hone/guide/guideText.ts b/apps/web/src/components/hone/guide/guideText.ts
+index b6a5345d..9ed4057d 100644
+--- a/apps/web/src/components/hone/guide/guideText.ts
++++ b/apps/web/src/components/hone/guide/guideText.ts
+@@ -14,6 +14,8 @@ export interface GuideStrings {
+   readonly watchLong: GuideStepText;
+   /** The start step after a run stopped with an error. */
+   readonly startAgain: GuideStepText;
++  /** The closing card after the visitor sent the request again on the new AGENTS.md. */
++  readonly doneRetry: GuideStepText;
+   readonly progress: (step: number, total: number) => string;
+   readonly start: string;
+   readonly startOver: string;
+@@ -107,6 +109,26 @@ const en: GuideStrings = {
+       body: "Open Versions to see what changed in AGENTS.md and why.",
+       next: "Every change is a Git commit, so nothing is lost.",
+     },
++    "retry-new-chat": {
++      title: "Try it again",
++      body: "Go back to the case the agent got wrong. Press New thread to start a new chat.",
++      next: "The same request is ready to send, and the agent now reads the new AGENTS.md.",
++    },
++    "retry-send": {
++      title: "Send the same request",
++      body: "It names the same approval and the same template as before. Press send.",
++      next: "The agent writes Amara's letter again.",
++    },
++    "retry-working": {
++      title: "The agent is working again",
++      body: "Nothing changed but AGENTS.md. The agent reads the approval, fills the template and saves the letter again.",
++      next: "When it is done, you check the letter.",
++    },
++    "retry-letter": {
++      title: "Check the new letter",
++      body: "Open Offer_Osei_Amara.pdf in the Files panel and look at the compensation table.",
++      next: "This time there is no £0 bonus and no 0 shares row.",
++    },
+     done: {
+       title: "That is Hone",
+       body: "The agent now follows the new rule in every chat, with no retraining and no prompt work. Feedback became a rule the agent reads.",
+@@ -123,6 +145,11 @@ const en: GuideStrings = {
+     body: "The last run stopped with an error and changed nothing. Press Start optimization to try again.",
+     next: "Hone reviews the batch and proposes changes to AGENTS.md.",
+   },
++  doneRetry: {
++    title: "That is Hone",
++    body: "Same request, new AGENTS.md. The letter leaves out the bonus and equity lines, because the agent read the rule Hone wrote from your feedback. No retraining and no prompt work.",
++    next: "Scan the code for the source.",
++  },
+   progress: (step, total) => `Step ${step} of ${total}`,
+   start: "Start",
+   startOver: "Start over",
+diff --git a/apps/web/src/state/hone.ts b/apps/web/src/state/hone.ts
+index 0a1e8bea..5010894a 100644
+--- a/apps/web/src/state/hone.ts
++++ b/apps/web/src/state/hone.ts
+@@ -35,6 +35,10 @@ export const honeEnvironment = {
+     label: "environment-data:hone:guide-unlock",
+     tag: WS_METHODS.honeGuideUnlock,
+   }),
++  guideRetry: createEnvironmentRpcCommand(connectionAtomRuntime, {
++    label: "environment-data:hone:guide-retry",
++    tag: WS_METHODS.honeGuideRetry,
++  }),
+ };
+ 
+ /** A Pi reply Hone can take feedback on, and whether it is the thread's newest reply. */
+diff --git a/packages/contracts/src/hone.ts b/packages/contracts/src/hone.ts
+index 7064ee7c..18a116ee 100644
+--- a/packages/contracts/src/hone.ts
++++ b/packages/contracts/src/hone.ts
+@@ -75,6 +75,17 @@ export type HoneGuideUnlockInput = typeof HoneGuideUnlockInput.Type;
+ export const HoneGuideUnlockResult = Schema.Struct({ unlocked: Schema.Boolean });
+ export type HoneGuideUnlockResult = typeof HoneGuideUnlockResult.Type;
+ 
++/** The request the guide would send again in a new chat of the demo project. */
++export const HoneGuideRetryInput = Schema.Struct({ prompt: Schema.String });
++export type HoneGuideRetryInput = typeof HoneGuideRetryInput.Type;
++
++/**
++ * Whether that chat can complete without a model call: a turn cache recording replays it from
++ * the project as it stands, or HONE_TURN_CACHE_RECORD=1 records it.
++ */
++export const HoneGuideRetryResult = Schema.Struct({ available: Schema.Boolean });
++export type HoneGuideRetryResult = typeof HoneGuideRetryResult.Type;
++
+ export const HoneErrorReason = Schema.Literals([
+   "unreachable",
+   "not-published",
+diff --git a/packages/contracts/src/rpc.ts b/packages/contracts/src/rpc.ts
+index fcf0c6d2..628ece31 100644
+--- a/packages/contracts/src/rpc.ts
++++ b/packages/contracts/src/rpc.ts
+@@ -170,6 +170,8 @@ import {
+   HoneError,
+   HoneFeedbackInput,
+   HoneFeedbackResult,
++  HoneGuideRetryInput,
++  HoneGuideRetryResult,
+   HoneGuideUnlockInput,
+   HoneGuideUnlockResult,
+   HoneStatus,
+@@ -450,6 +452,7 @@ export const WS_METHODS = {
+   honeThreadFeedback: "hone.threadFeedback",
+   honeDemoReset: "hone.demoReset",
+   honeGuideUnlock: "hone.guideUnlock",
++  honeGuideRetry: "hone.guideRetry",
+   providerAuthStart: "provider.auth.start",
+   providerConsumeResetCredit: "provider.consumeResetCredit",
+   providerAuthComplete: "provider.auth.complete",
+@@ -1480,6 +1483,12 @@ const WsHoneGuideUnlockRpc = Rpc.make(WS_METHODS.honeGuideUnlock, {
+   error: EnvironmentAuthorizationError,
+ });
+ 
++const WsHoneGuideRetryRpc = Rpc.make(WS_METHODS.honeGuideRetry, {
++  payload: HoneGuideRetryInput,
++  success: HoneGuideRetryResult,
++  error: EnvironmentAuthorizationError,
++});
++
+ const WsSubscribeVcsStatusRpc = Rpc.make(WS_METHODS.subscribeVcsStatus, {
+   payload: VcsStatusSubscriptionInput,
+   success: VcsStatusStreamEvent,
+@@ -2169,6 +2178,7 @@ export const WsRpcGroup = RpcGroup.make(
+   WsHoneThreadFeedbackRpc,
+   WsHoneDemoResetRpc,
+   WsHoneGuideUnlockRpc,
++  WsHoneGuideRetryRpc,
+   WsSubscribeVcsStatusRpc,
+   WsSubscribeWorktreeSetupRpc,
+   WsWorktreeSetupCancelRpc,
+-- 
+2.43.0
+

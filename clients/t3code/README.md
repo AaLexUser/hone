@@ -36,6 +36,8 @@ folder at session start and publishes the session trace after each reply.
 | `0012` | A two second press and hold to end the booth video (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
 | `0013` | Start over in every guide step card and next to the Guide button (`apps/web/src/components/hone/guide/useGuideStartOver.ts`) |
 | `0014` | A booth video that fades in, ends only on a key or mouse press held 1.5 seconds with a ring in the hint that fills, and plays after 30 idle seconds by default (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
+| `0015` | `HONE_TURN_CACHE_SPEED`, a pace multiplier for replayed turns (`apps/server/scripts/hone-pi.ts`) |
+| `0016` | The guide's second chat after the run and the `hone.guideRetry` RPC that says whether it can replay (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/guide/guideSteps.ts`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
@@ -129,8 +131,17 @@ Skip are always there, and a bar shows the progress.
 4. Watch the agent work, open `Offer_Osei_Amara.pdf` and spot the £0 bonus and 0 shares rows.
 5. Press thumbs down. The guide writes the feedback. The visitor presses Send to Hone.
 6. Click the Hone chip, press Start optimization and watch the reviewers and the judge.
-7. Open Versions and see the new rule. The last card has a QR code to the repository and a Start
-   over button.
+7. Open Versions and see the new rule.
+8. Try it again. Start a new chat, send the same request with the same two files, watch the
+   agent work on the new AGENTS.md and open the letter, which has no £0 bonus and no 0 shares
+   row this time.
+9. The last card has a QR code to the repository and a Start over button.
+
+Step 8 shows only when its chat can finish without a model call. Once Versions shows, the guide
+asks `hone.guideRetry`. The server answers yes when a turn cache recording of the request
+replays from the project as the next chat will find it, with the AGENTS.md that Hone's Pi
+extension syncs in when Pi starts, or when `HONE_TURN_CACHE_RECORD=1` records the visit.
+Otherwise the guide goes from Versions to the last card.
 
 The steps on the Hone page follow messages the Hone dashboard posts to t3code from its frame,
 for the route, Start optimization, and the start and end of a run. Each side checks the other's
