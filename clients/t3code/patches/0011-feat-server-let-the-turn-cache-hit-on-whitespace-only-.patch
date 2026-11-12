@@ -1,0 +1,148 @@
+From 404456e2b41f4e8c50715ce07a61e3df3df5559f Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Thu, 12 Nov 2026 13:34:18 +0300
+Subject: [PATCH] feat(server): let the turn cache hit on whitespace-only
+ differences
+
+A prompt whose whitespace differs from the recorded one now hits the
+cache: the key hashes the message with whitespace runs collapsed and
+edges trimmed (key format 3). Lookup tries the new key and then the
+verbatim format-2 key, so recordings made before this change still
+replay. New recordings write format 3.
+---
+ apps/server/scripts/hone-pi-turn-cache.ts | 24 ++++++++++++++++++++---
+ apps/server/scripts/hone-pi.test.ts       | 16 ++++++++++++++-
+ apps/server/scripts/hone-pi.ts            | 10 ++++++----
+ 3 files changed, 42 insertions(+), 8 deletions(-)
+
+diff --git a/apps/server/scripts/hone-pi-turn-cache.ts b/apps/server/scripts/hone-pi-turn-cache.ts
+index b3466906..8a32f420 100644
+--- a/apps/server/scripts/hone-pi-turn-cache.ts
++++ b/apps/server/scripts/hone-pi-turn-cache.ts
+@@ -111,14 +111,23 @@ function linkedFiles(message: string): Set<string> {
+   return paths;
+ }
+ 
++/** A visitor's version of the recorded prompt may differ only in whitespace. */
++function normalizePrompt(message: string): string {
++  return message.replace(/\s+/g, " ").trim();
++}
++
+ /**
+  * The cache key. An upload's saved path changes with every upload, so the prompt counts it by
+  * name and content. The project folder counts by its file names, and by content for AGENTS.md
+  * and the files the prompt links to. Other files are left out by content, because a rebuilt
+  * demo writes the prepared letters again with a new PDF creation date.
+  */
+-export function turnKey(input: TurnKeyInput): string {
+-  const message = input.message.replace(
++function turnKeyFor(
++  input: TurnKeyInput,
++  keyFormat: number,
++  messageFor: (message: string) => string,
++): string {
++  const message = messageFor(input.message).replace(
+     ATTACHMENT_PATTERN,
+     (_match, name: string, saved: string) => `[Attached "${name}" ${fileHash(saved)}]`,
+   );
+@@ -127,7 +136,7 @@ export function turnKey(input: TurnKeyInput): string {
+   return sha256(
+     JSON.stringify({
+       version: TURN_RECORDING_VERSION,
+-      key: 2,
++      key: keyFormat,
+       message,
+       images: input.images.map((image) => [image.mimeType, sha256(image.data)]),
+       model: input.model,
+@@ -138,6 +147,15 @@ export function turnKey(input: TurnKeyInput): string {
+   );
+ }
+ 
++export function turnKey(input: TurnKeyInput): string {
++  return turnKeyFor(input, 3, normalizePrompt);
++}
++
++/** Keys to try on lookup, current format first. Format 2 keyed the prompt verbatim. */
++export function turnKeys(input: TurnKeyInput): string[] {
++  return [turnKey(input), turnKeyFor(input, 2, (message) => message)];
++}
++
+ /** Pairs of recorded and current values, longest first so a path never loses to its prefix. */
+ export function replayReplacements(
+   recording: TurnRecording,
+diff --git a/apps/server/scripts/hone-pi.test.ts b/apps/server/scripts/hone-pi.test.ts
+index 48e7af92..7404829a 100644
+--- a/apps/server/scripts/hone-pi.test.ts
++++ b/apps/server/scripts/hone-pi.test.ts
+@@ -7,7 +7,7 @@ import * as NodeURL from "node:url";
+ 
+ import { describe, expect, it } from "@effect/vitest";
+ 
+-import { applyReplacements, promptAttachments, turnKey } from "./hone-pi-turn-cache.ts";
++import { applyReplacements, promptAttachments, turnKey, turnKeys } from "./hone-pi-turn-cache.ts";
+ 
+ const WRAPPER = NodeURL.fileURLToPath(new URL("./hone-pi.ts", import.meta.url));
+ 
+@@ -163,4 +163,18 @@ describe("turnKey", () => {
+       JSON.stringify({ text: 'cd "/new dir"' }),
+     );
+   });
++
++  it("hits on a prompt that differs only in whitespace", () => {
++    const input = (message: string) => ({
++      message,
++      images: [],
++      model: null,
++      thinkingLevel: null,
++      cwd: "/none",
++    });
++    const canonical = "Write the letter.\n\nThen stop.";
++    expect(turnKey(input("Write the letter.  \n Then   stop.  "))).toBe(turnKey(input(canonical)));
++    // The verbatim key stays second, so recordings made before normalization still hit.
++    expect(turnKeys(input(canonical))).toHaveLength(2);
++  });
+ });
+diff --git a/apps/server/scripts/hone-pi.ts b/apps/server/scripts/hone-pi.ts
+index 586c46b0..0bfc89d4 100755
+--- a/apps/server/scripts/hone-pi.ts
++++ b/apps/server/scripts/hone-pi.ts
+@@ -18,7 +18,7 @@ import {
+   sessionHasUserMessage,
+   TURN_RECORDING_VERSION,
+   type TurnRecording,
+-  turnKey,
++  turnKeys,
+ } from "./hone-pi-turn-cache.ts";
+ 
+ type PiRecord = Record<string, unknown>;
+@@ -276,7 +276,7 @@ function fromT3code(line: string) {
+     piState.sessionId !== null &&
+     !sessionHasUserMessage(piState.sessionFile)
+   ) {
+-    const key = turnKey({
++    const keys = turnKeys({
+       message: String(record.message ?? ""),
+       images: Array.isArray(record.images) ? record.images : [],
+       model: piState.model,
+@@ -284,14 +284,16 @@ function fromT3code(line: string) {
+       cwd,
+     });
+     const recording =
+-      cacheDirs.map((dir) => readRecording(dir, key)).find((found) => found !== null) ?? null;
++      keys
++        .flatMap((key) => cacheDirs.map((dir) => readRecording(dir, key)))
++        .find((found) => found !== null) ?? null;
+     if (recording !== null) {
+       void replay(recording, record);
+       return;
+     }
+     if (recordTurns) {
+       recorder = {
+-        key,
++        key: keys[0]!,
+         prompt: String(record.message ?? ""),
+         startedAt: Date.now(),
+         events: [],
+-- 
+2.54.0 (Apple Git-157)
+
