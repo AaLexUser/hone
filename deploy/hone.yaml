@@ -167,9 +167,11 @@ majics:
         reasoning: high
       - model: qwen3.8-flash
         reasoning: medium
+    # The propose judge words the committed rule. At high it twice widened a
+    # rule past the values its sessions showed, so it runs at max.
     judge:
       model: glm-5.3
-      reasoning: high
+      reasoning: max
 
 optimization:
   # The judges' follow-up questions often make a reviewer re-check a trace,
