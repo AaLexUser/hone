@@ -42,6 +42,11 @@
       "sub": "Daily sales reports from an order export"
     },
     {
+      "dir": "8-ohio",
+      "title": "Ohio is not in *Oxford*",
+      "sub": "Client proposals, with feedback that disagrees"
+    },
+    {
       "dir": "6-versions",
       "title": "Every change is a *version*",
       "sub": "AGENTS.md history, kept in Git"

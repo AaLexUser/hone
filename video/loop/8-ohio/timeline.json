@@ -1,0 +1,862 @@
+{
+  "shots": [
+    {
+      "id": "1-request",
+      "clip": "chat-harbor",
+      "from": "inbox-open@-0.6",
+      "to": "typed@0.6",
+      "dur": 10.0,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          6.0,
+          960,
+          540,
+          1
+        ],
+        [
+          8.0,
+          820,
+          880,
+          1.5
+        ],
+        [
+          10.0,
+          820,
+          880,
+          1.52
+        ]
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 5.0,
+          "text": "A design studio in Leeds writes client proposals with a Pi agent."
+        },
+        {
+          "at": 5.2,
+          "to": 10.0,
+          "text": "A new brief from a clinic in *Columbus, Ohio*."
+        }
+      ]
+    },
+    {
+      "id": "2-agent",
+      "clip": "chat-harbor",
+      "from": "sent@0.3",
+      "to": "replied@-1.0",
+      "dur": 8.0,
+      "badge": {
+        "big": "3 min 12 s",
+        "small": "agent at work, shown {speed}× faster"
+      },
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 8.0,
+          "rect": [
+            1068,
+            10,
+            256,
+            32
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 8.0,
+          "text": "The studio's AGENTS.md says to use *British* spelling."
+        }
+      ]
+    },
+    {
+      "id": "3-reply",
+      "clip": "chat-harbor",
+      "from": "reply-top@0",
+      "to": "reply-top@4.8",
+      "dur": 9.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.6,
+          960,
+          540,
+          1
+        ],
+        [
+          2.4,
+          818,
+          300,
+          1.75
+        ],
+        [
+          9.0,
+          818,
+          300,
+          1.78
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.6,
+          "to": 9.0,
+          "rect": [
+            1109,
+            233,
+            55,
+            21
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 2.8,
+          "to": 9.0,
+          "rect": [
+            883,
+            256,
+            87,
+            21
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 3.0,
+          "to": 9.0,
+          "rect": [
+            831,
+            279,
+            48,
+            21
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 3.2,
+          "to": 9.0,
+          "rect": [
+            476,
+            324,
+            87,
+            21
+          ],
+          "tone": "red"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 9.0,
+          "text": "So the Ohio clinic gets *colour* and organisation."
+        }
+      ]
+    },
+    {
+      "id": "4-feedback",
+      "clip": "chat-harbor",
+      "from": "thumb-down@-1.3",
+      "to": "feedback-sent@1.5",
+      "dur": 9.0,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.6,
+          960,
+          540,
+          1
+        ],
+        [
+          2.4,
+          760,
+          800,
+          1.6
+        ],
+        [
+          7.6,
+          760,
+          800,
+          1.6
+        ],
+        [
+          9.0,
+          960,
+          540,
+          1
+        ]
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 9.0,
+          "text": "One thumbs down. / American client *again*."
+        }
+      ]
+    },
+    {
+      "id": "5-batch",
+      "clip": "run",
+      "from": "hone-dashboard@0",
+      "to": "start-clicked@-0.3",
+      "dur": 9.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.8,
+          960,
+          540,
+          1
+        ],
+        [
+          2.4,
+          1088,
+          630,
+          1.45
+        ],
+        [
+          9.0,
+          1088,
+          630,
+          1.47
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.6,
+          "to": 9.0,
+          "rect": [
+            1222,
+            544,
+            310,
+            28
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 2.8,
+          "to": 9.0,
+          "rect": [
+            1222,
+            665,
+            310,
+            28
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 5.0,
+          "to": 9.0,
+          "rect": [
+            1222,
+            726,
+            240,
+            28
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 4.8,
+          "text": "Two US clients complained about the spelling."
+        },
+        {
+          "at": 5.0,
+          "to": 9.0,
+          "text": "A UK client *praised* the same style."
+        }
+      ]
+    },
+    {
+      "id": "6-review",
+      "clip": "run",
+      "from": "run-started@0",
+      "to": "run-started@255",
+      "speed": 25,
+      "badge": {
+        "big": "15 min 25 s",
+        "small": "real run, shown {speed}× faster"
+      },
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          1088,
+          450,
+          1.4
+        ]
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 10.2,
+          "text": "Three reviewers on *different models* read every session."
+        }
+      ]
+    },
+    {
+      "id": "7-judge",
+      "clip": "run",
+      "from": "run-started@255",
+      "to": "run-started@520",
+      "speed": 25,
+      "badge": {
+        "big": "15 min 25 s",
+        "small": "real run, shown {speed}× faster"
+      },
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          1088,
+          450,
+          1.4
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 10.6,
+          "rect": [
+            770,
+            436,
+            150,
+            64
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 10.6,
+          "text": "A *judge* cross-examines them."
+        }
+      ]
+    },
+    {
+      "id": "8-propose",
+      "clip": "run",
+      "from": "run-started@520",
+      "to": "run-started@840",
+      "speed": 28,
+      "badge": {
+        "big": "15 min 25 s",
+        "small": "real run, shown {speed}× faster"
+      },
+      "noCursor": true,
+      "camera": [
+        [
+          0,
+          1088,
+          450,
+          1.4
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 1.4,
+          "to": 5.6,
+          "rect": [
+            1120,
+            386,
+            200,
+            174
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 5.8,
+          "to": 11.4,
+          "rect": [
+            1337,
+            436,
+            146,
+            64
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 5.6,
+          "text": "Three proposers draft a new rule."
+        },
+        {
+          "at": 5.8,
+          "to": 11.4,
+          "text": "A second judge questions the drafts."
+        }
+      ]
+    },
+    {
+      "id": "9-question",
+      "clip": "review",
+      "from": "question@0.3",
+      "to": "question@4.8",
+      "dur": 10.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          735,
+          500,
+          1.5
+        ],
+        [
+          10.0,
+          735,
+          500,
+          1.55
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 10.0,
+          "rect": [
+            440,
+            426,
+            600,
+            44
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 5.0,
+          "to": 10.0,
+          "rect": [
+            440,
+            474,
+            600,
+            34
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 5.6,
+          "to": 10.0,
+          "rect": [
+            440,
+            558,
+            600,
+            34
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 4.8,
+          "text": "Should the rule also tell the agent to *ask* the user?"
+        },
+        {
+          "at": 5.0,
+          "to": 10.0,
+          "text": "No trace shows an unclear brief. / That clause is *dropped*."
+        }
+      ]
+    },
+    {
+      "id": "10-commit",
+      "clip": "run",
+      "from": "run-ended@0.5",
+      "dur": 5.5,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          1088,
+          430,
+          1.3
+        ],
+        [
+          5.5,
+          1088,
+          430,
+          1.32
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 5.5,
+          "rect": [
+            1524,
+            590,
+            110,
+            64
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 0.8,
+          "to": 5.5,
+          "rect": [
+            1654,
+            590,
+            118,
+            64
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 1.4,
+          "to": 5.5,
+          "rect": [
+            404,
+            226,
+            896,
+            70
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 5.5,
+          "text": "A verifier checks the edit. / The new version is *committed*."
+        }
+      ]
+    },
+    {
+      "id": "11-versions",
+      "clip": "review",
+      "from": "versions@-0.4",
+      "to": "versions-end@0",
+      "dur": 11.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.8,
+          960,
+          540,
+          1
+        ],
+        [
+          2.6,
+          1340,
+          420,
+          1.6
+        ],
+        [
+          11.0,
+          1340,
+          420,
+          1.62
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.7,
+          "to": 6.6,
+          "rect": [
+            1036,
+            362,
+            690,
+            40
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 6.8,
+          "to": 11.0,
+          "rect": [
+            1036,
+            400,
+            690,
+            68
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 6.6,
+          "text": "The British rule is *replaced*, not flipped."
+        },
+        {
+          "at": 6.8,
+          "to": 11.0,
+          "text": "Spelling now follows the client's *country*."
+        }
+      ]
+    },
+    {
+      "id": "12-denver",
+      "clip": "chat2-frontrange",
+      "from": "new-thread@0.2",
+      "to": "sent@0.3",
+      "dur": 5.0,
+      "fade": 0.3,
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 5.0,
+          "text": "Next, a library in *Denver*."
+        }
+      ]
+    },
+    {
+      "id": "13-denver-agent",
+      "clip": "chat2-frontrange",
+      "from": "sent@0.3",
+      "to": "replied@-1.0",
+      "dur": 4.0,
+      "badge": {
+        "big": "1 min 48 s",
+        "small": "agent at work, shown {speed}× faster"
+      },
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 4.0,
+          "rect": [
+            1068,
+            10,
+            256,
+            32
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 4.0,
+          "text": "It runs on the new *AGENTS.md*."
+        }
+      ]
+    },
+    {
+      "id": "14-denver-reply",
+      "clip": "chat2-frontrange",
+      "from": "reply-top@0",
+      "to": "reply-top@4.8",
+      "dur": 8.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.5,
+          960,
+          540,
+          1
+        ],
+        [
+          2.2,
+          818,
+          300,
+          1.75
+        ],
+        [
+          8.0,
+          818,
+          300,
+          1.78
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.4,
+          "to": 8.0,
+          "rect": [
+            1073,
+            233,
+            47,
+            21
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 2.6,
+          "to": 8.0,
+          "rect": [
+            1079,
+            256,
+            88,
+            21
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 2.8,
+          "to": 8.0,
+          "rect": [
+            722,
+            279,
+            39,
+            21
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 8.0,
+          "text": "Denver gets American spelling, *color* and organization."
+        }
+      ]
+    },
+    {
+      "id": "15-glasgow",
+      "clip": "chat2-clyde",
+      "from": "new-thread@0.2",
+      "to": "sent@0.3",
+      "dur": 4.5,
+      "fade": 0.3,
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 4.5,
+          "text": "Then a youth theatre in *Glasgow*."
+        }
+      ]
+    },
+    {
+      "id": "16-glasgow-agent",
+      "clip": "chat2-clyde",
+      "from": "sent@0.3",
+      "to": "replied@-1.0",
+      "dur": 4.0,
+      "badge": {
+        "big": "4 min 15 s",
+        "small": "agent at work, shown {speed}× faster"
+      }
+    },
+    {
+      "id": "17-glasgow-reply",
+      "clip": "chat2-clyde",
+      "from": "reply-top@0",
+      "to": "reply-top@4.8",
+      "dur": 9.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          960,
+          540,
+          1
+        ],
+        [
+          0.5,
+          960,
+          540,
+          1
+        ],
+        [
+          2.2,
+          818,
+          300,
+          1.75
+        ],
+        [
+          9.0,
+          818,
+          300,
+          1.78
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 2.4,
+          "to": 9.0,
+          "rect": [
+            744,
+            256,
+            55,
+            21
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 2.6,
+          "to": 9.0,
+          "rect": [
+            1056,
+            256,
+            82,
+            21
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 2.8,
+          "to": 9.0,
+          "rect": [
+            616,
+            278,
+            87,
+            21
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 3.0,
+          "to": 9.0,
+          "rect": [
+            512,
+            301,
+            48,
+            21
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 9.0,
+          "text": "Glasgow keeps British spelling, *colour* and organisation."
+        }
+      ]
+    }
+  ]
+}
