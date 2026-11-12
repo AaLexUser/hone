@@ -1,0 +1,102 @@
+From 8251682b56f0c967b94682a0c94507b186f58457 Mon Sep 17 00:00:00 2001
+From: build <build@localhost>
+Date: Thu, 12 Nov 2026 13:41:51 +0300
+Subject: [PATCH] feat(web): hold to dismiss the booth idle video
+
+The guide-mode idle video used to close on any tap, so an accidental
+brush dropped the visitor back into the app. Dismissing it now takes a
+two second press-and-hold, with a progress bar at the bottom edge, the
+same idiom the guide exit uses. A missing or broken video dismisses the
+overlay instead of trapping the visitor on a black screen.
+---
+ .../src/components/hone/guide/GuideLayer.tsx  | 41 ++++++++++++++++++-
+ .../src/components/hone/guide/guideText.ts    |  2 +-
+ 2 files changed, 40 insertions(+), 3 deletions(-)
+
+diff --git a/apps/web/src/components/hone/guide/GuideLayer.tsx b/apps/web/src/components/hone/guide/GuideLayer.tsx
+index 0e1220d4..e938c3ac 100644
+--- a/apps/web/src/components/hone/guide/GuideLayer.tsx
++++ b/apps/web/src/components/hone/guide/GuideLayer.tsx
+@@ -7,6 +7,7 @@ import { type CSSProperties, useEffect, useRef, useState } from "react";
+ 
+ import { useComposerDraftStore } from "~/composerDraftStore";
+ import { observeResize } from "~/lib/observeResize";
++import { cn } from "~/lib/utils";
+ import { useThreadRouteTarget } from "~/hooks/useThreadRouteTarget";
+ import { useRightPanelStore } from "~/rightPanelStore";
+ import { usePrimaryEnvironmentId } from "~/state/environments";
+@@ -470,7 +471,24 @@ function ClosingCard(props: {
+   );
+ }
+ 
++const VIDEO_DISMISS_HOLD_MS = 2000;
++
+ function BoothVideo({ src, onDismiss }: { readonly src: string; readonly onDismiss: () => void }) {
++  const [holding, setHolding] = useState(false);
++  const timer = useRef<number | null>(null);
++  const cancelHold = () => {
++    if (timer.current !== null) window.clearTimeout(timer.current);
++    timer.current = null;
++    setHolding(false);
++  };
++  const startHold = () => {
++    cancelHold();
++    setHolding(true);
++    timer.current = window.setTimeout(() => {
++      timer.current = null;
++      onDismiss();
++    }, VIDEO_DISMISS_HOLD_MS);
++  };
+   return (
+     <div
+       role="button"
+@@ -478,12 +496,31 @@ function BoothVideo({ src, onDismiss }: { readonly src: string; readonly onDismi
+       aria-label={guideText.videoHint}
+       data-guide-video=""
+       className="fixed inset-0 z-[100] bg-black"
+-      onClick={onDismiss}
++      onPointerDown={startHold}
++      onPointerUp={cancelHold}
++      onPointerLeave={cancelHold}
++      onPointerCancel={cancelHold}
+     >
+-      <video src={src} autoPlay muted loop playsInline className="size-full object-contain" />
++      <video
++        src={src}
++        autoPlay
++        muted
++        loop
++        playsInline
++        className="size-full object-contain"
++        onError={onDismiss}
++      />
+       <p className="pointer-events-none absolute inset-x-0 bottom-8 text-center text-sm text-white/80">
+         {guideText.videoHint}
+       </p>
++      <span
++        aria-hidden
++        className={cn(
++          "absolute inset-x-0 bottom-0 h-1 bg-white",
++          holding ? "w-full transition-[width] ease-linear" : "w-0",
++        )}
++        style={holding ? { transitionDuration: `${VIDEO_DISMISS_HOLD_MS}ms` } : undefined}
++      />
+     </div>
+   );
+ }
+diff --git a/apps/web/src/components/hone/guide/guideText.ts b/apps/web/src/components/hone/guide/guideText.ts
+index 8aab5f4b..fd5cdca5 100644
+--- a/apps/web/src/components/hone/guide/guideText.ts
++++ b/apps/web/src/components/hone/guide/guideText.ts
+@@ -125,7 +125,7 @@ const en: GuideStrings = {
+   back: "Back",
+   skip: "Skip",
+   watchVideo: "Watch the video",
+-  videoHint: "Touch the screen to try Hone yourself",
++  videoHint: "Press and hold the screen to try Hone yourself",
+   resetting: "Getting the demo ready",
+   codeLabel: "github.com/AaLexUser/hone",
+   paper: "ICDM 2026, paper S33237",
+-- 
+2.54.0 (Apple Git-157)
+
