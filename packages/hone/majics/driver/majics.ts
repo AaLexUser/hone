@@ -32,7 +32,7 @@ import { Type } from "typebox";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 interface ModelSpec {
   id: string;

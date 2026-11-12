@@ -21,7 +21,7 @@ from pydantic import (
     model_validator,
 )
 
-ReasoningLevel = Literal["off", "minimal", "low", "medium", "high", "xhigh"]
+ReasoningLevel = Literal["off", "minimal", "low", "medium", "high", "xhigh", "max"]
 PiThinkingLevel = Literal["off", "minimal", "low", "medium", "high", "xhigh", "max"]
 ModelInput = Literal["text", "image"]
 
@@ -269,10 +269,10 @@ class ModelDefinition(FrozenConfigModel):
         if not self.reasoning:
             return False
         if self.thinking_level_map is None:
-            return level != "xhigh"
+            return level not in ("xhigh", "max")
         if level in self.thinking_level_map:
             return self.thinking_level_map[level] is not None
-        return level != "xhigh"
+        return level not in ("xhigh", "max")
 
     def to_pi(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
