@@ -552,6 +552,175 @@
           "text": "A long name gets a smaller font, / never a second line."
         }
       ]
+    },
+    {
+      "id": "13-again",
+      "clip": "chat2-xai",
+      "from": "new-thread@0.2",
+      "to": "sent@0.3",
+      "dur": 6.0,
+      "fade": 0.3,
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 6.0,
+          "text": "Next week, badges for another *workshop*."
+        }
+      ]
+    },
+    {
+      "id": "14-agent",
+      "clip": "chat2-xai",
+      "from": "sent@0.3",
+      "to": "replied@-1.0",
+      "dur": 5.0,
+      "badge": {
+        "big": "2 min 4 s",
+        "small": "agent at work, shown {speed}× faster"
+      },
+      "highlights": [
+        {
+          "at": 0.4,
+          "to": 5.0,
+          "rect": [
+            1068,
+            10,
+            256,
+            32
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 5.0,
+          "text": "It runs on the new *AGENTS.md*."
+        }
+      ]
+    },
+    {
+      "id": "15-reply",
+      "clip": "chat2-xai",
+      "from": "reply-top@0",
+      "to": "reply-top@4.8",
+      "dur": 7.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "camera": [
+        [
+          0,
+          818,
+          600,
+          1.5
+        ],
+        [
+          7.0,
+          818,
+          600,
+          1.52
+        ]
+      ],
+      "highlights": [
+        {
+          "at": 0.8,
+          "to": 7.0,
+          "rect": [
+            466,
+            484,
+            722,
+            160
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 7.0,
+          "text": "Every name on one line. / The long ones drop to *18 or 19 pt*."
+        }
+      ]
+    },
+    {
+      "id": "16-before",
+      "clip": "sheet-timeseries",
+      "from": "sheet-max@0",
+      "to": "sheet-max@3.0",
+      "dur": 4.5,
+      "noCursor": true,
+      "fade": 0.3,
+      "highlights": [
+        {
+          "at": 0.3,
+          "to": 4.5,
+          "rect": [
+            990,
+            455,
+            540,
+            160
+          ],
+          "tone": "red"
+        },
+        {
+          "at": 0.3,
+          "to": 4.5,
+          "rect": [
+            1010,
+            820,
+            500,
+            165
+          ],
+          "tone": "red"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.3,
+          "to": 4.5,
+          "text": "Before, long names took *two lines*."
+        }
+      ]
+    },
+    {
+      "id": "17-after",
+      "clip": "sheet-xai",
+      "from": "sheet-max@-0.3",
+      "to": "sheet-max@5.8",
+      "dur": 10.0,
+      "noCursor": true,
+      "fade": 0.3,
+      "highlights": [
+        {
+          "at": 0.6,
+          "to": 10.0,
+          "rect": [
+            980,
+            452,
+            560,
+            60
+          ],
+          "tone": "indigo"
+        },
+        {
+          "at": 0.9,
+          "to": 10.0,
+          "rect": [
+            980,
+            816,
+            560,
+            60
+          ],
+          "tone": "indigo"
+        }
+      ],
+      "captions": [
+        {
+          "at": 0.4,
+          "to": 10.0,
+          "text": "Now each name sits on *one line*."
+        }
+      ]
     }
   ]
 }
