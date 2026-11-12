@@ -17,6 +17,13 @@ A run passes when both reviewers pass it. Their notes are kept with the cache en
 5. **Clear commit.** The title says what changed in plain words, and the body says why, citing the sessions.
 6. **Presentable.** Read on the run page and the Versions page, the run tells a story a visitor can follow. No garbled text, no leaked secrets or local paths that mean nothing to a visitor, no rambling.
 
+## Blocking faults and minor notes
+
+Points 1, 4 and 5 are strict. Any fault there fails the run.
+Points 2, 3 and 6 fail the run only when a fault misleads a visitor about the story, which is what went wrong in the sessions, what the panel concluded, what rule was added and why.
+A slip that a careful reader can see through without losing that story is a minor note. Examples are a miscount in a finding the commit does not rely on, a judge question that corrects itself, a seat answer with jargon or a dash, or a remark after a seat submits.
+The reviewers write both kinds down, so the notes stay with the entry.
+
 ## Outcome
 
 - Pass. The entry is marked approved with both reviewers' notes and the date, and only then can it be replayed, shipped or filmed.
