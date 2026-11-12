@@ -49,12 +49,12 @@
     {
      "at": 0.4,
      "to": 4.8,
-     "text": "An HR coordinator gets offer letters from a *Pi agent*."
+     "text": "An HR coordinator gets offer letters from a *Pi* *agent*."
     },
     {
      "at": 5.0,
      "to": 9.0,
-     "text": "Last week she flagged a *£0* bonus line."
+     "text": "Earlier she flagged a *£0* bonus line."
     }
    ]
   },
@@ -120,7 +120,22 @@
      "to": 8.0,
      "text": "The agent fills the template and saves the *letter*."
     }
-   ]
+   ],
+   "camera": [
+    [
+     0,
+     1560,
+     560,
+     1.6
+    ],
+    [
+     8.0,
+     1560,
+     560,
+     1.62
+    ]
+   ],
+   "fade": 0.3
   },
   {
    "id": "4-letter",
@@ -268,7 +283,7 @@
     {
      "at": 0.4,
      "to": 6.0,
-     "text": "Four sessions wait in the batch. Press *Start optimization*."
+     "text": "Four sessions wait in the batch. Press *Start* *optimization*."
     }
    ]
   },
@@ -295,7 +310,7 @@
     {
      "at": 0.4,
      "to": 10.0,
-     "text": "Three reviewers on *different models* read all four sessions."
+     "text": "Three reviewers on *different* *models* read all four sessions."
     }
    ]
   },
@@ -362,7 +377,7 @@
     {
      "at": 0.4,
      "to": 9.0,
-     "text": "Three proposers draft the rule. / The judge drops what no feedback asked for."
+     "text": "Three proposers draft the *rule*. / The judge drops what no feedback asked for."
     }
    ]
   },
@@ -416,7 +431,7 @@
     {
      "at": 0.4,
      "to": 9.0,
-     "text": "The judge checks a claim against the *saved letters*."
+     "text": "The judge checks a claim against the *saved* *letters*."
     }
    ]
   },
