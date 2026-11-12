@@ -1,0 +1,40 @@
+[
+ {
+  "title": "Hone",
+  "start": 0.0
+ },
+ {
+  "title": "A complaint becomes a rule",
+  "sub": "Offer letters with a Pi agent in t3code",
+  "start": 6.0
+ },
+ {
+  "title": "Spreadsheets too",
+  "sub": "Expense reports from PDF receipts",
+  "start": 123.0
+ },
+ {
+  "title": "A sale in the right time zone",
+  "sub": "Daily sales reports from an order export",
+  "start": 276.3
+ },
+ {
+  "title": "Ohio is not in Oxford",
+  "sub": "Client proposals, with feedback that disagrees",
+  "start": 441.3
+ },
+ {
+  "title": "Every name on one line",
+  "sub": "Workshop name badges from a registration list",
+  "start": 582.533
+ },
+ {
+  "title": "Every change is a version",
+  "sub": "AGENTS.md history, kept in Git",
+  "start": 696.333
+ },
+ {
+  "title": "Results",
+  "start": 769.833
+ }
+]
