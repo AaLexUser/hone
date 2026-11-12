@@ -35,7 +35,7 @@ folder at session start and publishes the session trace after each reply.
 | `0011` | A turn cache hit when the message differs from the recording only in whitespace (`apps/server/scripts/hone-pi.ts`) |
 | `0012` | A two second press and hold to end the booth video (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
 | `0013` | Start over in every guide step card and next to the Guide button (`apps/web/src/components/hone/guide/useGuideStartOver.ts`) |
-| `0014` | A booth video that fades in, ends only on a 1.5 second hold with a ring that shows the hold, and plays after 30 idle seconds by default (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
+| `0014` | A booth video that fades in, ends only on a key or mouse press held 1.5 seconds with a Keep holding ring, and plays after 30 idle seconds by default (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
@@ -143,9 +143,10 @@ The Guide button in the sidebar footer turns guide mode on. It stays on through 
 Reset demo gives way to Start over while it is on. Start over is also in every step card. It
 asks first, then resets the demo the way Reset demo does and shows the welcome card. To leave
 guide mode, hold the button for two seconds, then enter the PIN when one is set. After a short
-idle the booth video fades in full screen and muted. Taps, mouse moves and key presses neither
-end it nor count as activity. A press or any key held for 1.5 seconds ends it, and a Hold to
-return ring in the middle of the screen fills while the visitor holds. After a long idle the
+idle the booth video fades in full screen and muted, with the hint "Hold any key to try Hone
+yourself". Taps, mouse moves and key presses neither end it nor count as activity. A press or
+any key held for 1.5 seconds ends it, and a ring labelled Keep holding fills in the middle of
+the screen while the visitor holds. After a long idle the
 guide resets the demo and shows the welcome card again, also while the video plays. Idle time
 does not count while the agent or an optimization works.
 

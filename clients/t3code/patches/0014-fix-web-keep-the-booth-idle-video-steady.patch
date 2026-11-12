@@ -1,4 +1,4 @@
-From e93cbbac4ffda3e1ee9418435b95a79ac3e79960 Mon Sep 17 00:00:00 2001
+From 743ef16e04d7c2a05dbe47c927cc3f5f6aa40254 Mon Sep 17 00:00:00 2001
 From: Alexey Lapin <a.lapin03@gmail.com>
 Date: Thu, 12 Nov 2026 12:30:45 +0000
 Subject: [PATCH] fix(web): keep the booth idle video steady
@@ -12,9 +12,10 @@ too, before the hold finished.
 The video now fades in over the app when its first frame plays. Taps,
 mouse moves and key presses neither end it nor count as activity, so the
 idle reset keeps counting while it plays. Only a press or a key held for
-1.5 seconds ends it. The first touch or key shows a "Hold to return" ring
-in the middle of the screen that fills while the visitor holds, and
-stays up for a moment after an early release. The video takes focus, so
+1.5 seconds ends it. The hint says "Hold any key to try Hone yourself",
+since the booth laptop may have no touch screen. The first press or key
+shows a "Keep holding" ring in the middle of the screen that fills while
+the visitor holds, and stays up for a moment after an early release. The video takes focus, so
 held keys never type into the chat below. A video that never starts
 closes after ten seconds, so a stalled load cannot hide the app.
 
@@ -22,8 +23,8 @@ The idle time before the video now defaults to 30 seconds instead of 90.
 ---
  apps/server/src/hone/Hone.ts                  |   2 +-
  .../src/components/hone/guide/GuideLayer.tsx  | 179 +++++++++++++-----
- .../src/components/hone/guide/guideText.ts    |   3 +
- 3 files changed, 140 insertions(+), 44 deletions(-)
+ .../src/components/hone/guide/guideText.ts    |   5 +-
+ 3 files changed, 141 insertions(+), 45 deletions(-)
 
 diff --git a/apps/server/src/hone/Hone.ts b/apps/server/src/hone/Hone.ts
 index 55e44faf..01f98442 100644
@@ -334,7 +335,7 @@ index 816c5fd1..44ae1055 100644
    );
  }
 diff --git a/apps/web/src/components/hone/guide/guideText.ts b/apps/web/src/components/hone/guide/guideText.ts
-index 1b3f7dc3..4417f98f 100644
+index 1b3f7dc3..86e64424 100644
 --- a/apps/web/src/components/hone/guide/guideText.ts
 +++ b/apps/web/src/components/hone/guide/guideText.ts
 @@ -23,6 +23,8 @@ export interface GuideStrings {
@@ -346,11 +347,13 @@ index 1b3f7dc3..4417f98f 100644
    readonly resetting: string;
    readonly codeLabel: string;
    readonly paper: string;
-@@ -130,6 +132,7 @@ const en: GuideStrings = {
+@@ -129,7 +131,8 @@ const en: GuideStrings = {
+   back: "Back",
    skip: "Skip",
    watchVideo: "Watch the video",
-   videoHint: "Press and hold the screen to try Hone yourself",
-+  videoHold: "Hold to return",
+-  videoHint: "Press and hold the screen to try Hone yourself",
++  videoHint: "Hold any key to try Hone yourself",
++  videoHold: "Keep holding",
    resetting: "Getting the demo ready",
    codeLabel: "github.com/AaLexUser/hone",
    paper: "ICDM 2026, paper S33237",
