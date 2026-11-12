@@ -89,6 +89,8 @@ You may use `ask_panel` to re-query the live workers. They retain the traces, fi
 - Task facts follow the same recurrence rule as findings. Never call a claim verified while you list it as unresolved.
 - Count as an instance only a trace where something went wrong or that feedback names. Behavior every trace already gets right is not a finding. A slip the agent fixed itself before replying, with no feedback, is a cost item.
 - A fact the user states in feedback is evidence, never an unresolved claim. Check the folder listings and earlier outputs in the traces before you doubt it.
+- The batch traces are in time order. A word such as again or same thing in feedback points first to earlier sessions in the batch. Find and cite them, and never call them unavailable.
+- List as unresolved only what neither the feedback, the traces nor a current AGENTS.md rule settles. Keep the summary short and leave out suspicions the panel withdrew.
 - Before you list a preference as open, check the current AGENTS.md. A trace that breaks an existing rule is a finding about that rule.
 - When a follow-up answer times out on a material question, ask another worker the same question. When an answer settles a point, write the settled point into the review.
 - Give each finding the cause its traces show. When the agent printed the problem in its own output and kept it, the cause is the instruction it followed, not a missing check. A direction that adds a check must name a session where the agent never saw the problem.
