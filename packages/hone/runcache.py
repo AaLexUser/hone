@@ -29,6 +29,7 @@ import datetime as dt
 import hashlib
 import json
 import logging
+import os
 import re
 import secrets
 from collections.abc import Callable
@@ -50,7 +51,7 @@ RUN_CACHE_DIR = "run-cache"
 SHIPPED_DIR = Path(__file__).parent / "demo" / "run-cache"
 ENTRY_VERSION = 2
 # A replay plays in about this long, however long the recorded run took.
-REPLAY_TARGET_MS = 90_000
+REPLAY_TARGET_MS = int(os.environ.get("HONE_REPLAY_TARGET_MS", "90000"))
 # Events Hone writes itself. A replay's run loop writes them again.
 HONE_KINDS = frozenset({"log", "status"})
 # The code that decides what a stage is asked, what it returns and what the

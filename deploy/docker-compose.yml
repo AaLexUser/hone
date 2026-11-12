@@ -43,6 +43,8 @@ services:
       # The agent turn cache. New recordings go to the volume, shipped ones come with the image.
       HONE_TURN_CACHE_DIR: /home/node/turn-cache:/opt/hone-deploy/turn-cache
       HONE_TURN_CACHE_RECORD: ${HONE_TURN_CACHE_RECORD:-0}
+      # A replay streams this many times faster than it was recorded.
+      HONE_TURN_CACHE_SPEED: ${HONE_TURN_CACHE_SPEED:-1}
     volumes:
       - t3code-state:/home/node/.t3
       - pi-sessions:/home/node/.pi/agent/sessions
@@ -63,6 +65,8 @@ services:
       # The prepared state is built for the booth day so it matches the recorded runs in the cache.
       HONE_DEMO_DATE: ${HONE_DEMO_DATE:-2026-11-11}
       HONE_TOKEN: ${HONE_TOKEN}
+      # A replayed run finishes in about this many milliseconds.
+      HONE_REPLAY_TARGET_MS: ${HONE_REPLAY_TARGET_MS:-90000}
       HONE_EXPOSE_WRITE_TOKEN: "false"
       HONE_CONFIG: /app/hone.booth.yaml
       OPENCODE_API_KEY: ${OPENCODE_API_KEY}
