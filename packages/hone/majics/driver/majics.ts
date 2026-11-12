@@ -474,7 +474,7 @@ async function rerunAgent(result: AgentResult, question: string): Promise<Follow
     "Answer directly from the context you already gathered. Use tools only for a quick check. " +
     "Do not restart broad research. State uncertainty if the evidence is incomplete. " +
     "People read this answer on the run page, so write plain sentences. Name sessions by their trace id and " +
-    "messages by what they say. Leave out labels such as STATE_MISMATCH, message or row numbers, file paths, " +
+    "messages by what they say. Leave out codes and labels, message or row numbers, file paths, " +
     `raw markup and em dashes.\n\n${question}`;
   const outcome = await executeAgent({
     modelId: result.modelId,

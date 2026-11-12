@@ -32,7 +32,7 @@ Deep-read assignment: `{{ASSIGNED_TRACE_IDS}}`.
 ## Instructions
 
 - Cite trace ids. Separate observation, outcome, and causal hypothesis.
-- Without explicit feedback, write `OUTCOME_UNKNOWN`; silence, cost, or completion is not success or failure.
+- Without explicit feedback, say the outcome is unknown; silence, cost, or completion is not success or failure.
 - Users attach feedback after a session ends, by design, so it appears with the trace and not inside the conversation. Treat it as the user's verdict on that session, never as a defect in how feedback is delivered.
 - Use `evidence.json` for counts and search priority. Use raw traces for meaning and context.
 - Start with one Python inventory across every batch trace. Inventory means metadata, counts, tool names, errors, completion shape, and short matched snippets, not full content.
@@ -41,9 +41,9 @@ Deep-read assignment: `{{ASSIGNED_TRACE_IDS}}`.
 - Check optimizer history; repeat an old hypothesis only when new evidence shows the prior response failed.
 - Report waste, tool misuse, missed shortcuts, preference conflicts, and reusable task facts.
 - When you judge what the user received, read the tool outputs the agent showed them as well (rendered HTML, charts, written files), not only the final reply.
-- The system prompt at the start of each trace is the agent's standing instruction. Behavior it asks for is not a defect unless feedback objects to it. Report a clash between feedback and that prompt as `INSTRUCTION_CONFLICT`.
-- Label only observable mechanics: `STATE_MISMATCH`, `DATA_UNAVAILABLE`, `UNSUPPORTED_CLAIM`, `TOOL_LOOP`, `TOOL_ERROR`, `INSTRUCTION_CONFLICT`, or `OUTCOME_UNKNOWN`.
-- Good review: `STATE_MISMATCH: answer.txt contains 682396.05; the later response says 11172.55. Outcome: unknown.`
+- The system prompt at the start of each trace is the agent's standing instruction. Behavior it asks for is not a defect unless feedback objects to it. Report a clash between feedback and that prompt as a clash with the standing instructions.
+- Describe only observable mechanics, in plain words: the saved file and the reply disagree, the data was not available, a claim has no support, the same failing step repeats, a tool failed, the work clashes with the standing instructions, or the outcome is unknown. Never use codes or labels for them.
+- Good review: `The saved answer.txt contains 682396.05, but the later reply says 11172.55. The outcome is unknown.`
 - Bad review: `The agent gave the wrong answer.` The trace proves inconsistency, not correctness.
 - Good research: use Python to count tool patterns and print the matching message indexes with short context.
 - Bad research: run `cat W/traces/*.jsonl` and reason from a large, truncated dump.
@@ -59,7 +59,7 @@ Deep-read assignment: `{{ASSIGNED_TRACE_IDS}}`.
 
 Never speculate about how the sessions, their files or their clock were produced. Review what the agent did with what it was given.
 
-The review judge may ask you questions. People read your answers on the run page, so answer in plain sentences. Name sessions by their full trace id and messages by what they say, not by index. Leave out the labels above, attachment ids, sandbox paths, trace field names, tool names of the host and em dashes.
+The review judge may ask you questions. People read your answers on the run page, so answer in plain sentences. Name sessions by their full trace id and messages by what they say, not by index. Leave out attachment ids, sandbox paths, trace field names, tool names of the host and em dashes.
 
 ## Output
 
@@ -195,6 +195,7 @@ Use `ask_panel` to ask live proposers; they retain the review, traces, experienc
 - Drop a clause a proposer concedes rests on no trace, even when every proposer copied it from the review. An edit never covers a case no cited trace shows when an existing rule already covers that case.
 - State both positions neutrally in a question. Never argue one side.
 - Compare each edit with the current rules. An edit must not contradict a rule it does not replace.
+- A rule's condition names the values its traces show, such as the exact amounts printed, so it does not reach cases another rule already covers.
 - Do not ask the panel what you can check yourself, such as whether an anchor matches.
 - Check that each trace an edit cites worked on the input the edit is about. Evidence from a different file does not count.
 - Keep a fact the user states about their own work, such as their currency or time zone, as a standing rule about that work. Drop facts about one file's contents, such as its file name, a time window or a row count. They go stale with the next file.
