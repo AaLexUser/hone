@@ -19,12 +19,13 @@ The council's picks and the reasons are in `council.md`.
 
 | Folder | Name | State |
 |---|---|---|
-| 1-complaint | A complaint becomes a rule, offer letters | Being re-recorded from the approved booth run r_89a9 |
+| 1-complaint | A complaint becomes a rule, offer letters | Built from the approved booth run r_89a9 and its recorded visitor turn |
 | 4-spreadsheets | Spreadsheets too, expense reports | Built on an older roster |
 | 7-singles-day | A sale in the right time zone | Built from approved run r_3db5 |
 | 8-ohio | Ohio is not in Oxford | Built from approved run r_3931 |
+| 10-badges | Every name on one line | Built from approved run r_a466, ends on the rule because the after sheet hit the key's weekly limit |
 | 6-versions | Every change is a version | Built |
-| next | Anonymised interview transcripts, workshop badges, don't invent our results, "Not useful" | Council picks 3 to 6, in that order |
+| next | Don't invent our results, "Not useful" | Council picks 5 and 6, waiting for a model key. Transcripts was dropped because the agent anonymised every name unprompted |
 
 Every clip uses a real run that two reviewers passed under `docs/run-review.md`.
 
