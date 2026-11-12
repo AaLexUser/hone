@@ -1,0 +1,45 @@
+From 72d4f70cab3e0e6bbed0806d61c95a9838eee5c7 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Thu, 12 Nov 2026 09:50:10 +0000
+Subject: [PATCH] fix(web): skip the GitHub star prompt in the Hone booth demo
+
+Booth visitors share one browser, so after a few visitors the star prompt
+asked strangers to star the repository, over the Hone page. The composer
+no longer counts prompts toward it while the server runs the Hone demo.
+---
+ apps/web/src/components/chat/useComposerSend.ts | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/apps/web/src/components/chat/useComposerSend.ts b/apps/web/src/components/chat/useComposerSend.ts
+index 98084e97..0e9e21f5 100644
+--- a/apps/web/src/components/chat/useComposerSend.ts
++++ b/apps/web/src/components/chat/useComposerSend.ts
+@@ -60,6 +60,7 @@ import {
+ import { resolvePlanFollowUpSubmission } from "../../proposedPlan";
+ import { type ChatMessage } from "../../types";
+ import { recordPromptSent } from "../GitHubStarPrompt";
++import { useHoneStatus } from "./HoneControls";
+ import { stackedThreadToast, toastManager } from "../ui/toast";
+ import { newMessageId, newThreadId } from "~/lib/utils";
+ import { useNewThreadHandler } from "../../hooks/useHandleNewThread";
+@@ -336,6 +337,8 @@ export function useComposerSend(input: ComposerSendInput) {
+     persistThreadSettingsForNextTurn,
+   } = input;
+   const linkedEnvironments = useLinkedEnvironments(environmentId);
++  // Booth visitors share one browser, so the star prompt would ask strangers after a few chats.
++  const honeDemo = useHoneStatus(environmentId)?.demo === true;
+   const handleNewThread = useNewThreadHandler();
+   const navigate = useNavigate();
+   const clientSettingsHydrated = useClientSettingsHydrated();
+@@ -1435,7 +1438,7 @@ export function useComposerSend(input: ComposerSendInput) {
+         ) {
+           handleNewThreadInActiveProject();
+         }
+-        void recordPromptSent(environmentId);
++        if (!honeDemo) void recordPromptSent(environmentId);
+       }
+     }
+ 
+-- 
+2.43.0
+

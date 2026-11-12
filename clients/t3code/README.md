@@ -31,6 +31,7 @@ folder at session start and publishes the session trace after each reply.
 | `0007` | The orchestration WebSocket at `/api/ws/`, for reverse proxies that upgrade only that prefix (`apps/server/src/ws.ts`) |
 | `0008` | Guide mode for the booth, the `hone.guideUnlock` RPC and the guide settings in `hone.status` (`apps/web/src/components/hone/guide/`) |
 | `0009` | The agent turn cache, a Pi wrapper that replays a recorded first turn of a demo chat (`apps/server/scripts/hone-pi.ts`) |
+| `0010` | No GitHub star prompt while the server runs the Hone demo, since booth visitors share one browser (`apps/web/src/components/chat/useComposerSend.ts`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
