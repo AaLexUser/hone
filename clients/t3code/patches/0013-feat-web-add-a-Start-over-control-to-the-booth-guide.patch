@@ -1,0 +1,288 @@
+From 133272c28b3f25d40dd8b4611f3b511cd3ac7051 Mon Sep 17 00:00:00 2001
+From: Alexey Lapin <a.lapin03@gmail.com>
+Date: Thu, 12 Nov 2026 12:29:23 +0000
+Subject: [PATCH] feat(web): add a Start over control to the booth guide
+
+A visitor who lost the thread had no way back to the start in guide
+mode, since the sidebar hides Reset demo there. Every step card now has
+a Start over button, and the sidebar shows Start over next to the Guide
+toggle in place of Reset demo. Both ask first, then reset the demo the
+same way Reset demo does and show the welcome card. The guide steps
+aside while the question is open, as it does for the exit PIN.
+---
+ .../src/components/hone/guide/GuideLayer.tsx  | 55 ++++++++++---------
+ .../src/components/hone/guide/guideStore.ts   | 10 ++++
+ .../src/components/hone/guide/guideText.ts    |  4 ++
+ .../hone/guide/useGuideStartOver.ts           | 31 +++++++++++
+ .../src/components/sidebar/SidebarChrome.tsx  |  9 ++-
+ 5 files changed, 81 insertions(+), 28 deletions(-)
+ create mode 100644 apps/web/src/components/hone/guide/useGuideStartOver.ts
+
+diff --git a/apps/web/src/components/hone/guide/GuideLayer.tsx b/apps/web/src/components/hone/guide/GuideLayer.tsx
+index e938c3ac..816c5fd1 100644
+--- a/apps/web/src/components/hone/guide/GuideLayer.tsx
++++ b/apps/web/src/components/hone/guide/GuideLayer.tsx
+@@ -12,7 +12,7 @@ import { useThreadRouteTarget } from "~/hooks/useThreadRouteTarget";
+ import { useRightPanelStore } from "~/rightPanelStore";
+ import { usePrimaryEnvironmentId } from "~/state/environments";
+ import { useEnvironmentThread } from "~/state/threads";
+-import { useHoneDemoReset, useHoneStatus } from "../../chat/HoneControls";
++import { useHoneStatus } from "../../chat/HoneControls";
+ import { Button } from "../../ui/button";
+ import { QRCodeSvg } from "../../ui/qr-code";
+ import {
+@@ -26,6 +26,7 @@ import {
+ import { useGuideStore } from "./guideStore";
+ import { type GuideStepText, guideText } from "./guideText";
+ import { parseHoneFrameMessage, sendHighlight, setHoneFrameHighlight } from "./honeFrame";
++import { useGuideStartOver } from "./useGuideStartOver";
+ 
+ const REPO_URL = "https://github.com/AaLexUser/hone";
+ const VISITOR_FILES = {
+@@ -41,8 +42,9 @@ const COUNTED_STEPS = GUIDE_STEPS.length - 2;
+ export function GuideLayer() {
+   const on = useGuideStore((state) => state.on);
+   const unlocking = useGuideStore((state) => state.unlocking);
++  const confirming = useGuideStore((state) => state.confirming);
+   const status = useHoneStatus(usePrimaryEnvironmentId());
+-  if (!on || unlocking || status?.demo !== true) return null;
++  if (!on || unlocking || confirming || status?.demo !== true) return null;
+   return <ActiveGuide config={status.guide} />;
+ }
+ 
+@@ -56,9 +58,9 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+   const facts = useGuideFacts(visitorChat);
+   const factsKey = guideFactsKey(facts, signalSet);
+   const current = GUIDE_STEPS[step]!;
++  const resetting = useGuideStore((state) => state.resetting);
++  const startOver = useGuideStartOver(usePrimaryEnvironmentId());
+   const [video, setVideo] = useState(false);
+-  const [resetting, setResetting] = useState(false);
+-  const startOver = useStartOver(setResetting);
+ 
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- the guide moves on when the real event its step waits for has happened
+   useEffect(() => {
+@@ -86,7 +88,7 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+     dirty: step > 0 || signals.length > 0,
+     onVideo: () => setVideo(true),
+     onActive: () => setVideo(false),
+-    onReset: startOver,
++    onReset: () => startOver({ confirm: false }),
+   });
+ 
+   const text =
+@@ -107,7 +109,11 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+           onStart={() => useGuideStore.getState().signal("started")}
+         />
+       ) : current.id === "done" ? (
+-        <ClosingCard text={text} resetting={resetting} onStartOver={() => void startOver()} />
++        <ClosingCard
++          text={text}
++          resetting={resetting}
++          onStartOver={() => void startOver({ confirm: false })}
++        />
+       ) : (
+         <StepCard
+           rect={rect}
+@@ -115,6 +121,8 @@ function ActiveGuide({ config }: { readonly config: HoneGuideConfig }) {
+           text={text}
+           onBack={() => useGuideStore.getState().goTo(step - 1, factsKey)}
+           onSkip={() => useGuideStore.getState().goTo(step + 1, factsKey)}
++          resetting={resetting}
++          onStartOver={() => void startOver({ confirm: true })}
+           {...(current.id === "watch" && runQuick === false && config.videoUrl !== null
+             ? { onVideo: () => setVideo(true) }
+             : {})}
+@@ -276,20 +284,6 @@ function useIdle(input: {
+   }, []);
+ }
+ 
+-function useStartOver(setResetting: (resetting: boolean) => void) {
+-  const resetDemo = useHoneDemoReset(usePrimaryEnvironmentId());
+-  const running = useRef(false);
+-  return async () => {
+-    if (running.current) return;
+-    running.current = true;
+-    setResetting(true);
+-    const reset = await resetDemo({ confirm: false });
+-    running.current = false;
+-    setResetting(false);
+-    if (reset) useGuideStore.getState().restart();
+-  };
+-}
+-
+ /** Where the target is on screen, followed as the layout moves. */
+ function useTargetRect(step: GuideStep): DOMRect | null {
+   const [rect, setRect] = useState<{ readonly step: GuideStep; readonly box: DOMRect } | null>(
+@@ -360,6 +354,8 @@ function StepCard(props: {
+   readonly text: GuideStepText;
+   readonly onBack: () => void;
+   readonly onSkip: () => void;
++  readonly resetting: boolean;
++  readonly onStartOver: () => void;
+   readonly onVideo?: () => void;
+ }) {
+   const card = useRef<HTMLDivElement>(null);
+@@ -391,6 +387,11 @@ function StepCard(props: {
+       <h2 className="font-medium text-sm">{props.text.title}</h2>
+       <p className="text-sm">{props.text.body}</p>
+       {props.text.next ? <p className="text-muted-foreground text-xs">{props.text.next}</p> : null}
++      {props.onVideo ? (
++        <Button size="xs" variant="outline" className="self-start" onClick={props.onVideo}>
++          {guideText.watchVideo}
++        </Button>
++      ) : null}
+       <div className="mt-1 flex items-center gap-1">
+         <Button size="xs" variant="ghost" onClick={props.onBack}>
+           {guideText.back}
+@@ -398,11 +399,15 @@ function StepCard(props: {
+         <Button size="xs" variant="ghost" onClick={props.onSkip}>
+           {guideText.skip}
+         </Button>
+-        {props.onVideo ? (
+-          <Button size="xs" variant="outline" className="ms-auto" onClick={props.onVideo}>
+-            {guideText.watchVideo}
+-          </Button>
+-        ) : null}
++        <Button
++          size="xs"
++          variant="ghost"
++          className="ms-auto"
++          disabled={props.resetting}
++          onClick={props.onStartOver}
++        >
++          {props.resetting ? guideText.resetting : guideText.startOver}
++        </Button>
+       </div>
+     </div>
+   );
+diff --git a/apps/web/src/components/hone/guide/guideStore.ts b/apps/web/src/components/hone/guide/guideStore.ts
+index ad08236f..ad4c8cd4 100644
+--- a/apps/web/src/components/hone/guide/guideStore.ts
++++ b/apps/web/src/components/hone/guide/guideStore.ts
+@@ -21,6 +21,12 @@ interface GuideState {
+   /** The presenter is entering the exit PIN, so the guide steps aside. Not kept over reloads. */
+   readonly unlocking: boolean;
+   readonly setUnlocking: (unlocking: boolean) => void;
++  /** The visitor is asked whether to start over, so the guide steps aside. Not kept over reloads. */
++  readonly confirming: boolean;
++  readonly setConfirming: (confirming: boolean) => void;
++  /** The demo is being reset for a new visit. Not kept over reloads. */
++  readonly resetting: boolean;
++  readonly setResetting: (resetting: boolean) => void;
+   readonly enter: () => void;
+   readonly exit: () => void;
+   /** Back to the welcome card with a fresh visit. */
+@@ -47,10 +53,14 @@ export const useGuideStore = create<GuideState>()(
+     (set) => ({
+       on: false,
+       unlocking: false,
++      confirming: false,
++      resetting: false,
+       ...freshVisit,
+       enter: () => set({ on: true, ...freshVisit }),
+       exit: () => set({ on: false, unlocking: false, ...freshVisit }),
+       setUnlocking: (unlocking) => set({ unlocking }),
++      setConfirming: (confirming) => set({ confirming }),
++      setResetting: (resetting) => set({ resetting }),
+       restart: () => set(freshVisit),
+       goTo: (step, heldAt = null) =>
+         set({ step: Math.max(0, Math.min(step, GUIDE_STEPS.length - 1)), heldAt }),
+diff --git a/apps/web/src/components/hone/guide/guideText.ts b/apps/web/src/components/hone/guide/guideText.ts
+index fd5cdca5..1b3f7dc3 100644
+--- a/apps/web/src/components/hone/guide/guideText.ts
++++ b/apps/web/src/components/hone/guide/guideText.ts
+@@ -17,6 +17,8 @@ export interface GuideStrings {
+   readonly progress: (step: number, total: number) => string;
+   readonly start: string;
+   readonly startOver: string;
++  /** Asked before Start over clears the visit. The first line is the title. */
++  readonly startOverConfirm: string;
+   readonly back: string;
+   readonly skip: string;
+   readonly watchVideo: string;
+@@ -122,6 +124,8 @@ const en: GuideStrings = {
+   progress: (step, total) => `Step ${step} of ${total}`,
+   start: "Start",
+   startOver: "Start over",
++  startOverConfirm:
++    "Start the demo over?\nThis clears every chat and change made in this visit and goes back to the welcome card.",
+   back: "Back",
+   skip: "Skip",
+   watchVideo: "Watch the video",
+diff --git a/apps/web/src/components/hone/guide/useGuideStartOver.ts b/apps/web/src/components/hone/guide/useGuideStartOver.ts
+new file mode 100644
+index 00000000..dd62a1ba
+--- /dev/null
++++ b/apps/web/src/components/hone/guide/useGuideStartOver.ts
+@@ -0,0 +1,31 @@
++import type { EnvironmentId } from "@t3tools/contracts";
++
++import { requestConfirmDialog } from "~/confirmDialog";
++import { useHoneDemoReset } from "../../chat/HoneControls";
++import { useGuideStore } from "./guideStore";
++import { guideText } from "./guideText";
++
++/**
++ * Resets the demo the way the sidebar's Reset demo does, then shows the welcome card. A visitor
++ * confirms first. The idle reset and the closing card do not ask.
++ */
++export function useGuideStartOver(environmentId: EnvironmentId | null) {
++  const resetDemo = useHoneDemoReset(environmentId);
++  return async ({ confirm }: { readonly confirm: boolean }) => {
++    const store = useGuideStore.getState();
++    if (store.confirming || store.resetting) return;
++    if (confirm) {
++      store.setConfirming(true);
++      const confirmed = await requestConfirmDialog(guideText.startOverConfirm, {
++        variant: "destructive",
++      });
++      useGuideStore.getState().setConfirming(false);
++      if (confirmed !== true) return;
++    }
++    useGuideStore.getState().setResetting(true);
++    const reset = await resetDemo({ confirm: false });
++    const after = useGuideStore.getState();
++    after.setResetting(false);
++    if (reset) after.restart();
++  };
++}
+diff --git a/apps/web/src/components/sidebar/SidebarChrome.tsx b/apps/web/src/components/sidebar/SidebarChrome.tsx
+index c621f523..a5e8027b 100644
+--- a/apps/web/src/components/sidebar/SidebarChrome.tsx
++++ b/apps/web/src/components/sidebar/SidebarChrome.tsx
+@@ -23,6 +23,8 @@ import { usePrimaryEnvironmentId, usePullRequestsSupported } from "../../state/e
+ import { useHoneDemoReset, useHoneStatus } from "../chat/HoneControls";
+ import { HoneGlyph } from "../hone/HonePage";
+ import { GuideToggle } from "../hone/guide/GuideToggle";
++import { guideText } from "../hone/guide/guideText";
++import { useGuideStartOver } from "../hone/guide/useGuideStartOver";
+ import { useGuideStore } from "../hone/guide/guideStore";
+ import { T3Wordmark } from "../T3Wordmark";
+ import {
+@@ -240,6 +242,7 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+   const honeStatus = useHoneStatus(primaryEnvironmentId);
+   const resetHoneDemo = useHoneDemoReset(primaryEnvironmentId);
+   const guideOn = useGuideStore((state) => state.on);
++  const guideStartOver = useGuideStartOver(primaryEnvironmentId);
+   const closeMobileSidebar = () => {
+     if (isMobile) {
+       setOpenMobile(false);
+@@ -305,11 +308,11 @@ const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+           {honeStatus?.dashboardUrl ? (
+             <SidebarUtilityItem icon={<HoneGlyph />} label="Hone" onClick={handleHoneClick} />
+           ) : null}
+-          {honeStatus?.demo && !guideOn ? (
++          {honeStatus?.demo ? (
+             <SidebarUtilityItem
+               icon={<RotateCcwIcon />}
+-              label="Reset demo"
+-              onClick={() => void resetHoneDemo()}
++              label={guideOn ? guideText.startOver : "Reset demo"}
++              onClick={() => void (guideOn ? guideStartOver({ confirm: true }) : resetHoneDemo())}
+             />
+           ) : null}
+           {honeStatus?.demo ? <GuideToggle environmentId={primaryEnvironmentId} /> : null}
+-- 
+2.43.0
+

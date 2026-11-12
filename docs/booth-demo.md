@@ -148,10 +148,11 @@ Enabled when the server starts with `HONE_DEMO=1`.
 - The input files are dragged from the existing Files panel into the composer.
 - A Hone button next to Settings, Usage and Pull requests opens the Hone dashboard inside t3code.
 
-### Guide mode (patches 0008 and 0009)
+### Guide mode (patches 0008, 0009 and 0012 to 0014)
 Guide mode lets a visitor walk through the demo alone, with no presenter. `clients/t3code/README.md` lists the steps and settings.
 - The presenter turns it on with the Guide button in the sidebar. Leaving it takes a two second hold and the PIN in `HONE_GUIDE_PIN`.
-- After `HONE_GUIDE_IDLE_VIDEO_SECONDS` without a touch the booth video plays. After `HONE_GUIDE_IDLE_RESET_SECONDS` the guide resets the demo and shows the welcome card.
+- Start over in every step card, and next to the Guide button in the sidebar, asks the visitor first, then resets the demo the way Reset demo does and shows the welcome card.
+- After `HONE_GUIDE_IDLE_VIDEO_SECONDS` without a touch (30 by default) the booth video fades in. Taps, mouse moves and key presses neither end it nor count as activity. A press or any key held for 1.5 seconds ends it, and a Hold to return ring in the middle of the screen fills while the visitor holds. After `HONE_GUIDE_IDLE_RESET_SECONDS` (300 by default) the guide resets the demo and shows the welcome card, also while the video plays.
 - The guide writes the visitor's request and feedback word for word as the recorded chat and run had them. The agent turn cache then replays the recorded chat, Hone gets the same trace, and Start optimization finds the approved run in the run cache.
 - The visitor's chat replays in about two minutes, and the optimization in about a minute and a half.
 

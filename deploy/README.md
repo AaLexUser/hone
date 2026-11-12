@@ -41,7 +41,9 @@ Guide mode lets visitors try the demo alone. `clients/t3code/README.md` describe
 
 - The booth loop ships in the repo through Git LFS as `deploy/booth-video/loop.mp4` (re-encoded to about 73 MB). Run `git lfs install` once on the laptop before cloning or pulling, or the file arrives as a small pointer with its chapter list `loop.chapters.json`. Caddy serves the folder at `/booth-video/` behind the booth login. To ship a new loop, re-encode the rendered `hone-loop.mp4` with `ffmpeg -i hone-loop.mp4 -c:v libx264 -preset slow -crf 28 -tune animation -pix_fmt yuv420p -movflags +faststart -an loop.mp4` and copy `hone-loop.chapters.json` as `loop.chapters.json`.
 - Open `/loop` to play the loop on demand, with a seek bar, the playing time and a chapter list. Space pauses, the arrows skip 10 seconds, page up and page down jump between chapters, and F is full screen.
-- `HONE_GUIDE_PIN`, `HONE_GUIDE_IDLE_VIDEO_SECONDS` and `HONE_GUIDE_IDLE_RESET_SECONDS` in `.env` set the exit PIN and the two idle times. `HONE_GUIDE_VIDEO_URL` defaults to `/booth-video/loop.mp4`.
+- `HONE_GUIDE_PIN`, `HONE_GUIDE_IDLE_VIDEO_SECONDS` and `HONE_GUIDE_IDLE_RESET_SECONDS` in `.env` set the exit PIN and the two idle times. By default the booth video plays after 30 idle seconds and the demo starts over after 300. `HONE_GUIDE_VIDEO_URL` defaults to `/booth-video/loop.mp4`.
+- The video fades in over the app. Taps, mouse moves and key presses do not end it. A press or any key held for 1.5 seconds does, and a Hold to return ring in the middle of the screen fills while the visitor holds. The idle reset keeps counting while the video plays.
+- In guide mode the sidebar shows Start over next to the Guide button in place of Reset demo, and every step card has a Start over button. It asks first, then resets the demo like Reset demo and shows the welcome card.
 - On every start the entrypoint points Pi's binary path at the turn cache wrapper. It replays recordings from `clients/t3code/turn-cache/`, which the image holds, and from the `turn-cache` volume. `HONE_TURN_CACHE_RECORD=1` records new ones in the volume. `docs/booth-demo.md` says how to record the guided visit.
 
 ## Data

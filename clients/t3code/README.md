@@ -32,6 +32,10 @@ folder at session start and publishes the session trace after each reply.
 | `0008` | Guide mode for the booth, the `hone.guideUnlock` RPC and the guide settings in `hone.status` (`apps/web/src/components/hone/guide/`) |
 | `0009` | The agent turn cache, a Pi wrapper that replays a recorded first turn of a demo chat (`apps/server/scripts/hone-pi.ts`) |
 | `0010` | No GitHub star prompt while the server runs the Hone demo, since booth visitors share one browser (`apps/web/src/components/chat/useComposerSend.ts`) |
+| `0011` | A turn cache hit when the message differs from the recording only in whitespace (`apps/server/scripts/hone-pi.ts`) |
+| `0012` | A two second press and hold to end the booth video (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
+| `0013` | Start over in every guide step card and next to the Guide button (`apps/web/src/components/hone/guide/useGuideStartOver.ts`) |
+| `0014` | A booth video that fades in, ends only on a 1.5 second hold with a ring that shows the hold, and plays after 30 idle seconds by default (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token
@@ -136,15 +140,19 @@ ten minutes, and the card says which. During a real run the card offers the boot
 that fails sends the visitor back to Start optimization.
 
 The Guide button in the sidebar footer turns guide mode on. It stays on through reloads, and
-Reset demo is hidden while it is on. To leave guide mode, hold the button for two seconds, then
-enter the PIN when one is set. After a short idle the booth video plays full screen and muted.
-A touch, a key or a mouse move ends it. After a long idle the guide resets the demo and shows
-the welcome card again. Idle time does not count while the agent or an optimization works.
+Reset demo gives way to Start over while it is on. Start over is also in every step card. It
+asks first, then resets the demo the way Reset demo does and shows the welcome card. To leave
+guide mode, hold the button for two seconds, then enter the PIN when one is set. After a short
+idle the booth video fades in full screen and muted. Taps, mouse moves and key presses neither
+end it nor count as activity. A press or any key held for 1.5 seconds ends it, and a Hold to
+return ring in the middle of the screen fills while the visitor holds. After a long idle the
+guide resets the demo and shows the welcome card again, also while the video plays. Idle time
+does not count while the agent or an optimization works.
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `HONE_GUIDE_VIDEO_URL` | none | The booth video. Without it the guide plays no video |
-| `HONE_GUIDE_IDLE_VIDEO_SECONDS` | `90` | Idle seconds before the video plays, `0` for never |
+| `HONE_GUIDE_IDLE_VIDEO_SECONDS` | `30` | Idle seconds before the video plays, `0` for never |
 | `HONE_GUIDE_IDLE_RESET_SECONDS` | `300` | Idle seconds before the demo starts over, `0` for never |
 | `HONE_GUIDE_PIN` | none | The PIN that ends guide mode. Without it the hold is enough |
 

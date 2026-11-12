@@ -37,7 +37,7 @@ services:
       OPENCODE_API_KEY: ${OPENCODE_API_KEY:?set OPENCODE_API_KEY in .env}
       # Guide mode. Caddy serves the video from ./booth-video behind the booth login.
       HONE_GUIDE_VIDEO_URL: ${HONE_GUIDE_VIDEO_URL:-/booth-video/loop.mp4}
-      HONE_GUIDE_IDLE_VIDEO_SECONDS: ${HONE_GUIDE_IDLE_VIDEO_SECONDS:-90}
+      HONE_GUIDE_IDLE_VIDEO_SECONDS: ${HONE_GUIDE_IDLE_VIDEO_SECONDS:-30}
       HONE_GUIDE_IDLE_RESET_SECONDS: ${HONE_GUIDE_IDLE_RESET_SECONDS:-300}
       HONE_GUIDE_PIN: ${HONE_GUIDE_PIN:-}
       # The agent turn cache. New recordings go to the volume, shipped ones come with the image.
