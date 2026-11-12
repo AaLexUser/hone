@@ -23,7 +23,7 @@ The council's picks and the reasons are in `council.md`.
 | 4-spreadsheets | Spreadsheets too, expense reports | Built on an older roster |
 | 7-singles-day | A sale in the right time zone | Built from approved run r_3db5 |
 | 8-ohio | Ohio is not in Oxford | Built from approved run r_3931 |
-| 10-badges | Every name on one line | Built from approved run r_a466, ends on the rule because the after sheet hit the key's weekly limit |
+| 10-badges | Every name on one line | Built from approved run r_a466, ends on the before and after sheets |
 | 6-versions | Every change is a version | Built |
 | not planned | Don't invent our results, "Not useful" | The loop has enough scenarios. Transcripts was dropped because the agent anonymised every name unprompted |
 
