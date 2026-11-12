@@ -25,7 +25,7 @@ The council's picks and the reasons are in `council.md`.
 | 8-ohio | Ohio is not in Oxford | Built from approved run r_3931 |
 | 10-badges | Every name on one line | Built from approved run r_a466, ends on the rule because the after sheet hit the key's weekly limit |
 | 6-versions | Every change is a version | Built |
-| next | Don't invent our results, "Not useful" | Council picks 5 and 6, waiting for a model key. Transcripts was dropped because the agent anonymised every name unprompted |
+| not planned | Don't invent our results, "Not useful" | The loop has enough scenarios. Transcripts was dropped because the agent anonymised every name unprompted |
 
 Every clip uses a real run that two reviewers passed under `docs/run-review.md`.
 
