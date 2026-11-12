@@ -14,14 +14,19 @@ Every scenario is real footage of the booth stack, built with the same tooling a
 
 ## Scenarios
 
-| # | Name | Domain and files | What happens | What it shows about Hone |
-|---|---|---|---|---|
-| 1 | A complaint becomes a rule | Offer letters, hiring approval PDF and DOCX template | The agent prints a £0 bonus row, thumbs down, a real MAJICS run adds a rule, the next letter is right | The core loop, feedback to AGENTS.md without re-running anything |
-| 2 | A one off stays one off | Offer letters | One session gets a request scoped to a single candidate, another gets a general complaint. The judge cross-examines the panel | Hone keeps a scoped request out of AGENTS.md and turns only the general complaint into a rule |
-| 3 | Nothing wrong, nothing changes | Offer letters | A batch where every session is approved | A real run ends with no changes, so Hone does not churn the file |
-| 4 | Spreadsheets | Monthly expense reports, receipts as PDF, an XLSX template | The agent already gets formats, dates and a frozen header right, so the real gap is company practice. Feedback asks for a subtotal per category, a real run adds that rule and four more mined from the agent's own mistakes, and the next report has the subtotals | Hone works across office tasks, not just one demo |
-| 5 | Meeting minutes | A meeting transcript and a DOCX minutes template | Feedback asks for action items first, each with an owner and a date. The rule lands and the next minutes follow it | Preferences, not only errors, become rules |
-| 6 | Every change is a version | The Versions page | Compare two versions, branch from an older one, set a version as current, the t3code chip shows the new version | AGENTS.md history is in Git and nothing is lost |
+`loop.json` lists every clip in loop order, and `build.py` skips a clip whose folder does not exist yet.
+The council's picks and the reasons are in `council.md`.
+
+| Folder | Name | State |
+|---|---|---|
+| 1-complaint | A complaint becomes a rule, offer letters | Being re-recorded from the approved booth run r_89a9 |
+| 4-spreadsheets | Spreadsheets too, expense reports | Built on an older roster |
+| 7-singles-day | A sale in the right time zone | Built from approved run r_3db5 |
+| 8-ohio | Ohio is not in Oxford | Built from approved run r_3931 |
+| 6-versions | Every change is a version | Built |
+| next | Anonymised interview transcripts, workshop badges, don't invent our results, "Not useful" | Council picks 3 to 6, in that order |
+
+Every clip uses a real run that two reviewers passed under `docs/run-review.md`.
 
 ## Honesty rules
 
