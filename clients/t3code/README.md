@@ -38,6 +38,7 @@ folder at session start and publishes the session trace after each reply.
 | `0014` | A booth video that fades in, ends only on a key or mouse press held 1.5 seconds with a ring in the hint that fills, and plays after 30 idle seconds by default (`apps/web/src/components/hone/guide/GuideLayer.tsx`) |
 | `0015` | `HONE_TURN_CACHE_SPEED`, a pace multiplier for replayed turns (`apps/server/scripts/hone-pi.ts`) |
 | `0016` | The guide's second chat after the run and the `hone.guideRetry` RPC that says whether it can replay (`apps/server/src/hone/HoneDemo.ts`, `apps/web/src/components/hone/guide/guideSteps.ts`) |
+| `0017` | The exit hold no longer re-enters the guide on its release click (`apps/web/src/components/hone/guide/GuideToggle.tsx`) |
 
 The t3code server calls Hone for status and feedback, so those calls need no token in the browser and
 Hone needs no CORS. The Hone page in demo mode loads the dashboard itself, which reads the write token

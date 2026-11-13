@@ -1,0 +1,61 @@
+From e79c9bab96778ed5f49ea905118f284467aed58c Mon Sep 17 00:00:00 2001
+From: build <build@localhost>
+Date: Fri, 13 Nov 2026 14:17:19 +0300
+Subject: [PATCH] fix(web): do not re-enter the guide off the exit hold's click
+
+The two second hold exits guide mode and flips the button to its enter
+state before the release arrives, so the same press ended with the guide
+turning back on. Clicks within half a second of an exit are swallowed.
+---
+ apps/web/src/components/hone/guide/GuideToggle.tsx | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/apps/web/src/components/hone/guide/GuideToggle.tsx b/apps/web/src/components/hone/guide/GuideToggle.tsx
+index a12d8d7b..a0f37664 100644
+--- a/apps/web/src/components/hone/guide/GuideToggle.tsx
++++ b/apps/web/src/components/hone/guide/GuideToggle.tsx
+@@ -37,6 +37,9 @@ export function GuideToggle({ environmentId }: { readonly environmentId: Environ
+   const [pin, setPin] = useState("");
+   const [wrong, setWrong] = useState(false);
+   const timer = useRef<number | null>(null);
++  // The release click of the exit hold lands after `on` is already false, when
++  // the button would enter the guide again. A real click comes later.
++  const exitedAt = useRef(0);
+ 
+   const cancelHold = () => {
+     if (timer.current !== null) window.clearTimeout(timer.current);
+@@ -54,6 +57,7 @@ export function GuideToggle({ environmentId }: { readonly environmentId: Environ
+         setWrong(false);
+         setPinOpen(true);
+       } else {
++        exitedAt.current = Date.now();
+         useGuideStore.getState().exit();
+       }
+     }, HOLD_MS);
+@@ -62,6 +66,7 @@ export function GuideToggle({ environmentId }: { readonly environmentId: Environ
+     if (environmentId === null) return;
+     const result = await unlock({ environmentId, input: { pin } });
+     if (result._tag === "Success" && result.value.unlocked) {
++      exitedAt.current = Date.now();
+       useGuideStore.getState().exit();
+       return;
+     }
+@@ -81,7 +86,14 @@ export function GuideToggle({ environmentId }: { readonly environmentId: Environ
+               data-guide-toggle=""
+               isActive={on}
+               className="relative overflow-hidden"
+-              onClick={on ? undefined : () => useGuideStore.getState().enter()}
++              onClick={
++                on
++                  ? undefined
++                  : () => {
++                      if (Date.now() - exitedAt.current < 500) return;
++                      useGuideStore.getState().enter();
++                    }
++              }
+               onPointerDown={on ? startHold : undefined}
+               onPointerUp={cancelHold}
+               onPointerLeave={cancelHold}
+-- 
+2.54.0 (Apple Git-157)
+
