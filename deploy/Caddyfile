@@ -1,6 +1,23 @@
 {$SITE_ADDRESS} {
-	basic_auth {
+	# CPA uses its own API and management keys, including the panel's root API paths.
+	@booth not path /cpa /cpa/* /v8/management /v8/management/* /v0/management /v0/management/* /v0/resource/plugins/*
+	basic_auth @booth {
 		{$BASIC_AUTH_USER} {$BASIC_AUTH_HASH}
+	}
+
+	redir /cpa /cpa/ 308
+	handle_path /cpa/* {
+		reverse_proxy cpa:8317 {
+			flush_interval -1
+		}
+	}
+
+	# The official panel detects the origin as its API base, without /cpa.
+	@cpaManagement path /v8/management /v8/management/* /v0/management /v0/management/* /v0/resource/plugins/*
+	handle @cpaManagement {
+		reverse_proxy cpa:8317 {
+			flush_interval -1
+		}
 	}
 
 	# /hone without a slash stays with t3code, which shows Hone in a frame there.

@@ -2,6 +2,10 @@
 
 This folder runs the booth demo as four containers behind one shared login.
 
+The optional [CLIProxyAPI profile](cpa/README.md) adds an API proxy at `/cpa`
+and its management panel at `/cpa/management.html`, with automatic server and
+panel updates and separate access keys.
+
 - `caddy` is the only service with published ports. It asks every visitor for the booth login and password, then sends `/hone/` to Hone and everything else to t3code.
 - `t3code` is the web interface for the Pi agent. It is built from the pinned t3code commit with every patch in `clients/t3code/patches`, applied in name order. The image also holds Pi, the Hone extension and the office tools the agent runs, which are `pdftotext`, python-docx and LibreOffice.
 - `hone` is the Hone service with its dashboard, started in demo mode. Its settings are in `hone.yaml` in this folder.

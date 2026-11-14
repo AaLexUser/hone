@@ -87,6 +87,26 @@ services:
         aliases: [hone.internal]
     depends_on: [docker]
 
+  cpa:
+    image: eceasy/cli-proxy-api:latest
+    profiles: [cpa]
+    restart: unless-stopped
+    command: ["./CLIProxyAPI", "--config", "/CLIProxyAPI/config/config.yaml"]
+    environment:
+      TZ: Europe/Istanbul
+      MANAGEMENT_STATIC_PATH: /CLIProxyAPI/static
+    volumes:
+      - ./cpa/config:/CLIProxyAPI/config
+      - cpa-auths:/root/.cli-proxy-api
+      - cpa-static:/CLIProxyAPI/static
+      - cpa-logs:/CLIProxyAPI/logs
+    networks: [backend, outbound]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   # A Docker daemon of its own for the optimization sandboxes. Only Hone holds
   # its client certificate. It sees Hone's data at the same path, /data,
   # because Harbor mounts the run folders into the sandboxes by path.
@@ -126,3 +146,6 @@ volumes:
   turn-cache:
   docker-certs:
   docker-lib:
+  cpa-auths:
+  cpa-static:
+  cpa-logs:

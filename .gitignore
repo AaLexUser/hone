@@ -256,3 +256,5 @@ reference
 deploy/booth-video/*
 !deploy/booth-video/loop.mp4
 !deploy/booth-video/loop.chapters.json
+# CLIProxyAPI's writable configuration contains API and management keys.
+/deploy/cpa/config/

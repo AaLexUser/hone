@@ -1,0 +1,23 @@
+config-version: 8
+server:
+  host: ""
+  port: 8317
+  shutdown-timeout: 30
+management:
+  allow-remote: true
+  secret-key: "replace-with-a-random-management-key"
+  disable-control-panel: false
+  disable-auto-update-panel: false
+  panel-github-repository: "https://github.com/router-for-me/Cli-Proxy-API-Management-Center"
+access:
+  api-keys:
+    - "replace-with-a-random-client-api-key"
+oauth:
+  auth-dir: "/root/.cli-proxy-api"
+observability:
+  logs:
+    logging-to-file: false
+    logs-max-total-size-mb: 100
+    request-log: false
+  usage:
+    usage-statistics-enabled: true
