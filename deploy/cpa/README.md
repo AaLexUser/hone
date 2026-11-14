@@ -6,8 +6,10 @@ image behind Caddy. Its API base is `/cpa/v1` and its management panel is
 
 CPA uses its own client and management keys. The booth's Basic login remains on
 Hone and t3code. The official panel detects the origin without `/cpa`, so Caddy
-also forwards `/v8/management/*`, the legacy `/v0/management/*`, and plugin
-resources under `/v0/resource/plugins/*` to CPA. A custom panel server address
+also forwards `/v8/management/*`, the legacy `/v0/management/*`, plugin
+resources under `/v0/resource/plugins/*`, and the dashboard's `/v1/models`
+request to CPA. These routes use CPA's own authentication; a missing key must
+not trigger the booth's browser login dialog. A custom panel server address
 ending in `/cpa` works too.
 
 ## Set up
