@@ -26,6 +26,13 @@ The configuration directory is writable so panel edits and the startup hash of
 the management key persist. Named volumes retain OAuth credentials, the panel,
 and request error logs across container updates. CPA has no published host ports.
 
+## Logs
+
+File logging is enabled so the panel's Logs Viewer can read application and
+access logs. The `cpa-logs` volume retains them across container updates, and
+`observability.logs.logs-max-total-size-mb: 100` bounds total log storage.
+Full request/response logging (`request-log`) is disabled.
+
 ## Automatic updates
 
 `update.sh` pulls `latest` and recreates only CPA when the image changes. On the

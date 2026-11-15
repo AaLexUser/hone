@@ -16,7 +16,7 @@ oauth:
   auth-dir: "/root/.cli-proxy-api"
 observability:
   logs:
-    logging-to-file: false
+    logging-to-file: true
     logs-max-total-size-mb: 100
     request-log: false
   usage:
